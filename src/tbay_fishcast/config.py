@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
@@ -48,8 +49,35 @@ class LsofsConfig:
 
 
 @dataclass(frozen=True)
+class DateRange:
+    start: date
+    end: date
+
+    def contains(self, d: date) -> bool:
+        return self.start <= d <= self.end
+
+
+@dataclass(frozen=True)
+class TemporalSplit:
+    """Tune vs held-out validation windows (ADR-004, revised by ADR-018).
+
+    `assign` returns 'tune' | 'validate' | None so a caller can never accidentally
+    tune a threshold on a date it will later report skill for (CLAUDE rule 6)."""
+    tune: DateRange
+    validate: DateRange
+
+    def assign(self, d: date) -> str | None:
+        if self.tune.contains(d):
+            return "tune"
+        if self.validate.contains(d):
+            return "validate"
+        return None
+
+
+@dataclass(frozen=True)
 class Config:
     lsofs: LsofsConfig
+    temporal_split: TemporalSplit
     stations: tuple[Station, ...] = field(default_factory=tuple)
 
     def station(self, station_id: str) -> Station:
@@ -74,6 +102,15 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
         cycles=tuple(l["cycles"]),
         nowcast_hours=int(l["nowcast_hours"]),
     )
+
+    def _d(v) -> date:
+        return v if isinstance(v, date) else datetime.fromisoformat(str(v)).date()
+
+    ts = raw["temporal_split"]
+    temporal_split = TemporalSplit(
+        tune=DateRange(_d(ts["tune"]["start"]), _d(ts["tune"]["end"])),
+        validate=DateRange(_d(ts["validate"]["start"]), _d(ts["validate"]["end"])),
+    )
     stations = tuple(
         Station(
             id=s["id"],
@@ -90,7 +127,7 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
         )
         for s in raw["stations"]
     )
-    return Config(lsofs=lsofs, stations=stations)
+    return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations)
 
 
 def knowledge_pack_version(knowledge_dir: Path | str = KNOWLEDGE_DIR) -> str:

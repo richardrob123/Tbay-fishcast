@@ -21,6 +21,14 @@ lsofs:
   cycles: ["t00z", "t06z", "t12z", "t18z"]
   nowcast_hours: 7                        # n000..n006 per cycle
 
+# Temporal split for threshold tuning vs held-out validation (ADR-004, revised by ADR-018).
+# LSOFS has no data before 2024-03, so the original 2022-2024 tune window is infeasible;
+# the split principle (never tune on data you report skill for) is preserved.
+temporal_split:
+  tune:     {start: "2024-03-26", end: "2024-12-31"}
+  validate: {start: "2025-01-01", end: "2026-12-31"}
+  note: "ADR-018: tune on the 2024 season (only LSOFS available), validate 2025-2026 held out."
+
 stations:
   - id: silver_harbour_outer
     name: "Silver Harbour — outer rocks"
