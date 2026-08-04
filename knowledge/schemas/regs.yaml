@@ -1,0 +1,55 @@
+# regs.yaml — SAFETY-CRITICAL. Tier-1 sources ONLY. verified_on mandatory.
+# The scoring engine consumes these as hard gates; tests assert closed water is unrecommendable.
+# ALL entries must be re-verified against the current Ontario Fishing Regulations Summary before go-live.
+
+- id: laker_fmz9_season
+  scope: {zone: "FMZ 9 (Lake Superior)", species: lake_trout}
+  rule: "Open Jan 1 – Sep 30. CLOSED Oct 1 – Dec 31 (fall spawn protection)."
+  source: "Ontario Fishing Regulations Summary, FMZ 9"
+  verified_on: 2026-08-02
+  tier: T1
+
+- id: coaster_fmz9
+  scope: {zone: "FMZ 9 Superior + tribs", species: brook_trout}
+  rule: "Fourth Sat in April – Labour Day. S-1, must exceed 56 cm; C-0."
+  source: "Ontario Fishing Regulations Summary, FMZ 9"
+  verified_on: 2026-08-02
+  tier: T1
+
+- id: steelhead_tribs_69cm
+  scope: {zone: "Thunder Bay area tributaries", species: rainbow_trout}
+  rule: "One fish/day, must exceed 69 cm total length (1999 rule). Confirm per-water."
+  source: "Regs summary + northshoresteelhead.com history"
+  verified_on: 2026-08-01
+  tier: T1
+
+- id: mcintyre_sanctuary_spring
+  scope: {water: "McIntyre River — footbridge to dam, Lakehead University property"}
+  rule: "Fish sanctuary — NO FISHING Apr 1 – May 31. Legal outside window."
+  source: "Ontario Fishing Regulations Summary, FMZ 6 exceptions"
+  verified_on: 2026-08-02
+  tier: T1
+
+- id: kakabeka_park_closed
+  scope: {water: "Kakabeka Falls Provincial Park waters"}
+  rule: "Fishing NOT permitted in the park (lake sturgeon spawning at falls base). Hard exclusion — overrides any community pin."
+  source: "Ontario Parks — Kakabeka Falls"
+  verified_on: 2026-08-04
+  tier: T1
+
+- id: whitefish_dipnet_window
+  scope: {zone: "FMZ 9", mode: dip_net, species: [lake_whitefish, cisco]}
+  rule: "2026 variation order: close times Jan 1–Sep 30 and Dec 16–31 → open Oct 1 – Dec 15. Dip nets only in Ontario."
+  source: "2026 ECCC/MNRF variation order"
+  verified_on: 2026-08-03
+  tier: T1
+
+- id: marina_dock_zones
+  scope: {water: "Marina Park docking/launch areas"}
+  rule: "No angling in posted dock/launch zones; shoreline open — obey signage."
+  source: "Ellis (T2) — MUST upgrade to T1 city bylaw citation before go-live"
+  verified_on: 2026-08-03
+  tier: T2   # flagged: below bar; validator must block go-live until upgraded
+
+# --- required additions before Phase 2: FMZ 6 walleye/pike season dates, Neebing weir no-fishing zone
+# --- boundaries, Nipigon system special regs (barbless/single/seasons), FMZ 6 vs 9 boundary definitions per water.

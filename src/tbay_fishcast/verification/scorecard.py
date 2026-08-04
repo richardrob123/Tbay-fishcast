@@ -1,0 +1,80 @@
+"""Skill scorecard — the numbers the commissioning gates are read from (PLAN 5).
+
+G1 = temperature MAE (this module, real). G2 = event POD/FAR (this module, real
+contingency math). G3/G4 are computed by comparing these outputs against the
+held-out-year thresholds; that comparison harness lands with the backfill data.
+
+Truth-proxy caveat (Phase-0 limitation, documented): the only reachable water-temp
+truths are GLSEA surface SST and the Slate Island buoy (~165 km E, 1 m). Both are
+SURFACE references; the gates specify 6 m. Until an in-situ logger exists, G1/G2
+are evaluated against surface proxies with an explicit depth caveat, NOT against
+true 6 m observations. `depth_caveat` is carried on every result so no scorecard
+is ever read as a clean 6 m verification.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class ErrorStats:
+    n: int
+    mae: float
+    bias: float  # mean(model - truth)
+    rmse: float
+    depth_caveat: str
+
+
+@dataclass(frozen=True)
+class Contingency:
+    hits: int          # event forecast & observed
+    misses: int        # observed, not forecast
+    false_alarms: int  # forecast, not observed
+    correct_neg: int
+
+    @property
+    def pod(self) -> float:
+        """Probability of detection = hits / (hits + misses)."""
+        denom = self.hits + self.misses
+        return float("nan") if denom == 0 else self.hits / denom
+
+    @property
+    def far(self) -> float:
+        """False-alarm ratio = false_alarms / (hits + false_alarms)."""
+        denom = self.hits + self.false_alarms
+        return float("nan") if denom == 0 else self.false_alarms / denom
+
+
+def temperature_error(
+    model_c, truth_c, *, depth_caveat: str = "surface-proxy vs 6 m target"
+) -> ErrorStats:
+    """MAE / bias / RMSE of model vs truth, NaNs dropped pairwise (G1)."""
+    m = np.asarray(model_c, dtype=float)
+    o = np.asarray(truth_c, dtype=float)
+    if m.shape != o.shape:
+        raise ValueError("model and truth must have matching shape")
+    valid = ~(np.isnan(m) | np.isnan(o))
+    m, o = m[valid], o[valid]
+    if m.size == 0:
+        return ErrorStats(0, float("nan"), float("nan"), float("nan"), depth_caveat)
+    diff = m - o
+    return ErrorStats(
+        n=int(m.size),
+        mae=float(np.mean(np.abs(diff))),
+        bias=float(np.mean(diff)),
+        rmse=float(np.sqrt(np.mean(diff**2))),
+        depth_caveat=depth_caveat,
+    )
+
+
+def contingency(forecast_days: set, observed_days: set, all_days: set) -> Contingency:
+    """Build a 2x2 event contingency table from day-sets (G2)."""
+    forecast_days = set(forecast_days) & all_days
+    observed_days = set(observed_days) & all_days
+    hits = len(forecast_days & observed_days)
+    misses = len(observed_days - forecast_days)
+    false_alarms = len(forecast_days - observed_days)
+    correct_neg = len(all_days - (forecast_days | observed_days))
+    return Contingency(hits, misses, false_alarms, correct_neg)

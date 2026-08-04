@@ -1,0 +1,60 @@
+# events_calendar.yaml — phenology windows + modifiers. Dates are typical; system shifts by GLSEA seasonal anomaly.
+
+- id: chinook_staging
+  window: {start: "08-25", end: "09-15"}
+  stations: ["kam_mouth", "fishermans_park_mouth"]
+  species: chinook
+  note: "Dawn cruisers off river mouths before commitment; nights-cooling trigger."
+  source: "Ellis September run + field-week synthesis"
+  retrieved: 2026-08-05
+  tier: T2
+
+- id: pink_run
+  window: {start: "09-01", end: "09-30"}
+  stations: ["fishermans_park_mouth", "fishermans_park_west_channel"]
+  species: pink
+  modifiers:
+    even_year: {effect: 0.5, note: "even-year runs historically lighter on Superior; both cycles exist", tier: T2, source: "MN Steelheader pink history / BC cycle refs"}
+    rain_trigger: {effect: 1.8, note: "first cool rain after Aug 20 = starting gun", tier: T2}
+  lore: "Origin water: all Great Lakes pinks descend from ~20k fingerlings released into the Current River, 1956."
+  source: "MN Steelheader / Jerry Dennis histories"
+  retrieved: 2026-08-05
+  tier: T2
+
+- id: mcintyre_coho
+  window: {start: "08-25", end: "10-31"}
+  stations: ["mcintyre_confederation"]
+  species: coho
+  note: "Strong coho runs; hotspot near Confederation College. Verify station access + regs stretch."
+  source: "ontariotroutandsteelhead.com salmon rivers guide"
+  retrieved: 2026-08-05
+  tier: T3   # single listicle source — needs T2 corroboration before high weighting
+
+- id: fall_steelhead
+  window: {start: "09-25", end: "freeze_up"}
+  stations: ["mcintyre_*", "neebing_*", "mcvicar_mouth", "current_below_boulevard"]
+  species: steelhead
+  note: "NSSA-endorsed venues; floodway mouth runs fish spring AND fall (Ellis)."
+  source: "NSSA/CBC + Ellis"
+  retrieved: 2026-08-05
+  tier: T2
+
+- id: whitefish_dipnet_season
+  window: {start: "10-01", end: "12-15"}
+  stations: ["river_mouths", "shallow_bays"]
+  species: [lake_whitefish, cisco]
+  mode: dip_net
+  note: "Night activity near freeze-up; local family derbies documented. Regs gate: regs.yaml#whitefish_dipnet_window."
+  source: "variation order (T1) + Northern Wilds + local derby video"
+  retrieved: 2026-08-05
+  tier: T1
+
+- id: upwelling_event      # condition-triggered, not calendar-triggered
+  trigger: "T@6m <= 12C at any superior_shore station (LSOFS forecast) OR delta>4C/24h"
+  window: {start: "06-15", end: "09-30"}   # laker season gate bounds the end
+  stations: ["silver_harbour_outer", "mackenzie_point", "marina_east_mcvicar"]
+  species: lake_trout
+  note: "The August exception. Ekman geometry favors NE-shore stations under W wind; marina is breakwall-filtered."
+  source: "field-week physics program + JGR Li 2021 (10C NW-coast August cooling)"
+  retrieved: 2026-08-05
+  tier: T2

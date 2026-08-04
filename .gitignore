@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+# data artifacts — never commit bulk NetCDF/parquet (fixtures under tests/ are the exception)
+data/
+*.parquet
+*.nc
+!tests/fixtures/*.nc
+.DS_Store

@@ -1,0 +1,37 @@
+# spots.yaml — station registry. One entry per fishable station.
+# Schema: every leaf that is a claim carries {value, source, retrieved, tier}.
+# Depth profiles may come from count-down soundings (tier T3, method: countdown).
+
+- id: mountdale_dock
+  name: "Mountdale/Neste Boat Launch — dock & ramp"
+  lat: 48.3540888
+  lon: -89.2949411
+  waterbody: "Kaministiquia River (lower, above delta split)"
+  lsofs_node: null            # filled by grid bootstrap; null = river station (no LSOFS)
+  access:
+    status: {value: "public — official city launch", source: "visitthunderbay.com boat launches; City of Thunder Bay improvements notice", retrieved: 2026-08-04, tier: T1}
+    hours: {value: "unrestricted; unlit after dark", source: "Google listing + reviews (46 @ 4.5)", retrieved: 2026-08-02, tier: T3}
+    parking: {value: "large lot; nose-out; no visibles in car", source: "field protocol", retrieved: 2026-08-04, tier: T4}
+  platform: ["dock", "concrete ramp", "gravel bank"]
+  exposure_bearing_deg: null   # river station — wind exposure via valley shelter note instead
+  shelter_note: {value: "river valley shelters from W winds", tier: T4, retrieved: 2026-08-04, source: "geometry inference"}
+  depth_profile_m:             # distance_m_from_platform: depth_m
+    seam_20m: {value: null, method: countdown_pending, tier: T3}
+  hazards:
+    - {value: "greasy banks after rain; fish from dock/gravel only", tier: T4, retrieved: 2026-08-04, source: "field inference"}
+    - {value: "isolated industrial pocket after dark; standard solo protocol", tier: T3, retrieved: 2026-08-04, source: "review corpus + city context"}
+  pollution:
+    upstream: {value: "Thunder Bay Pulp & Paper effluent enters UPSTREAM at Westfort — all delta branches carry it; Aug 2025 violation incl. dead baitfish at Neste", source: "CBC/TBNewswatch Aug 2025", retrieved: 2026-08-04, tier: T1}
+    downstream: {value: "City WPCP (901 Atlantic Ave) discharges to lower main channel DOWNSTREAM of this station; scheduled secondary bypass Oct 19–Nov 6 2026", source: "City annual report + bypass notice", retrieved: 2026-08-04, tier: T1}
+    consumption: {value: "Thunder Bay AOC; fish-consumption impairment not delisted — release-first water; check Ontario guide per species", source: "AOC status report", retrieved: 2026-08-04, tier: T1}
+  cso_flag_applies: false      # farm-country water above; urban CSO logic applies to Current/Neebing/McIntyre/McVicar stations
+  micro_stations:
+    - {name: "basin seam off dock", note: "fast/slack seam across launch-basin mouth; primary", tier: T2, source: "Ellis: shore fishing concentrated at launches/bridges", retrieved: 2026-08-03}
+    - {name: "ramp concrete edge", note: "hard-bottom transition, dusk patrol lane", tier: T4}
+    - {name: "upstream point + rock", note: "eddy on downstream (launch-facing) face; ~200 m walk; snag budget", tier: T4, source: "satellite read 2026-08-04"}
+  bridges_nearby:
+    - {name: "Hwy 61 bridge", lat: 48.3484918, lon: -89.3149638, note: "KML pin; piling cushions; public-road fishing, heed signage", tier: T3, source: "seed KML"}
+# --- add remaining stations from seed corpus: silver_harbour_outer, silver_harbour_basin,
+# --- mackenzie_point, marina_east_mcvicar, boulevard_dam, boulevard_north_inlet,
+# --- fishermans_park_mouth, fishermans_park_west_channel, hazelwood_dock, hazelwood_dam,
+# --- whitefish_landing, stanley_bridge, sturgeon_bay_launch, island_drive_wetland (daylight-only note)

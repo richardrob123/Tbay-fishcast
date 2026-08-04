@@ -1,0 +1,22 @@
+# species_rules.yaml — deterministic behavior rules per species. NO ML here (ADR-009).
+# month_matrix values: 0=absent/closed-biology, 1=marginal, 2=viable, 3=prime (venue-class specific overrides allowed in events_calendar).
+# priors: Beta(a,b) on P(≥1 target-species landed | 2h competent session, right venue-class, right window). Seeded T4-expert; updated only by logged sessions.
+
+- species: walleye
+  temp_band_c: {pref: [16, 22], source: "standard fisheries refs", retrieved: 2026-08-04, tier: T2}
+  venues: ["river_channel", "river_mouth", "shallow_fertile_lake", "dammed_lake_inlet_outlet"]
+  month_matrix: {jan: 2, feb: 2, mar: 1, apr: 1, may: 2, jun: 3, jul: 2, aug: 2, sep: 3, oct: 3, nov: 2, dec: 1}   # ice months = through ice
+  window_multipliers: {dawn: 1.6, day: 0.7, dusk: 2.0, night: 1.3}
+  stained_water_bonus: {value: 1.4, note: "turbidity advantage vs sight feeders", tier: T2, source: "Ellis + standard refs"}
+  triggers:
+    - {event: "river_dropping_clearing_after_rain", effect: 1.5, tier: T2}
+    - {event: "post_frontal_bluebird", effect: 0.7, tier: T3}
+  lure_classes: ["jig_paddletail_chartreuse_white", "jig_crawler", "deep_crank_perch", "gold_spoon_stained"]
+  regs_ref: "regs.yaml#walleye_fmz6"
+  priors:
+    river_channel_dusk_aug: {a: 6, b: 4, note: "~60% seed from field-week estimate", tier: T4, retrieved: 2026-08-05}
+    shallow_lake_dusk_aug: {a: 5, b: 4, tier: T4}
+# --- add: pike, perch, smallmouth, chinook (staging_mouth venue; 'occasionally' per Ellis → low prior),
+# --- pink (even_year modifier in events_calendar), coho (mcintyre venue), steelhead (trib venues; 69cm reg),
+# --- lake_trout (upwelling_trigger: T@6m<=12 → effect 4.0 on superior_shore; season gate Sept 30),
+# --- whitefish (dipnet mode Oct1–Dec15; angling separate), brook_trout_coaster (Labour Day close; 56cm)

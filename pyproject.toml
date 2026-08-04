@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tbay-fishcast"
+version = "0.0.0"
+description = "Deterministic fishing-conditions hindcast/forecast for Thunder Bay shore fishing (Phase 0)."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "pyarrow",
+    "duckdb",
+    "xarray",
+    "netCDF4",
+    "fsspec",
+    "aiohttp",
+    "requests",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

@@ -1,0 +1,78 @@
+# stations.yaml — the operator's station registry (config, not knowledge-graph).
+# Phase 0 scope: the LSOFS temperature layer only samples SUPERIOR-SHORE stations.
+# River / warmwater stations carry lsofs_node: null (no meaningful lake-model node).
+#
+# COORDINATE PROVENANCE: lat/lon below are approximate map-derived positions
+# (tier T4, field_verify: true). They are precise enough for LSOFS nearest-node
+# lookup (model cells are 200 m–2.5 km) but MUST be replaced with field GPS before
+# any access-legality claim is attached to them (RESEARCH_PROTOCOL: access = T1 or field_verify).
+#
+# lsofs_node / node_depth_m are filled deterministically by the grid bootstrap
+# (scripts/bootstrap_grid.py) and pinned here so backtests are reproducible.
+
+lsofs:
+  # NODD S3 buckets (verified reachable 2026-08-04):
+  recent_bucket: "noaa-ofs-pds"          # <=30 d, layout: lsofs.YYYYMMDD/lsofs.tHHz.YYYYMMDD.fields.nNNN.nc
+  archive_bucket: "noaa-nos-ofs-pds"     # historical native fields, layout: lsofs/netcdf/YYYY/MM/DD/...
+  # Verified archive coverage: native `fields` from ~2024-11 (nested) forward; recent bucket last ~30 d.
+  # `regulargrid` product exists 2024-03..2024-12 (flat lsofs/netcdf/YYYYMM/) — separate path, not used in Phase 0.
+  archive_starts: "2024-03-26"           # earliest LSOFS on NODD (regulargrid); native fields later.
+  target_depths_m: [2, 6, 10]            # the operator's cast-relevant band
+  cycles: ["t00z", "t06z", "t12z", "t18z"]
+  nowcast_hours: 7                        # n000..n006 per cycle
+
+stations:
+  - id: silver_harbour_outer
+    name: "Silver Harbour — outer rocks"
+    lat: 48.4690
+    lon: -89.1580
+    lsofs_shore: true
+    exposure_bearing_deg: 135      # faces SE toward open bay; W-quadrant wind => upwelling on this shore
+    lsofs_node: 29434             # pinned by scripts/bootstrap_grid.py (min_depth 10 m)
+    node_depth_m: 11.92
+    node_dist_m: 1182.9
+    coord_tier: T4
+    field_verify: true
+
+  - id: mackenzie_point
+    name: "MacKenzie Point — flat-rock point"
+    lat: 48.5010
+    lon: -89.1120
+    lsofs_shore: true
+    exposure_bearing_deg: 120
+    lsofs_node: 29446             # 2.5 km offshore — at LSOFS cell scale; provisional
+    node_depth_m: 13.83
+    node_dist_m: 2493.7
+    coord_tier: T4
+    field_verify: true
+
+  - id: marina_east_mcvicar
+    name: "Marina Park east / McVicar mouth"
+    lat: 48.4335
+    lon: -89.2050
+    lsofs_shore: true
+    exposure_bearing_deg: 110      # breakwall-filtered; upwelling signal attenuated
+    lsofs_node: 29138
+    node_depth_m: 16.33
+    node_dist_m: 439.1
+    coord_tier: T4
+    field_verify: true
+
+  # --- River / warmwater stations: NO LSOFS node (lake model does not represent them) ---
+  - id: mountdale_kam
+    name: "Mountdale/Neste boat launch (Kaministiquia)"
+    lat: 48.3540888
+    lon: -89.2949411
+    lsofs_shore: false
+    lsofs_node: null               # river station — stays null by design
+    coord_tier: T1                 # from spots.yaml (city launch listing)
+    field_verify: false
+
+  - id: sturgeon_bay_launch
+    name: "Sturgeon Bay launch (warmwater)"
+    lat: 48.5470
+    lon: -88.9950
+    lsofs_shore: false             # warmwater embayment; excluded from upwelling layer
+    lsofs_node: null
+    coord_tier: T4
+    field_verify: true
