@@ -75,3 +75,70 @@ addressable: (1) it's nowcast-only when a 5-day forecast is sitting right there,
 (2) the decision variable (isotherm depth) carries ~3 m error that we can now *measure*
 against real profiles and work to reduce. The single highest-leverage external ask is
 the Bare Point intake feed — a real thermometer in the water we're forecasting.
+
+---
+
+# Audit round 2 — squeezing the remaining accuracy, and closing the "is there more data" question
+
+Second pass, after the forecast/GLOS/heartbeat work shipped. Everything below was
+**tested against live data in this repo's env**, and the point of several was to
+*confirm a negative* so we stop wondering about it. Two wins shipped; the rest are
+documented dead-ends so nobody re-litigates them.
+
+## Shipped (measured improvements)
+
+### D. Isotherm from native sigma layers — the free win ✅ shipped
+We interpolated LSOFS's **20 native sigma layers** down to 7 fixed depths
+`[1,2,4,6,8,10,15]` and *then* found the isotherm — but the isotherm sits at 3–4 m,
+right in the 2→4 m sampling gap. Where the thermocline is sharp that misplaces the
+line: MacKenzie **3.50 m (7-depth) → 2.82 m (native)**, a 0.68 m local error, zero
+cost to remove (same file read). On the GLOS gate the native profile beat the fixed
+grid **2.42 m → 2.28 m** (A/B on identical data). Implemented as
+`lsofs_extract.extract_native_columns`, wired into the forecast, the dynamic map, and
+the isotherm-depth validator. Bronze extraction still uses fixed depths (schema +
+buoy-depth matching); the native path is isotherm-only.
+
+### E. NONNA-10 bathymetry validated against a field measurement ✅ confirmed
+The whole depth axis rests on CHS NONNA-10, previously unchecked against ground truth.
+The seed corpus holds the operator's own count-down-sonar depth at Silver Harbour
+("outer rocks ~5–7 m at cast range"). NONNA at 60–80 m from shore there reads **median
+7.6 m (p25 6.2)** — a match. MacKenzie's "4.8" reference lines up with NONNA's ~4.6–4.9 m
+at cast range too. The bathymetry is trustworthy nearshore where we use it.
+
+## Tested and rejected (so we don't chase them again)
+
+| lever | test | verdict |
+|---|---|---|
+| **Wind-state-conditioned bias** (fix the upwelling under-shoal) | n=793 cross-year, leave-one-buoy-out: pooled MAE **1.595** vs 2-regime **1.61–1.66** and continuous-regression **1.78**; on the isotherm gate, conditioning was flat-to-worse (2.41–2.60 vs 2.42). In-sample gains vanish under LOBO — classic overfit. | **SKIP.** Pooled +3.3 °C band stays. Residual error is spatial non-locality, not something a wind proxy fixes. Also overturns a hypothesis in BACKTEST_UPWELLING.md: bias is *smallest* during sustained favorable wind, *largest at the transition*. |
+| **u,v currents → advection feature** | surface displacement looked huge (≈50 km/5 d at Marina) but that's wind-drift; at the **cold-pool depth** coherence is Silver 0.36 (inertial rotation), Marina 0.56, MacKenzie 0.90. Coherent at 1 of 3 spots. | **SKIP** as a scored feature (fails the generalization/demotion bar — would help at MacKenzie, mislead at Silver). Keep only as an optional diagnostic where subsurface flow is coherent. |
+| **net_heat_flux → relaxation timing** | correlates 0.83–0.92 with the temp trend, but it's a *forcing input inside the same FVCOM run* that makes `temp` — no orthogonal skill. | **SKIP** as a feature; fine as a QC diagnostic. |
+| **zeta (seiche water level)** | 8.6–9.3 cm peak-to-peak over 120 h — ~10× below the 1 m depth-axis bar; and already fed into `interp_column`. | **SKIP** (no change; already handled). |
+| **ww (vertical velocity)** | spatial std across neighbouring elements ≈ the temporal signal at a point. | **SKIP**, confirms the earlier "too noisy at a point" call. |
+
+## The comprehensiveness question: is there any *independent* subsurface source? — tested NO
+
+The subsurface field rests entirely on one model (LSOFS FVCOM). We looked hard for a
+second, independent one to cross-check it. **None exists that is live, no-auth, and
+independently pullable** — a tested negative, not an assumption:
+- **NOAA RTOFS** — Great Lakes are land-masked out (pulled the file: 100 % NaN over the bay).
+- **GLERL GLCFS** — LSOFS's own development testbed, same FVCOM lineage (not independent).
+- **CoastWatch `LS_fvcom_temp` reanalysis** — real, 20-level, subsurface, CC0 — but ends **2022-12-31**, before our tune window even starts, and is also FVCOM.
+- **Copernicus / ECCC-GIOPS / Open-Meteo Marine** — all exclude the freshwater lakes (surface-only at best).
+- **ERA5 FLake lake-column** (`lake_bottom_temperature`) — the *one* genuinely independent physics (1-D lake model, ECMWF-forced, not FVCOM). Not exposed by Open-Meteo; needs a raw ECMWF CDS key (not configured here). **The single unclosed lead** — worth a short spike if a CDS key appears, though ERA5's lake mask resolution near Thunder Bay is uncertain.
+
+Verdict: keep validating the *output* against GLOS thermistor **observations** (the
+isotherm-depth gate) — that remains the honest cross-check; there is no second model to
+consume.
+
+Side finding: `ingest/era5_wind.py` claimed `archive-api.open-meteo.com` was
+egress-blocked (403 on 2026-08-04). Retested 2026-08-05: **HTTP 200, real records** —
+historical ERA5 wind is reachable again; the stale status note was corrected.
+
+## Bottom line, round 2
+The accuracy that was recoverable, we recovered (native-sigma isotherm) and validated
+the depth axis against field truth. Everything else worth trying was tested and
+honestly rejected — the correction is already near its pooled ceiling, the unused
+model variables don't add orthogonal skill, and there is no independent subsurface
+model to cross-check against. The remaining error is dominated by one thing a second
+dataset can't fix but a **local sensor** would: spatial non-locality. The Bare Point
+intake ask stands as the highest-leverage move left.

@@ -45,6 +45,59 @@ def valid_time_from_dataset(dataset) -> datetime:
 
 
 @dataclass(frozen=True)
+class NativeColumn:
+    """The full native FVCOM sigma-layer profile at one node — no depth binning.
+
+    Used for the isotherm computation, which is sensitive to vertical resolution
+    near a sharp thermocline: interpolating the 20 sigma layers down to a handful of
+    fixed target depths and *then* finding the isotherm can misplace it by up to
+    ~0.7 m where the gradient is steep and falls in a sampling gap (measured at
+    MacKenzie Point). Finding the isotherm on the native layers removes that
+    discretization error for free (same file read). Bronze extraction still uses
+    fixed target depths (schema + buoy-depth matching); this is a parallel path.
+    """
+    station_id: str
+    node: int
+    depths_m: list[float]   # positive-down, sorted shallow -> deep
+    temps_c: list[float]
+    water_column_m: float
+    valid_time: datetime    # UTC
+
+
+def extract_native_columns(dataset, station_nodes: dict[str, int]) -> dict[str, NativeColumn]:
+    """Native sigma-layer temperature profiles (depth positive-down, temp) per node.
+
+    FVCOM depth of layer = -siglay * (h + zeta) (siglay runs 0 at surface to -1 at
+    bottom). Non-finite layers (fill values below the bed) are dropped.
+    """
+    nodes = list(station_nodes.values())
+    vt = valid_time_from_dataset(dataset)
+    temp = np.asarray(dataset.variables["temp"][0, :, nodes], dtype=float)   # (siglay, k)
+    siglay = np.asarray(dataset.variables["siglay"][:, nodes], dtype=float)  # (siglay, k)
+    h = np.asarray(dataset.variables["h"][nodes], dtype=float)
+    if "zeta" in dataset.variables:
+        zeta = np.asarray(dataset.variables["zeta"][0, nodes], dtype=float)
+    else:
+        zeta = np.zeros(len(nodes))
+
+    out: dict[str, NativeColumn] = {}
+    for col, (sid, node) in enumerate(station_nodes.items()):
+        H = float(h[col] + zeta[col])
+        z = -siglay[:, col] * H
+        t = temp[:, col]
+        ok = np.isfinite(z) & np.isfinite(t)
+        z, t = z[ok], t[ok]
+        order = np.argsort(z)
+        out[sid] = NativeColumn(
+            station_id=sid, node=int(node),
+            depths_m=[float(v) for v in z[order]],
+            temps_c=[float(v) for v in t[order]],
+            water_column_m=H, valid_time=vt,
+        )
+    return out
+
+
+@dataclass(frozen=True)
 class SurfaceRow:
     station_id: str
     node: int

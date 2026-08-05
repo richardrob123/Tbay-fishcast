@@ -40,7 +40,7 @@ from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.cross_shore import isotherm_depth  # noqa: E402
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
-from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset  # noqa: E402
+from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
 
 CENTER = (48.455, -89.175)     # harbour stretch incl. Marina Park + north shore
@@ -48,7 +48,6 @@ HALF_M = 4500.0
 PX = 680
 TARGET_C = 12.0
 CAST_M = 75.0
-PROFILE_DEPTHS = [1, 2, 4, 6, 8, 10, 15]
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
 _R = 6378137.0
 
@@ -131,19 +130,16 @@ def main(argv) -> int:
             continue
         vt = valid_time_from_dataset(ds)
         node_map = {str(int(nd)): int(nd) for nd in inbox}
-        rows = extract_nodes(ds, node_map, PROFILE_DEPTHS)
+        # native sigma-layer profiles (no depth-binning loss for the isotherm)
+        cols = extract_native_columns(ds, node_map)
         ds.close()
-        # per-node corrected isotherm depth
-        by = {}
-        for r in rows:
-            by.setdefault(r.station_id, []).append(r)
         iso_pts, iso_val = [], []
         for i, nd in enumerate(inbox):
-            pr = sorted(by.get(str(int(nd)), []), key=lambda r: r.depth_m)
-            if len(pr) < 4:
+            col = cols.get(str(int(nd)))
+            if col is None or len(col.depths_m) < 4:
                 continue
-            depths = [r.depth_m for r in pr]
-            raw = [r.temp_c for r in pr]
+            depths = col.depths_m
+            raw = col.temps_c
             surf_bias = (raw[0] - g_sst) if g_sst else 0.0
             bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
             zc = thermocline.isotherm_band(depths, raw, bm, TARGET_C)["central"]

@@ -9,7 +9,11 @@ from datetime import datetime, timezone
 import netCDF4 as nc
 import pytest
 
-from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset
+from tbay_fishcast.ingest.lsofs_extract import (
+    extract_native_columns,
+    extract_nodes,
+    valid_time_from_dataset,
+)
 
 GOLDEN = {
     "silver_harbour_outer": {2.0: 14.558, 6.0: 11.141, 10.0: 10.171},
@@ -65,3 +69,44 @@ def test_thermocline_present(lsofs_fixture, grid_meta, config):
     by = {(r.station_id, r.depth_m): r.temp_c for r in rows}
     for sid in GOLDEN:
         assert by[(sid, 2.0)] > by[(sid, 10.0)]
+
+
+def test_native_columns_are_well_formed(lsofs_fixture, grid_meta, config):
+    """Native sigma profiles: depths positive-down, sorted, finite, surface-first,
+    with enough layers to beat the fixed-depth interp near the thermocline."""
+    ds = nc.Dataset(lsofs_fixture)
+    try:
+        cols = extract_native_columns(ds, _station_nodes(grid_meta))
+    finally:
+        ds.close()
+    for sid in GOLDEN:
+        col = cols[sid]
+        z, t = col.depths_m, col.temps_c
+        assert len(z) == len(t) >= 10                      # full sigma column, not binned
+        assert z == sorted(z)                              # shallow -> deep
+        assert all(v == v for v in t)                      # no NaN survived
+        assert 0.0 < z[0] < 1.5                            # surface-most layer near the top
+        assert z[-1] <= col.water_column_m + 0.01          # deepest layer within the column
+        assert col.water_column_m > 10.0                   # these nodes are >10 m
+
+
+def test_native_column_isotherm_matches_fixed_depth_within_reason(lsofs_fixture, grid_meta, config):
+    """The native-layer isotherm should agree with the fixed-depth one to O(1 m):
+    same physics, finer sampling — a sanity bound, not a golden value."""
+    from tbay_fishcast.features.cross_shore import isotherm_depth
+
+    ds = nc.Dataset(lsofs_fixture)
+    try:
+        cols = extract_native_columns(ds, _station_nodes(grid_meta))
+        rows = extract_nodes(ds, _station_nodes(grid_meta), config.lsofs.target_depths_m)
+    finally:
+        ds.close()
+    fixed = {}
+    for r in rows:
+        fixed.setdefault(r.station_id, []).append((r.depth_m, r.temp_c))
+    for sid in GOLDEN:
+        pr = sorted(fixed[sid])
+        iso_fixed = isotherm_depth([d for d, _ in pr], [t for _, t in pr], 12.0)
+        iso_native = isotherm_depth(cols[sid].depths_m, cols[sid].temps_c, 12.0)
+        if iso_fixed is not None and iso_native is not None:
+            assert abs(iso_fixed - iso_native) < 2.0, sid

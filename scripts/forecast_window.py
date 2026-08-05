@@ -29,13 +29,12 @@ from tbay_fishcast.features.forecast import ForecastPoint, reachable_windows, su
 from tbay_fishcast.features.reachability import reachability, shore_distance_m  # noqa: E402
 from tbay_fishcast.ingest import glsea, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
-from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset  # noqa: E402
+from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
 from tbay_fishcast.ingest import lsofs_grid  # noqa: E402
 
 TARGET_C = 12.0
 CAST_M = 75.0
-PROFILE_DEPTHS = [1, 2, 4, 6, 8, 10, 15]
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]  # (kind, file_hour, lead_h)
 
 
@@ -77,10 +76,12 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
             grid = lsofs_grid.read_grid(ds)
         this_node = node if node is not None else lsofs_grid.nearest_node(grid, lat, lon, min_depth_m=6.0).node
         vt = valid_time_from_dataset(ds)
-        pr = sorted(extract_nodes(ds, {name: this_node}, PROFILE_DEPTHS), key=lambda r: r.depth_m)
+        # isotherm from the native sigma layers (no depth-binning loss near a sharp
+        # thermocline — measured up to ~0.7 m tighter than the fixed-depth interp)
+        col = extract_native_columns(ds, {name: this_node})[name]
         ds.close()
-        depths = [r.depth_m for r in pr]
-        raw = [r.temp_c for r in pr]
+        depths = col.depths_m
+        raw = col.temps_c
         surf_bias = (raw[0] - surf_sst) if surf_sst else 0.0
         bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
         iso = thermocline.isotherm_band(depths, raw, bm, TARGET_C)["central"]

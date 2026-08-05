@@ -1,9 +1,10 @@
 """ERA5 hourly wind via Open-Meteo historical archive (PLAN task 3).
 
-STATUS: host `archive-api.open-meteo.com` is blocked by this environment's egress
-policy (verified 2026-08-04: proxy 403). The client is written to the real API
-shape; it fetches when the host is allowlisted and raises SourceUnavailable until
-then, so the backfill degrades loudly (CLAUDE rule 5), never silently.
+STATUS: `archive-api.open-meteo.com` is reachable in this environment (verified
+2026-08-05: HTTP 200, real hourly records returned). An earlier note claimed the
+host was egress-blocked (403 on 2026-08-04); that no longer holds. The client still
+raises SourceUnavailable on any transport error, so the backfill degrades loudly
+(CLAUDE rule 5), never silently — it just isn't expected to be unavailable now.
 
 Wind is the driver of the Wedderburn/upwelling cross-table (PLAN task 4). Thunder
 Bay point: ~48.4 N, -89.2 W.

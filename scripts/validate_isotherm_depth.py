@@ -25,11 +25,10 @@ from tbay_fishcast.features import thermocline  # noqa: E402
 from tbay_fishcast.features.cross_shore import isotherm_depth  # noqa: E402
 from tbay_fishcast.ingest import glos, glsea, lsofs_grid  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
-from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset  # noqa: E402
+from tbay_fishcast.ingest.lsofs_extract import extract_native_columns  # noqa: E402
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
 
 TARGET_C = 12.0
-PROFILE_DEPTHS = [1, 2, 4, 6, 8, 10, 15]
 # pooled subsurface warm bias (from validate_engine / the live buoys)
 CENTRAL, LO, HI = 3.31, 1.51, 5.55
 
@@ -65,10 +64,10 @@ def main(argv) -> int:
                 continue
             grid = lsofs_grid.read_grid(ds)
             node = lsofs_grid.nearest_node(grid, chain.lat, chain.lon, min_depth_m=3.0).node
-            pr = sorted(extract_nodes(ds, {cid: node}, PROFILE_DEPTHS), key=lambda r: r.depth_m)
+            col = extract_native_columns(ds, {cid: node})[cid]
             ds.close()
-            z = [r.depth_m for r in pr]
-            raw = [r.temp_c for r in pr]
+            z = col.depths_m
+            raw = col.temps_c
             raw_iso = isotherm_depth(z, raw, TARGET_C)
             # corrected: surface anchored to satellite, subsurface pooled bias
             try:
