@@ -104,3 +104,35 @@ day? Tested at 4 independent site/depth combinations:
   Bay offset still needs the local logger; (b) event POD/FAR needs *years* of events, not a
   method fix; (c) the 6 m case is one partial season — the 2.4 m replication (two sites, full
   seasons) is the stronger evidence and should anchor the conclusion.
+
+## Optimization result (correction technique + more data)
+
+Tested correction techniques against the constant offset with leave-one-buoy-out CV
+(fit on some Superior buoys, predict an unseen one — the Thunder Bay transfer test),
+mid-depth, 3 buoys (`scripts/optimize_correction.py`):
+
+| correction | LOO-buoy MAE | anomaly r |
+|---|---|---|
+| raw LSOFS | 3.20 | +0.65 |
+| **constant offset (≈ −3 °C)** | **1.59** (passes G1 on unseen site) | +0.65 |
+| linear a·LSOFS+b (a≈1.06) | 1.74 | +0.65 |
+| + wind-informed | 1.78 | +0.66 |
+| + seasonal(doy) | 1.83 | +0.62 |
+
+**The simple constant offset wins and generalizes** (3.20 → 1.59 °C on a held-out
+location, under the 2.0 gate). Smarter techniques overfit. The fitted slope ≈1.0 means
+LSOFS's error is a pure *level* offset, not an amplitude/under-prediction problem — so
+Thunder Bay needs just one offset number, not a model. (Held-out 6 m case = 2.03, a hair
+over, because it was cross-depth from 2.4 m training → a TB 6 m offset ideally comes from
+6 m data.)
+
+## Product reframe (2026-08-05) — 6 m was a validation convenience, not the product
+
+The deliverable is not "temperature at 6 m." It is the **cross-shore transect**: compose
+LSOFS's bias-corrected temperature-vs-depth profile with per-spot **bathymetry** (contour
+map / soundings) to get **temperature-vs-distance-from-shore**, and flag where the target
+species' band falls inside cast range (~75 m). Upwelling tilts the cold band up/inshore →
+the product flags when laker water enters cast range. Limitation: LSOFS (200 m–2.5 km cells)
+can't resolve structure *within* the cast zone — it's a proxy from the offshore profile +
+bathymetry, good for the "shallow & close vs deep & far" decision, not a survey-grade map.
+Delivery is built around this, not a fixed depth. Needs: per-spot bathymetry.
