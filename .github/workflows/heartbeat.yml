@@ -40,6 +40,7 @@ jobs:
           restore-keys: heartbeat-state-
       - name: Run heartbeat
         env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+          # topic is a repo VARIABLE (not secret) — a topic name isn't sensitive; secret fallback kept
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
         run: python scripts/heartbeat.py

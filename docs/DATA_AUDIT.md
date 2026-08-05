@@ -58,8 +58,14 @@ and it should become a standing validation gate.
   of a reachable window Thu–Sat").
 - **Isotherm-depth validation gate** (B) — validate the output, not a proxy; the ~2.9 m
   error is the number to drive down.
-- **Landsat front geometry** to validate the modelled isotherm *line* spatially (C) —
-  the first way to check the 2D map's shape against observation.
+- **Landsat front geometry** (C) — TESTED and it does NOT pan out as a quantitative
+  gate: on the best clear scene (2026-07-28, path 025/026, 92% bay coverage, QA
+  cloud-masked), the LSOFS surface pattern vs Landsat 30 m anomaly correlates at only
+  r≈0.14 across 367 nodes. That's a scale mismatch, not a fixable bug — LSOFS (200 m–
+  2.5 km) can't resolve the 30 m thermal texture Landsat sees, and Landsat's over-water
+  values are uncertain. Verdict: Landsat is a QUALITATIVE front-spotting layer for the
+  rare clear scene, not a validation gate. The real product-output validation stays the
+  isotherm-depth gate against GLOS profiles (~2.4 m). `scripts/validate_landsat_fronts.py`.
 - **No off-the-shelf upwelling index exists** — we compute it (wind stress → Wedderburn,
   or the LSOFS forecast temperature field). Confirmed no product to consume.
 
