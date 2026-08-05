@@ -26,7 +26,6 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import binary_dilation, label
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -35,10 +34,10 @@ matplotlib.use("Agg")
 import matplotlib.image as mpimg  # noqa: E402
 
 import forecast_window as fw  # noqa: E402
-from build_dynamic_map import _land_shore_distance, _merc  # noqa: E402  (shared helpers)
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
+from tbay_fishcast.features.overlay import cold_line_reachable, land_shore_distance, merc  # noqa: E402
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -87,7 +86,7 @@ def _node_columns_in_box(cfg, issue, clat, clon):
     dlon = HALF_M / (111000.0 * math.cos(math.radians(clat)))
     inbox = np.where((lon >= clon - dlon) & (lon <= clon + dlon)
                      & (grid.lat >= clat - dlat) & (grid.lat <= clat + dlat) & (grid.h >= 3.0))[0]
-    node_xy = np.array([_merc(grid.lat[n], lon[n]) for n in inbox]) if len(inbox) else np.empty((0, 2))
+    node_xy = np.array([merc(grid.lat[n], lon[n]) for n in inbox]) if len(inbox) else np.empty((0, 2))
     return inbox, node_xy
 
 
@@ -112,21 +111,11 @@ def _overlay(depth, water, dist, gx, gy, inbox, node_xy, cols, g_sst, bias):
     nan = ~np.isfinite(iso)
     if nan.any():
         iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
-    cold_raw = water & (depth >= iso)
-    warm = water & ~cold_raw
-    wl, wn = label(warm)
-    big_warm = np.zeros_like(warm)
-    for c in range(1, wn + 1):
-        comp = wl == c
-        if comp.sum() >= 60:
-            big_warm |= comp
-    cold = water & ~big_warm
-    line = cold & binary_dilation(big_warm, iterations=1)
-    reachable = cold & (dist <= CAST_M)
+    _cold, line, reachable = cold_line_reachable(depth, iso, dist, cast_m=CAST_M)
     ny, nx = depth.shape
     rgba = np.zeros((ny, nx, 4), dtype=np.uint8)
-    rgba[reachable] = (57, 211, 83, 140)
-    rgba[line] = (255, 30, 60, 255)
+    rgba[reachable] = (57, 211, 83, 140)     # reachable cold water — green
+    rgba[line] = (255, 30, 60, 255)          # the 12 C line — red
     return rgba, float(reachable.sum())  # caller scales pixel count by res^2 for ha
 
 
@@ -159,17 +148,21 @@ def main(argv) -> int:
         depth = patch.depth
         water = np.isfinite(depth)
         res = nonna.ground_res_m(patch.res_mercator_m, clat)
-        dist, _land = _land_shore_distance(depth, res)
+        dist, _land = land_shore_distance(depth, res)
         ny, nx = depth.shape
         x0, y0, x1, y1 = patch.bounds_3857
         gx, gy = np.meshgrid(np.linspace(x0, x1, nx), np.linspace(y1, y0, ny))
         inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon)
         if len(inbox) == 0:
             print(f"skip {sid}: no LSOFS nodes"); continue
-        try:
-            g_sst = glsea.fetch_sst(clat, clon, issue).sst_c
-        except Exception:  # noqa: BLE001
-            g_sst = None
+        # surface anchor: GLSEA lags ~1 day, so fall back to the most recent available
+        # day rather than dropping it — without it the corrected isotherm collapses to
+        # the surface (whole shelf reads "cold", no 12 C line).
+        px = glsea.fetch_recent_sst(clat, clon, issue)
+        g_sst = px.sst_c if px else None
+        anchor_day = px.day if px else None
+        if px and px.day != issue.isoformat():
+            print(f"    {sid}: GLSEA anchor {px.sst_c:.1f}C from {px.day} (issue not yet posted)")
 
         # corner lon/lats for the MapLibre image source (TL, TR, BR, BL)
         tl = _merc_to_ll(x0, y1); tr = _merc_to_ll(x1, y1)
@@ -197,7 +190,8 @@ def main(argv) -> int:
         if not days:
             print(f"skip {sid}: no frames"); continue
         stretches_out.append({"id": sid, "name": name, "corners": corners,
-                              "center": [clat, clon], "res_m": round(res, 1), "days": days})
+                              "center": [clat, clon], "res_m": round(res, 1),
+                              "anchor_day": anchor_day, "days": days})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
               f"ha {days[0]['reach_ha']}..{max(d['reach_ha'] for d in days)}")
 

@@ -27,7 +27,6 @@ from pathlib import Path
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import binary_dilation, distance_transform_edt, label
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -37,7 +36,7 @@ import matplotlib.image as mpimg  # noqa: E402
 
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
-from tbay_fishcast.features.cross_shore import isotherm_depth  # noqa: E402
+from tbay_fishcast.features.overlay import cold_line_reachable, land_shore_distance, merc  # noqa: E402
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -50,30 +49,6 @@ TARGET_C = 12.0
 CAST_M = 75.0
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
 _R = 6378137.0
-
-
-def _merc(lat, lon):
-    return math.radians(lon) * _R, math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * _R
-
-
-def _land_shore_distance(depth, res, shallow_m=2.5):
-    """Distance-to-shore that keeps only GENUINE land as shore.
-
-    NONNA marks both land and unsurveyed deep water as NaN. The plain distance
-    transform (reachability.shore_distance_m) treats every NaN as shore, so an
-    offshore no-data hole fakes a coastline and spawns "reachable" cold water in
-    the middle of the lake. Real coastline reaches ~0 m depth; a no-data hole
-    borders only deep water. So: keep a NaN component as land only if it touches
-    water shallower than `shallow_m`. Returns (dist_m, land_mask)."""
-    water = np.isfinite(depth)
-    lbl, n = label(~water)
-    land = np.zeros_like(water)
-    for c in range(1, n + 1):
-        comp = lbl == c
-        ring = binary_dilation(comp) & water
-        if ring.any() and float(np.nanmin(depth[ring])) < shallow_m:
-            land |= comp
-    return distance_transform_edt(~land) * res, land
 
 
 def _png_b64(rgb_or_rgba) -> str:
@@ -92,7 +67,7 @@ def main(argv) -> int:
     depth = patch.depth
     water = np.isfinite(depth)
     res = nonna.ground_res_m(patch.res_mercator_m, clat)
-    dist, _land = _land_shore_distance(depth, res)
+    dist, _land = land_shore_distance(depth, res)
     ny, nx = depth.shape
     x0, y0, x1, y1 = patch.bounds_3857
     # pixel-centre 3857 coords (row 0 = top = y1)
@@ -112,14 +87,14 @@ def main(argv) -> int:
     dlon = HALF_M / (111000.0 * math.cos(math.radians(clat)))
     inbox = np.where((lon >= clon - dlon) & (lon <= clon + dlon)
                      & (grid.lat >= clat - dlat) & (grid.lat <= clat + dlat) & (grid.h >= 3.0))[0]
-    node_xy = np.array([_merc(grid.lat[n], lon[n]) for n in inbox])
+    node_xy = np.array([merc(grid.lat[n], lon[n]) for n in inbox])
     print(f"{len(inbox)} LSOFS nodes in box")
 
     central, lo, hi, _, n = bias_live.pooled_subsurface_bias(cfg, issue)
-    try:
-        g_sst = glsea.fetch_sst(clat, clon, issue).sst_c
-    except Exception:  # noqa: BLE001
-        g_sst = None
+    # surface anchor with GLSEA-lag fallback (without it the isotherm collapses to
+    # the surface — the whole shelf reads "cold" and the 12 C line disappears)
+    _px = glsea.fetch_recent_sst(clat, clon, issue)
+    g_sst = _px.sst_c if _px else None
 
     frames = []
     for kind, fh, lead in LEADS:
@@ -152,22 +127,7 @@ def main(argv) -> int:
         nanmask = ~np.isfinite(iso_field)
         if nanmask.any():
             iso_field[nanmask] = griddata(iso_pts, iso_val, (gx[nanmask], gy[nanmask]), method="nearest")
-        # cold-on-bottom. Fill interpolation pinholes (isolated sub-target pixels in
-        # otherwise-cold deep water) so the "line" traces a real drop-off edge, not
-        # speckle: keep only pinholes that are actually large warm regions.
-        cold_raw = water & (depth >= iso_field)
-        warm = water & ~cold_raw
-        wlbl, wn = label(warm)
-        big_warm = np.zeros_like(warm)
-        for c in range(1, wn + 1):
-            comp = wlbl == c
-            if comp.sum() >= 60:                 # ~0.5 ha; smaller = interpolation noise
-                big_warm |= comp
-        cold = water & ~big_warm                 # cold = water minus the real warm bodies
-        # the 12 C line = the cold/warm interface (isotherm meets bottom). NOT drawn
-        # where cold simply runs to shore — that's no threshold crossing, just green.
-        line = cold & binary_dilation(big_warm, iterations=1)
-        reachable = cold & (dist <= CAST_M)
+        _cold, line, reachable = cold_line_reachable(depth, iso_field, dist, cast_m=CAST_M)
         rgba = np.zeros((ny, nx, 4), dtype=np.uint8)
         rgba[reachable] = (57, 211, 83, 120)     # reachable cold water — green
         rgba[line] = (255, 30, 60, 255)          # the 12 C line — red

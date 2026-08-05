@@ -59,10 +59,12 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
     depth_grid, dist_field, res_m, bsrc = _bathy_grid(lat, lon)
     if depth_grid is None:
         return None, None, {"bathy": bsrc}
-    try:
-        surf_sst = glsea.fetch_sst(lat, lon, issue).sst_c
-    except Exception:  # noqa: BLE001
-        surf_sst = None
+    # GLSEA lags ~1 day; fall back to the most recent available day rather than
+    # dropping the surface anchor (without it the corrected isotherm collapses to
+    # the surface — every spot reads reachable). Slowly-varying SST makes a recent
+    # prior day a sound anchor.
+    _px = glsea.fetch_recent_sst(lat, lon, issue)
+    surf_sst = _px.sst_c if _px else None
     points = []
     grid = None
     for kind, fh, lead in LEADS:

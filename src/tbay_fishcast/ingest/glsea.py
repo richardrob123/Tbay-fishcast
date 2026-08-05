@@ -16,6 +16,7 @@ Pure HTTP + numpy. No LLM.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, timedelta
 
 import numpy as np
 import requests
@@ -76,6 +77,30 @@ def fetch_sst(lat: float, lon: float, day: str, *, dataset: str = DATASET_TRUTH,
         if best is None or d < best.dist_km:
             best = SstPixel(float(sst), float(plat), float(plon), d, day, dataset)
     return best
+
+
+def fetch_recent_sst(lat: float, lon: float, day, *, dataset: str = DATASET_TRUTH,
+                     half_deg: float = _HALF_DEG, max_back: int = 4) -> SstPixel | None:
+    """Most-recent available daily SST at/near (lat, lon), walking back from `day`.
+
+    GLSEA lags ~1 day (today's composite posts tomorrow) and gaps on cloud, so the
+    requested day is frequently a 404/empty. SST changes slowly day to day, so a
+    recent prior day is a sound SURFACE ANCHOR — far better than dropping it, which
+    collapses the corrected isotherm to the surface. Walks back up to `max_back` days;
+    the returned SstPixel's `.day` is the day actually used. None only if nothing in
+    the window resolves. `day` may be a date or an ISO 'YYYY-MM-DD' string.
+    """
+    if isinstance(day, str):
+        day = date.fromisoformat(day)
+    for k in range(max_back + 1):
+        d = day - timedelta(days=k)
+        try:
+            px = fetch_sst(lat, lon, d.isoformat(), dataset=dataset, half_deg=half_deg)
+        except SourceUnavailable:
+            px = None
+        if px is not None:
+            return px
+    return None
 
 
 def coverage_end(dataset: str = DATASET_TRUTH, timeout: float = 60.0) -> str:
