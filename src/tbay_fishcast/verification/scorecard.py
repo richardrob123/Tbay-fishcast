@@ -91,3 +91,57 @@ def contingency(forecast_days: set, observed_days: set, all_days: set) -> Contin
     false_alarms = len(forecast_days - observed_days)
     correct_neg = len(all_days - (forecast_days | observed_days))
     return Contingency(hits, misses, false_alarms, correct_neg)
+
+
+def anomaly_correlation(model, truth) -> float:
+    """Correlation of the DETRENDED series — timing skill, not just tracking the trend.
+
+    Removes each series' own linear trend before correlating, so a model that only
+    reproduces the seasonal warm-up scores ~0 here; it must get the wiggles
+    (upwelling, turning points) right. Inputs are assumed time-ordered. NaN if <4
+    points or a series is flat after detrending.
+    """
+    m = np.asarray(model, dtype=float)
+    t = np.asarray(truth, dtype=float)
+    if len(m) < 4 or len(m) != len(t):
+        return float("nan")
+    x = np.arange(len(m), dtype=float)
+    md = m - np.polyval(np.polyfit(x, m, 1), x)
+    td = t - np.polyval(np.polyfit(x, t, 1), x)
+    if np.std(md) == 0 or np.std(td) == 0:
+        return float("nan")
+    return float(np.corrcoef(md, td)[0, 1])
+
+
+def leave_one_out_mae(groups: dict) -> dict:
+    """Additive-bias correction generalization across held-out groups (e.g. buoys).
+
+    groups maps key -> (model_array, truth_array). For each key, fit the correction
+    (mean model-minus-truth bias) on ALL OTHER keys, apply it to the held-out key,
+    and return {key: held_out_MAE}. This is the transfer test for a site with no
+    local truth (Thunder Bay): never train and score on the same location.
+    """
+    biases = {k: float(np.mean(np.asarray(mdl, float) - np.asarray(tr, float)))
+              for k, (mdl, tr) in groups.items()}
+    out = {}
+    for held, (mdl, tr) in groups.items():
+        others = [b for k, b in biases.items() if k != held]
+        corr = float(np.mean(others)) if others else 0.0
+        pred = np.asarray(mdl, float) - corr
+        out[held] = float(np.mean(np.abs(pred - np.asarray(tr, float))))
+    return out
+
+
+def band_coverage(model, truth, lo_bias: float, hi_bias: float) -> float:
+    """Fraction of truth points inside the corrected uncertainty band.
+
+    The band removes a warm bias between lo_bias and hi_bias: corrected temperature
+    lies in [model - hi_bias, model - lo_bias]. Returns the share of truth values
+    that fall inside — a calibration check (should be ~0.68 for a ±1σ band).
+    """
+    m = np.asarray(model, dtype=float)
+    t = np.asarray(truth, dtype=float)
+    if len(m) == 0:
+        return float("nan")
+    inside = (t >= m - hi_bias) & (t <= m - lo_bias)
+    return float(np.mean(inside))
