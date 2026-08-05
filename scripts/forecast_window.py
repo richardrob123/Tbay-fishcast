@@ -22,8 +22,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import build_isotherm_maps as bim  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
+from tbay_fishcast.features import bias_live  # noqa: E402
 from tbay_fishcast.features import thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import ForecastPoint, reachable_windows, summarize  # noqa: E402
 from tbay_fishcast.features.reachability import reachability, shore_distance_m  # noqa: E402
@@ -52,36 +52,18 @@ def _bathy_grid(lat, lon):
     return patch.depth, dist, res, f"CHS NONNA-10 2-D patch ({res:.0f} m, water {patch.coverage_frac:.0%})"
 
 
-def main(argv) -> int:
-    cfg = load_config()
-    # resolve target: station id, or lat lon name
-    station = None
-    if argv[1:] and not _isfloat(argv[1]):
-        station = next((s for s in cfg.stations if s.id == argv[1]), None)
-        if station is None:
-            print(f"unknown station '{argv[1]}'"); return 1
-        lat, lon, name, sid, node = station.lat, station.lon, station.name, station.id, station.lsofs_node
-        rest = argv[2:]
-    else:
-        lat, lon, name = float(argv[1]), float(argv[2]), (argv[3] if len(argv) > 3 else "pin")
-        sid, node, rest = None, None, argv[4:]
-    issue = date.fromisoformat(rest[0]) if rest and _isdate(rest[0]) else date(2026, 8, 4)
-
+def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
+    """Compute the reachability trajectory + windows for one spot. Reusable by the
+    heartbeat. Returns (points, windows, meta) or (None, None, meta) if no bathymetry.
+    `bias_stats` = (central, lo, hi, n) pooled subsurface bias (computed once by caller)."""
+    central, lo, hi, n = bias_stats
     depth_grid, dist_field, res_m, bsrc = _bathy_grid(lat, lon)
     if depth_grid is None:
-        print(f"{name}: {bsrc}"); return 1
-
-    central, lo, hi, _, n = bim.pooled_subsurface_bias(cfg, issue)
+        return None, None, {"bathy": bsrc}
     try:
         surf_sst = glsea.fetch_sst(lat, lon, issue).sst_c
     except Exception:  # noqa: BLE001
         surf_sst = None
-
-    print(f"=== REACHABILITY FORECAST — {name} (issue {issue} t12z) ===")
-    print(f"    target {TARGET_C:.0f}C | cast {CAST_M:.0f}m | bathy: {bsrc}")
-    print(f"    subsurface bias {central:+.1f}C (band {lo:+.1f}..{hi:+.1f}); "
-          f"surface anchor {'GLSEA %.1fC' % surf_sst if surf_sst else 'none'} held across leads\n")
-
     points = []
     grid = None
     for kind, fh, lead in LEADS:
@@ -89,8 +71,8 @@ def main(argv) -> int:
         try:
             ds = _open_first(candidate_urls(f, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket,
                                             byterange=False))
-        except Exception as e:  # noqa: BLE001
-            print(f"  lead +{lead:>3}h: LSOFS unavailable ({str(e)[:35]})"); continue
+        except Exception:  # noqa: BLE001
+            continue
         if node is None and grid is None:
             grid = lsofs_grid.read_grid(ds)
         this_node = node if node is not None else lsofs_grid.nearest_node(grid, lat, lon, min_depth_m=6.0).node
@@ -101,16 +83,38 @@ def main(argv) -> int:
         raw = [r.temp_c for r in pr]
         surf_bias = (raw[0] - surf_sst) if surf_sst else 0.0
         bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
-        band = thermocline.isotherm_band(depths, raw, bm, TARGET_C)
-        iso = band["central"]
+        iso = thermocline.isotherm_band(depths, raw, bm, TARGET_C)["central"]
         reach, closest, area = reachability(depth_grid, dist_field, iso, CAST_M, res_m)
         points.append(ForecastPoint(vt, lead, iso, closest, reach))
-        flag = "GO " if reach else "-- "
-        iso_s = f"{iso:.1f} m" if iso is not None else "none"
-        reach_s = f"cold water {closest:.0f} m out, {area/1e4:.1f} ha in range" if reach else "not in cast range"
-        print(f"  {flag} +{lead:>3}h  {vt:%a %b %-d}  iso {iso_s:>7s}  {reach_s}")
+    return points, reachable_windows(points), {"bathy": bsrc, "surf_sst": surf_sst}
 
-    windows = reachable_windows(points)
+
+def main(argv) -> int:
+    cfg = load_config()
+    if argv[1:] and not _isfloat(argv[1]):
+        station = next((s for s in cfg.stations if s.id == argv[1]), None)
+        if station is None:
+            print(f"unknown station '{argv[1]}'"); return 1
+        lat, lon, name, node = station.lat, station.lon, station.name, station.lsofs_node
+        rest = argv[2:]
+    else:
+        lat, lon, name = float(argv[1]), float(argv[2]), (argv[3] if len(argv) > 3 else "pin")
+        node, rest = None, argv[4:]
+    issue = date.fromisoformat(rest[0]) if rest and _isdate(rest[0]) else date(2026, 8, 4)
+
+    central, lo, hi, _, n = bias_live.pooled_subsurface_bias(cfg, issue)
+    points, windows, meta = forecast_spot(cfg, lat, lon, name, node, issue, (central, lo, hi, n))
+    print(f"=== REACHABILITY FORECAST — {name} (issue {issue} t12z) ===")
+    print(f"    target {TARGET_C:.0f}C | cast {CAST_M:.0f}m | bathy: {meta['bathy']}")
+    if points is None:
+        return 1
+    print(f"    subsurface bias {central:+.1f}C (band {lo:+.1f}..{hi:+.1f}); surface anchor "
+          f"{'GLSEA %.1fC' % meta['surf_sst'] if meta.get('surf_sst') else 'none'} held across leads\n")
+    for p in points:
+        flag = "GO " if p.reachable else "-- "
+        iso_s = f"{p.isotherm_depth_m:.1f} m" if p.isotherm_depth_m is not None else "none"
+        reach_s = f"cold water {p.distance_m:.0f} m out" if p.reachable else "not in cast range"
+        print(f"  {flag} +{p.lead_h:>3}h  {p.valid_time:%a %b %-d}  iso {iso_s:>7s}  {reach_s}")
     print(f"\nVERDICT: {summarize(points, windows)}")
     return 0
 

@@ -1,0 +1,45 @@
+name: heartbeat
+
+# Deterministic 4x/day driver (ADR-001: no LLM in this loop). Computes the
+# reachability forecast for the shore stations and pushes an ntfy alert only when a
+# spot's window opens/closes. Set repo secret NTFY_TOPIC to receive phone pushes;
+# without it the run is a dry-run (logs only).
+
+on:
+  schedule:
+    # ~after the LSOFS t00/06/12/18z cycles post to NODD (allow a few h lag). UTC.
+    - cron: "30 4,10,16,22 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: heartbeat
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (geo extras for the live NONNA fetch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[geo]"
+      # keep the last-alert state warm between runs so we only push on a change.
+      # a cache miss just risks one duplicate alert, never a wrong one.
+      - name: Restore heartbeat state
+        uses: actions/cache@v4
+        with:
+          path: .heartbeat_state.json
+          key: heartbeat-state-${{ github.run_id }}
+          restore-keys: heartbeat-state-
+      - name: Run heartbeat
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+        run: python scripts/heartbeat.py
