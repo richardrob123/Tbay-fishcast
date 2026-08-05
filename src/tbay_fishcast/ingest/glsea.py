@@ -78,6 +78,21 @@ def fetch_sst(lat: float, lon: float, day: str, *, dataset: str = DATASET_TRUTH,
     return best
 
 
+def coverage_end(dataset: str = DATASET_TRUTH, timeout: float = 60.0) -> str:
+    """Dataset's last available day (ISO 'YYYY-MM-DD') from ERDDAP metadata, so callers
+    can clamp a requested window and avoid ERDDAP's 404 on an out-of-range end."""
+    try:
+        r = requests.get(f"https://apps.glerl.noaa.gov/erddap/info/{dataset}/index.json",
+                         timeout=timeout)
+        r.raise_for_status()
+    except requests.RequestException as e:
+        raise SourceUnavailable(f"GLSEA info unreachable: {e}") from e
+    for row in r.json()["table"]["rows"]:
+        if len(row) >= 5 and row[2] == "time_coverage_end":
+            return str(row[4])[:10]
+    raise SourceUnavailable("GLSEA time_coverage_end not found")
+
+
 def fetch_series(pixel_lat: float, pixel_lon: float, start: str, end: str,
                  *, dataset: str = DATASET_TRUTH, timeout: float = 120.0) -> dict:
     """Daily SST time series at ONE fixed pixel over [start, end] (ISO days).

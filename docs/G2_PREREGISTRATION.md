@@ -67,6 +67,16 @@ Locked event counts on 2024 (Jun 15–~Sep 3, the covered tune window): Silver 2
 Marina 1 — ~2–3/station/season, concentrated at the exposed stations, within the G4 target
 (2–5/summer). Marina (sheltered) fires least, as physics predicts.
 
+## OUTCOME (2026-08-05) — see docs/G2_SCORECARD.md
+
+Primary endpoint executed on held-out 2025 & 2026: the GLSEA differential truth fired **0
+events** (satellite blind to 6 m upwelling — absolute drop ≤1.6 °C, differential ≤2.4 °C/48 h
+vs a 5–6 °C model signal), so **POD is UNDEFINED → G2 INCONCLUSIVE against remote truth**.
+The independent physical check (wind) is positive: corr(favorable wind-run, 6 m temp) ≈ −0.46
+(2025) / −0.39 (2026), correct sign at every station → the events are physically-credible
+wind-driven upwelling, not noise. Conclusion: retain the layer, do not ship it as validated;
+the in-situ 6 m logger is the critical path (ADR-019).
+
 ## Honesty guards (from the adversarial critique)
 
 - **No-skill baseline:** a random alarm generator emitting the SAME number of alarms as the

@@ -78,22 +78,51 @@ def _glsea_pixels(cfg):
     return pix, (ref.pixel_lat, ref.pixel_lon)
 
 
-def truth_episodes(year, pix, ref_pixel, dg_c):
-    start, end = f"{year}-06-15", f"{year}-09-30"
+def truth_episodes(start, end, pix, ref_pixel, dg_c):
+    """GLSEA differential truth episodes over [start,end] (ISO). Also returns the max
+    48 h differential drop per station (the 'did GLSEA even move?' blindness metric)."""
     ref = glsea.fetch_series(ref_pixel[0], ref_pixel[1], start, end)
-    out = {}
+    out, maxdrop = {}, {}
     for sid, (plat, plon) in pix.items():
         s = glsea.fetch_series(plat, plon, start, end)
         days = sorted(set(s) & set(ref))
         if not days:
-            out[sid] = []
-            continue
-        # differential = station - offshore; a shore upwelling cools the differential
+            out[sid] = []; maxdrop[sid] = float("nan"); continue
         times = [pd.Timestamp(d).to_pydatetime() for d in days]
         diff = np.array([s[d] - ref[d] for d in days])
+        # blindness metric: biggest 48h (2-day) differential cooling all season
+        md = max((diff[max(0, i - 2):i + 1].max() - diff[i]) for i in range(len(diff)))
+        maxdrop[sid] = float(md)
         onsets = detect_onsets(times, diff, drop_c=dg_c, persist_h=0, window_h=TRUTH_WINDOW_H)
         out[sid] = cluster_episodes(onsets, MERGE_GAP)
-    return out
+    return out, maxdrop
+
+
+def wind_corroboration(series, start, end):
+    """Physical-consistency check: does 6 m temperature respond to favorable
+    (west-quadrant) wind-run as upwelling requires? Reports the season correlation
+    corr(trailing-48h favorable wind-run, 6 m temp) per station — expected NEGATIVE
+    (more upwelling-favorable wind -> colder 6 m). This survives GLSEA's blindness.
+
+    Caveat: LSOFS is wind-FORCED, so this confirms the model produces physically
+    sensible wind-driven upwelling, NOT that the events match the real lake (only the
+    in-situ logger can, ADR-019)."""
+    from tbay_fishcast.features.wind import favorable_wind_run
+    try:
+        h = fetch_wind(start, end)
+    except Exception:  # noqa: BLE001
+        return None
+    wt = pd.DatetimeIndex([pd.Timestamp(t, tz="UTC") for t in h["time"]])
+    spd = np.asarray(h["wind_speed_10m"], float); dr = np.asarray(h["wind_direction_10m"], float)
+    run = pd.Series(favorable_wind_run([t.to_pydatetime() for t in wt], spd, dr,
+                                       window_h=48.0), index=wt)
+    corrs = {}
+    for sid, (t, y) in series.items():
+        ti = pd.DatetimeIndex([pd.Timestamp(x) for x in t])
+        wr = np.array([run.asof(x) for x in ti])
+        m = ~np.isnan(wr)
+        corrs[sid] = float(np.corrcoef(wr[m], np.asarray(y)[m])[0, 1]) if m.sum() > 2 else float("nan")
+    return corrs
 
 
 def calibrate_dg(cfg, pix, ref_pixel) -> float:
@@ -163,7 +192,8 @@ def main() -> int:
     cfg = load_config()
     print("Resolving GLSEA pixels (station + offshore reference)...")
     pix, ref_pixel = _glsea_pixels(cfg)
-    print(f"  reference pixel: {ref_pixel}")
+    glsea_end = glsea.coverage_end()
+    print(f"  reference pixel: {ref_pixel} | GLSEA coverage end: {glsea_end}")
 
     # --- TUNE on 2024 ---
     s24 = load_6m(2024)
@@ -187,22 +217,37 @@ def main() -> int:
         if not s:
             print(f"\n(no {year} bronze — skipping)")
             continue
+        # align the truth window to the actual 6 m data coverage (clamps 2026 to today)
+        start = min(min(t) for t, _ in s.values()).date().isoformat()
+        end = min(max(max(t) for t, _ in s.values()).date().isoformat(), glsea_end)
         det = detected(s, DROP_C, PERSIST_H)
-        tru = truth_episodes(year, pix, ref_pixel, DG_C)
+        tru, blind = truth_episodes(start, end, pix, ref_pixel, DG_C)
         hits, misses, fa, per = score(det, tru)
         c = Contingency(hits, misses, fa, correct_neg=0)
-        ns = no_skill_pod(det, tru)
-        print(f"\n== VALIDATE {year} (held out) ==")
+        wind = wind_corroboration(s, start, end)
+        n_truth = sum(len(tru[sid]) for sid in EXPOSED)
+        n_det = sum(len(det[sid]) for sid in EXPOSED)
+        print(f"\n== VALIDATE {year} ({start}..{end}, held out) ==")
         for sid in EXPOSED:
-            m = per[sid]
-            print(f"  {sid:22s} detected={len(det[sid])} truth={len(tru[sid])} "
-                  f"hits={m.hits} miss={m.misses} FA={m.false_alarms}")
-        print(f"  POOLED hits={hits} miss={misses} FA={fa} | "
-              f"POD={c.pod:.2f} (no-skill {ns:.2f}) | FAR={c.far:.2f} [characterization]")
-        verdict = "PASS" if (not np.isnan(c.pod) and c.pod >= 0.70) else "FAIL/INSUFFICIENT"
-        print(f"  G2 POD gate (>=0.70): {verdict}")
-    print("\nNote: FAR is characterization not gate (ADR-019/critique). POD conditional "
-          "on LSOFS not assimilating GLSEA-SST (T4).")
+            print(f"  {sid:22s} detected={len(det[sid])} GLSEA-truth={len(tru[sid])} "
+                  f"(max 48h GLSEA-diff drop {blind[sid]:.1f}C)")
+        if n_truth == 0:
+            print(f"  GLSEA witnessed 0 events (max diff-drop < {DG_C}C all season) — "
+                  f"POD UNDEFINED. G2 vs satellite = INCONCLUSIVE (satellite blind to 6m "
+                  f"upwelling; ADR-019 logger required).")
+        else:
+            ns = no_skill_pod(det, tru)
+            print(f"  POOLED hits={hits} miss={misses} FA={fa} | POD={c.pod:.2f} "
+                  f"(no-skill {ns:.2f}) | FAR={c.far:.2f} [characterization]")
+            print(f"  G2 POD gate (>=0.70): "
+                  f"{'PASS' if c.pod >= 0.70 else 'FAIL'}")
+        if wind:
+            cs = ", ".join(f"{sid.split('_')[0]}={wind[sid]:+.2f}" for sid in EXPOSED)
+            mean_r = np.nanmean([wind[sid] for sid in EXPOSED])
+            print(f"  WIND physical-consistency corr(favWindRun, 6mTemp): {cs} "
+                  f"(mean {mean_r:+.2f}; negative = upwelling physics present in LSOFS)")
+    print("\nNote: FAR is characterization not gate (ADR-019/critique). POD (when defined) "
+          "conditional on LSOFS not assimilating GLSEA-SST (T4).")
     return 0
 
 
