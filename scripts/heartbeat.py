@@ -60,7 +60,9 @@ def push_ntfy(title: str, body: str, tags: str, priority: str = "default") -> bo
     if not topic:
         print(f"[dry-run: would push] {title}\n{body}")
         return False
-    server = os.environ.get("NTFY_SERVER", "https://ntfy.sh").rstrip("/")
+    # `or` (not a default arg): CI passes NTFY_SERVER="" for an undefined var, and
+    # os.environ.get would return that empty string, breaking the URL host.
+    server = (os.environ.get("NTFY_SERVER") or "https://ntfy.sh").rstrip("/")
     req = urllib.request.Request(
         f"{server}/{topic}", data=body.encode("utf-8"), method="POST",
         headers={"Title": title, "Tags": tags, "Priority": priority})
