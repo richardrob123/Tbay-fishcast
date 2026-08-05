@@ -76,3 +76,26 @@ def fetch_sst(lat: float, lon: float, day: str, *, dataset: str = DATASET_TRUTH,
         if best is None or d < best.dist_km:
             best = SstPixel(float(sst), float(plat), float(plon), d, day, dataset)
     return best
+
+
+def fetch_series(pixel_lat: float, pixel_lon: float, start: str, end: str,
+                 *, dataset: str = DATASET_TRUTH, timeout: float = 120.0) -> dict:
+    """Daily SST time series at ONE fixed pixel over [start, end] (ISO days).
+
+    Pass a pre-resolved VALID water pixel (e.g. fetch_sst(...).pixel_lat/lon) so the
+    series is at a consistent location; cloud-gapped days come back absent (null).
+    Returns {ISO-day: sst_c}. One ERDDAP griddap request over the time range.
+    """
+    q = (f"{ERDDAP}/{dataset}.json?sst"
+         f"%5B({start}T12:00:00Z):({end}T12:00:00Z)%5D"
+         f"%5B({pixel_lat})%5D%5B({pixel_lon})%5D")
+    try:
+        r = requests.get(q, timeout=timeout)
+        r.raise_for_status()
+    except requests.RequestException as e:
+        raise SourceUnavailable(f"GLSEA series unreachable: {e}") from e
+    out: dict[str, float] = {}
+    for t, _plat, _plon, sst in r.json()["table"]["rows"]:
+        if sst is not None:
+            out[str(t)[:10]] = float(sst)
+    return out
