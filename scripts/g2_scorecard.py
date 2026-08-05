@@ -33,8 +33,12 @@ from tbay_fishcast.verification.g2 import (  # noqa: E402
 from tbay_fishcast.verification.scorecard import Contingency  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
-DROP_C = 4.0          # PLAN event definition (6 m cooling / 24 h)
-WINDOW_H = 24.0
+DROP_C = 4.0          # PLAN event magnitude (6 m cooling)
+# Detection window CALIBRATED on 2024 tune data: the 6 m upwelling signal develops on a
+# ~48 h timescale (matching the seed's ~40 h internal seiche), NOT the 24 h that PLAN
+# assumed for the fast surface signal. At 24 h the exposed nodes fire ~0 events (max
+# 24 h-drop 3.7-4.5 C); at 48 h the drops are 5-6 C. This window is a tuned parameter.
+WINDOW_H = 48.0
 TRUTH_WINDOW_H = 48.0
 TAU_DAYS = 1
 MERGE_GAP = 1

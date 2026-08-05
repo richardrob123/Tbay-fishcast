@@ -56,12 +56,16 @@ explicit caveat that it conflates model error with satellite blindness.**
 
 ## Parameters to be fit on 2024 (values recorded here AFTER tuning, before validation)
 
-| param | meaning | tuned value |
+| param | meaning | tuned value (locked on 2024) |
 |---|---|---|
-| `DROP_C` | 24 h cooling to flag an onset | _pending tune_ |
-| `PERSIST_H` | hours the drop must persist (de-spike) | _pending tune_ |
-| `DG_C` | GLSEA differential 48 h drop = truth event | _pending tune_ |
-| surface↔6 m coupling | regression mapping 6 m event to expected GLSEA-surface signal | _pending tune_ |
+| `DROP_C` | 6 m cooling magnitude to flag an onset | **4.0 °C** (PLAN magnitude, not free-tuned) |
+| `WINDOW_H` | window the drop develops over | **48 h** (calibrated: 6 m signal is seiche-paced ~40 h, not the 24 h PLAN assumed for the surface — at 24 h the exposed nodes fire ~0 events) |
+| `PERSIST_H` | hours the drop must persist (de-spike) | **12 h** (counts identical for 6/12/18 h → events are sustained, not spikes) |
+| `DG_C` | GLSEA differential 48 h drop = truth event | **3.0 °C** (coupling-calibrated) |
+
+Locked event counts on 2024 (Jun 15–~Sep 3, the covered tune window): Silver 2, MacKenzie 3,
+Marina 1 — ~2–3/station/season, concentrated at the exposed stations, within the G4 target
+(2–5/summer). Marina (sheltered) fires least, as physics predicts.
 
 ## Honesty guards (from the adversarial critique)
 
