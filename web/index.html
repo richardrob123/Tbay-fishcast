@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Thunder Bay laker forecast — cold-water map</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🎣</text></svg>" />
+<link href="vendor/maplibre-gl.css" rel="stylesheet" />
+<script src="vendor/maplibre-gl.js"></script>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#111823cc; --ink:#e6edf3; --muted:#9aa4ae; --line:#26303b;
+    --go:#39d353; --cold:#39d353; --iso:#ff1e3c; --accent:#4aa3ff; --warn:#ffb020;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;overflow:hidden}
+  #map{position:absolute;inset:0}
+  .card{position:absolute;background:var(--panel);backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 6px 24px #0008}
+  /* top header */
+  #top{top:10px;left:10px;right:10px;padding:11px 14px;display:flex;align-items:center;
+    gap:12px;flex-wrap:wrap}
+  #top h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.1px}
+  #top h1 .fish{filter:saturate(1.2)}
+  .age{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .age.stale{color:var(--warn);font-weight:650}
+  .spacer{flex:1}
+  #legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center}
+  .sw{display:inline-block;width:15px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
+  /* bottom forecast scrubber */
+  #ctl{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));padding:12px 14px 13px}
+  .daylab{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+  .daylab .d{font-size:16px;font-weight:650}
+  .daylab .ha{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .daylab .wind{margin-left:auto;font-size:12px;color:var(--muted)}
+  .daylab .wind b{color:var(--accent);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+  .ticks{display:flex;justify-content:space-between;margin-top:2px;font-size:10.5px;color:var(--muted)}
+  .ticks span{flex:1;text-align:center}
+  .ticks span.on{color:var(--ink);font-weight:650}
+  /* opacity + play row */
+  .row2{display:flex;align-items:center;gap:12px;margin-top:9px}
+  button{background:#1b2430;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button:active{background:#243040}
+  .row2 label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;flex:1}
+  .row2 input[type=range]{flex:1;height:20px}
+  /* station popup */
+  .pop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .pop b{font-size:13.5px}
+  .pop .v{color:#0b0f14}
+  .pop .traj{margin-top:6px;display:flex;gap:4px}
+  .pop .traj .c{flex:1;text-align:center;font-size:10px;padding:3px 0;border-radius:4px;
+    background:#eee;color:#333;font-variant-numeric:tabular-nums}
+  .pop .traj .c.go{background:#d6f5df}
+  .pop .traj .c .z{display:block;font-weight:700;font-size:11px}
+  .maplibregl-popup-content{border-radius:10px;padding:11px 12px}
+  #err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;
+    color:var(--muted);font-size:14px}
+  .loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);
+    font-size:13px}
+  @media (max-width:560px){
+    #top h1{font-size:13.5px;width:100%}
+    #legend{font-size:11px;gap:10px}
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="loading" id="load">loading forecast…</div>
+<div id="err"></div>
+
+<div class="card" id="top">
+  <h1><span class="fish">🎣</span> Thunder Bay laker forecast</h1>
+  <span class="age" id="age"></span>
+  <span class="spacer"></span>
+  <div id="legend">
+    <span><span class="sw" style="background:#39d353;opacity:.75"></span>reachable cold water</span>
+    <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C line</span>
+  </div>
+</div>
+
+<div class="card" id="ctl" style="display:none">
+  <div class="daylab">
+    <span class="d" id="dlab">—</span>
+    <span class="ha" id="halab"></span>
+    <span class="wind" id="wlab"></span>
+  </div>
+  <input type="range" id="t" min="0" max="5" value="0" step="1" />
+  <div class="ticks" id="ticks"></div>
+  <div class="row2">
+    <button id="play">▶ Play</button>
+    <label>overlay <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
+  </div>
+</div>
+
+<script>
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC";
+
+let MAP, MAN, cur = 0, playing = null;
+
+function fail(msg){
+  document.getElementById('load').style.display='none';
+  const e=document.getElementById('err'); e.style.display='grid';
+  e.textContent = msg;
+}
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: { sat: { type:'raster', tiles:[ESRI], tileSize:256, attribution: ESRI_ATTR, maxzoom:19 } },
+    layers: [{ id:'sat', type:'raster', source:'sat' }]
+  },
+  center: [-89.11, 48.46], zoom: 10.4, maxZoom: 16, minZoom: 8, attributionControl: false
+});
+map.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-left');
+map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-right');
+map.addControl(new maplibregl.GeolocateControl({ positionOptions:{enableHighAccuracy:true}, trackUserLocation:true }), 'bottom-right');
+MAP = map;
+
+map.on('load', async () => {
+  let man;
+  try {
+    const r = await fetch('data/manifest.json', { cache: 'no-store' });
+    if(!r.ok) throw new Error('manifest '+r.status);
+    man = await r.json();
+  } catch(e){ return fail('Could not load the forecast data ('+e.message+'). If this is a fresh deploy, the daily build may not have run yet.'); }
+  MAN = man;
+  document.getElementById('load').style.display='none';
+  document.getElementById('ctl').style.display='block';
+
+  // add each stretch's day-0 image; we swap the URL when the slider moves
+  const bounds = new maplibregl.LngLatBounds();
+  man.stretches.forEach((s, i) => {
+    map.addSource('ov'+i, { type:'image', url: s.days[0].png, coordinates: s.corners });
+    map.addLayer({ id:'ov'+i, type:'raster', source:'ov'+i,
+      paint:{ 'raster-opacity': 0.82, 'raster-resampling':'nearest', 'raster-fade-duration':0 } });
+    s.corners.forEach(c => bounds.extend(c));
+  });
+  if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: {top:70,bottom:150,left:30,right:30}, duration:0 });
+
+  // station markers
+  (man.stations||[]).forEach(st => {
+    const el = document.createElement('div');
+    el.style.cssText = 'width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;'+
+      'box-shadow:0 0 0 2px #0009;cursor:pointer;background:'+(st.now?'#39d353':'#8894a0');
+    const pop = new maplibregl.Popup({offset:14, closeButton:false}).setHTML(stationHTML(st));
+    new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
+  });
+
+  // age banner
+  const age = document.getElementById('age');
+  age.textContent = `issue ${man.issue} · ${Math.round(man.age_h)} h old` + (man.stale?' ⚠ STALE':'');
+  if(man.stale) age.classList.add('stale');
+
+  // ticks from the first stretch's day labels
+  const days = man.stretches[0].days;
+  const t = document.getElementById('t');
+  t.max = days.length-1;
+  document.getElementById('ticks').innerHTML =
+    days.map((d,i)=>`<span data-i="${i}">${d.label.split(' ')[0]}</span>`).join('');
+  t.addEventListener('input', e => setDay(+e.target.value));
+  document.getElementById('op').addEventListener('input', e => {
+    const o = +e.target.value/100;
+    man.stretches.forEach((s,i)=> map.setPaintProperty('ov'+i,'raster-opacity', o));
+  });
+  document.getElementById('play').addEventListener('click', togglePlay);
+  setDay(0);
+});
+
+function stationHTML(st){
+  const traj = (st.traj||[]).map(p =>
+    `<div class="c ${p.reach?'go':''}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${p.label}</div>`).join('');
+  return `<div class="pop"><b class="v">${st.name.split('—')[0].trim()}</b>`+
+    `<div class="v" style="margin-top:3px">${st.verdict}</div>`+
+    (st.surf_sst!=null?`<div class="v" style="color:#555;font-size:12px;margin-top:2px">surface ${st.surf_sst}°C</div>`:'')+
+    `<div class="traj">${traj}</div>`+
+    `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">green = cold water reachable · number = 12°C depth</div></div>`;
+}
+
+function setDay(i){
+  cur = i;
+  const man = MAN;
+  man.stretches.forEach((s, k) => {
+    const day = s.days[Math.min(i, s.days.length-1)];
+    const src = map.getSource('ov'+k);
+    if(src && src.updateImage) src.updateImage({ url: day.png });
+  });
+  const d0 = man.stretches[0].days[i];
+  document.getElementById('dlab').textContent = d0.label + (i===0?'  (now)':'');
+  const totHa = man.stretches.reduce((a,s)=> a + (s.days[Math.min(i,s.days.length-1)].reach_ha||0), 0);
+  document.getElementById('halab').textContent = totHa.toFixed(0)+' ha reachable';
+  const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
+  document.getElementById('wlab').innerHTML = w ? `upwelling wind <b>${Math.round(w.p*100)}%</b>` : '';
+  document.querySelectorAll('#ticks span').forEach(sp =>
+    sp.classList.toggle('on', +sp.dataset.i === i));
+  document.getElementById('t').value = i;
+}
+
+function togglePlay(){
+  const btn = document.getElementById('play');
+  if(playing){ clearInterval(playing); playing=null; btn.textContent='▶ Play'; return; }
+  btn.textContent='❚❚ Pause';
+  playing = setInterval(()=>{
+    const n = MAN.stretches[0].days.length;
+    setDay((cur+1) % n);
+  }, 1100);
+}
+</script>
+</body>
+</html>

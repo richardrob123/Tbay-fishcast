@@ -1,0 +1,53 @@
+name: coast-site
+
+# Builds the hosted whole-coast cold-water forecast map (web/) and deploys it to
+# GitHub Pages. Runs daily after the LSOFS t12z cycle posts, so the phone map stays
+# current. Deterministic build (ADR-001: no LLM). One-time setup: repo Settings ->
+# Pages -> Source: "GitHub Actions".
+
+on:
+  schedule:
+    - cron: "45 16 * * *"   # ~after t12z posts to NODD (UTC)
+  workflow_dispatch: {}
+  push:
+    branches: [claude/tbay-fishcast-phase-0-6kh5lx]
+    paths: [web/index.html, scripts/build_coast_site.py, .github/workflows/coast_site.yml]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (geo extras for the live NONNA/LSOFS build)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[geo]"
+      - name: Build the coast site data (today's issue)
+        run: python scripts/build_coast_site.py
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

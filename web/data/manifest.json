@@ -1,0 +1,443 @@
+{
+ "issue": "2026-08-04",
+ "issued_utc": "2026-08-04T12:00:00Z",
+ "built_utc": "2026-08-05T19:37:52Z",
+ "age_h": 31.6,
+ "stale": true,
+ "target_c": 12.0,
+ "cast_m": 75.0,
+ "n_leads": 6,
+ "bias": {
+  "central": 3.3,
+  "lo": 1.5,
+  "hi": 5.6,
+  "n": 12
+ },
+ "stretches": [
+  {
+   "id": "kam_mission",
+   "name": "Kam mouth / Mission Island",
+   "corners": [
+    [
+     -89.27776114610515,
+     48.42001741507257
+    ],
+    [
+     -89.2022720659337,
+     48.42001741507257
+    ],
+    [
+     -89.2022720659337,
+     48.36995080695932
+    ],
+    [
+     -89.27776114610515,
+     48.36995080695932
+    ]
+   ],
+   "center": [
+    48.395,
+    -89.24
+   ],
+   "res_m": 7.3,
+   "days": [
+    {
+     "label": "Tue Aug 4",
+     "lead": 0,
+     "reach_ha": 123.7,
+     "png": "data/overlays/kam_mission_000.png"
+    },
+    {
+     "label": "Wed Aug 5",
+     "lead": 24,
+     "reach_ha": 124.3,
+     "png": "data/overlays/kam_mission_024.png"
+    },
+    {
+     "label": "Thu Aug 6",
+     "lead": 48,
+     "reach_ha": 131.4,
+     "png": "data/overlays/kam_mission_048.png"
+    },
+    {
+     "label": "Fri Aug 7",
+     "lead": 72,
+     "reach_ha": 129.5,
+     "png": "data/overlays/kam_mission_072.png"
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 96,
+     "reach_ha": 130.6,
+     "png": "data/overlays/kam_mission_096.png"
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 120,
+     "reach_ha": 130.6,
+     "png": "data/overlays/kam_mission_120.png"
+    }
+   ]
+  },
+  {
+   "id": "marina_mcvicar",
+   "name": "Marina Park / McVicar / Boulevard",
+   "corners": [
+    [
+     -89.22766384744591,
+     48.46707382998472
+    ],
+    [
+     -89.15234633336574,
+     48.46707382998472
+    ],
+    [
+     -89.15234633336574,
+     48.41705356704788
+    ],
+    [
+     -89.22766384744591,
+     48.41705356704788
+    ]
+   ],
+   "center": [
+    48.442,
+    -89.19
+   ],
+   "res_m": 7.3,
+   "days": [
+    {
+     "label": "Tue Aug 4",
+     "lead": 0,
+     "reach_ha": 142.2,
+     "png": "data/overlays/marina_mcvicar_000.png"
+    },
+    {
+     "label": "Wed Aug 5",
+     "lead": 24,
+     "reach_ha": 177.4,
+     "png": "data/overlays/marina_mcvicar_024.png"
+    },
+    {
+     "label": "Thu Aug 6",
+     "lead": 48,
+     "reach_ha": 178.0,
+     "png": "data/overlays/marina_mcvicar_048.png"
+    },
+    {
+     "label": "Fri Aug 7",
+     "lead": 72,
+     "reach_ha": 177.0,
+     "png": "data/overlays/marina_mcvicar_072.png"
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 96,
+     "reach_ha": 175.7,
+     "png": "data/overlays/marina_mcvicar_096.png"
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 120,
+     "reach_ha": 159.0,
+     "png": "data/overlays/marina_mcvicar_120.png"
+    }
+   ]
+  },
+  {
+   "id": "current_barepoint",
+   "name": "Current River / Trowbridge shore",
+   "corners": [
+    [
+     -89.1327877989577,
+     48.51203857682847
+    ],
+    [
+     -89.05729871878621,
+     48.51203857682847
+    ],
+    [
+     -89.05729871878621,
+     48.46206263058496
+    ],
+    [
+     -89.1327877989577,
+     48.46206263058496
+    ]
+   ],
+   "center": [
+    48.487,
+    -89.095
+   ],
+   "res_m": 7.3,
+   "days": [
+    {
+     "label": "Tue Aug 4",
+     "lead": 0,
+     "reach_ha": 75.3,
+     "png": "data/overlays/current_barepoint_000.png"
+    },
+    {
+     "label": "Wed Aug 5",
+     "lead": 24,
+     "reach_ha": 76.0,
+     "png": "data/overlays/current_barepoint_024.png"
+    },
+    {
+     "label": "Thu Aug 6",
+     "lead": 48,
+     "reach_ha": 77.9,
+     "png": "data/overlays/current_barepoint_048.png"
+    },
+    {
+     "label": "Fri Aug 7",
+     "lead": 72,
+     "reach_ha": 77.1,
+     "png": "data/overlays/current_barepoint_072.png"
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 96,
+     "reach_ha": 75.1,
+     "png": "data/overlays/current_barepoint_096.png"
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 120,
+     "reach_ha": 74.4,
+     "png": "data/overlays/current_barepoint_120.png"
+    }
+   ]
+  },
+  {
+   "id": "mackenzie_silver",
+   "name": "MacKenzie Point / Silver Harbour",
+   "corners": [
+    [
+     -88.99965251210982,
+     48.54093155571086
+    ],
+    [
+     -88.92433499802965,
+     48.54093155571086
+    ],
+    [
+     -88.92433499802965,
+     48.490984102295755
+    ],
+    [
+     -88.99965251210982,
+     48.490984102295755
+    ]
+   ],
+   "center": [
+    48.516,
+    -88.962
+   ],
+   "res_m": 7.3,
+   "days": [
+    {
+     "label": "Tue Aug 4",
+     "lead": 0,
+     "reach_ha": 102.4,
+     "png": "data/overlays/mackenzie_silver_000.png"
+    },
+    {
+     "label": "Wed Aug 5",
+     "lead": 24,
+     "reach_ha": 100.1,
+     "png": "data/overlays/mackenzie_silver_024.png"
+    },
+    {
+     "label": "Thu Aug 6",
+     "lead": 48,
+     "reach_ha": 97.7,
+     "png": "data/overlays/mackenzie_silver_048.png"
+    },
+    {
+     "label": "Fri Aug 7",
+     "lead": 72,
+     "reach_ha": 94.2,
+     "png": "data/overlays/mackenzie_silver_072.png"
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 96,
+     "reach_ha": 88.2,
+     "png": "data/overlays/mackenzie_silver_096.png"
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 120,
+     "reach_ha": 88.7,
+     "png": "data/overlays/mackenzie_silver_120.png"
+    }
+   ]
+  }
+ ],
+ "stations": [
+  {
+   "id": "silver_harbour_outer",
+   "name": "Silver Harbour Conservation Area \u2014 point",
+   "lat": 48.5085,
+   "lon": -88.9746,
+   "now": true,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 18.2,
+   "traj": [
+    {
+     "label": "Tue",
+     "lead": 0,
+     "iso": 3.6,
+     "reach": true
+    },
+    {
+     "label": "Wed",
+     "lead": 24,
+     "iso": 3.3,
+     "reach": true
+    },
+    {
+     "label": "Thu",
+     "lead": 48,
+     "iso": 3.5,
+     "reach": true
+    },
+    {
+     "label": "Fri",
+     "lead": 72,
+     "iso": 3.6,
+     "reach": true
+    },
+    {
+     "label": "Sat",
+     "lead": 96,
+     "iso": 4.5,
+     "reach": true
+    },
+    {
+     "label": "Sun",
+     "lead": 120,
+     "iso": 4.6,
+     "reach": true
+    }
+   ]
+  },
+  {
+   "id": "mackenzie_point",
+   "name": "MacKenzie Point Conservation Area \u2014 point",
+   "lat": 48.52294,
+   "lon": -88.94336,
+   "now": true,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 18.3,
+   "traj": [
+    {
+     "label": "Tue",
+     "lead": 0,
+     "iso": 3.0,
+     "reach": true
+    },
+    {
+     "label": "Wed",
+     "lead": 24,
+     "iso": 3.4,
+     "reach": true
+    },
+    {
+     "label": "Thu",
+     "lead": 48,
+     "iso": 3.8,
+     "reach": true
+    },
+    {
+     "label": "Fri",
+     "lead": 72,
+     "iso": 4.4,
+     "reach": true
+    },
+    {
+     "label": "Sat",
+     "lead": 96,
+     "iso": 5.0,
+     "reach": true
+    },
+    {
+     "label": "Sun",
+     "lead": 120,
+     "iso": 4.9,
+     "reach": true
+    }
+   ]
+  },
+  {
+   "id": "marina_east_mcvicar",
+   "name": "Marina Park \u2014 Prince Arthur's Landing point",
+   "lat": 48.43514,
+   "lon": -89.21356,
+   "now": true,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 18.1,
+   "traj": [
+    {
+     "label": "Tue",
+     "lead": 0,
+     "iso": 3.9,
+     "reach": true
+    },
+    {
+     "label": "Wed",
+     "lead": 24,
+     "iso": 1.7,
+     "reach": true
+    },
+    {
+     "label": "Thu",
+     "lead": 48,
+     "iso": 1.3,
+     "reach": true
+    },
+    {
+     "label": "Fri",
+     "lead": 72,
+     "iso": 2.1,
+     "reach": true
+    },
+    {
+     "label": "Sat",
+     "lead": 96,
+     "iso": 1.7,
+     "reach": true
+    },
+    {
+     "label": "Sun",
+     "lead": 120,
+     "iso": 2.3,
+     "reach": true
+    }
+   ]
+  }
+ ],
+ "wind": [
+  {
+   "day": "Wed",
+   "p": 0.0
+  },
+  {
+   "day": "Thu",
+   "p": 0.0
+  },
+  {
+   "day": "Fri",
+   "p": 0.0
+  },
+  {
+   "day": "Sat",
+   "p": 0.0
+  },
+  {
+   "day": "Sun",
+   "p": 0.0
+  }
+ ]
+}
