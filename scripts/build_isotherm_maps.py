@@ -327,46 +327,68 @@ th{{color:var(--ink)}}
 </div>"""
 
 
-def main(argv) -> int:
-    day = date.fromisoformat(argv[1]) if len(argv) > 1 else date(2026, 8, 4)
-    cfg = load_config()
-    nodes = station_node_map(cfg)
+def open_lsofs(cfg, day):
+    """Open the LSOFS t12z n006 dataset for `day` and return (ds, grid)."""
     f = LsofsFile(day, "t12z", "n", 6)
     ds = _open_first(candidate_urls(f, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket,
                                     byterange=False))
-    rows = extract_nodes(ds, nodes, PROFILE_DEPTHS)
-    ds.close()
+    return ds, lsofs_grid.read_grid(ds)
 
-    central, lo, hi, detail, n = pooled_subsurface_bias(cfg, day)
-    print(f"pooled subsurface warm bias: central {central:+.2f} band [{lo:+.2f},{hi:+.2f}] n={n}")
-    wind = upwelling_context(day)
-    if wind:
-        print(f"wind: {wind['fav_hours_48']}/48h W-quadrant, {wind['mean_insector_kn']:.1f}kn in-sector")
 
-    cards = []
-    for s in cfg.shore_stations:
-        pr = sorted([r for r in rows if r.station_id == s.id], key=lambda r: r.depth_m)
-        depths = [r.depth_m for r in pr]
-        raw = [r.temp_c for r in pr]
-        try:
-            g = glsea.fetch_sst(s.lat, s.lon, day).sst_c
-        except Exception as e:  # noqa: BLE001
-            print(f"  {s.id}: GLSEA unavailable ({str(e)[:40]}) — skipping"); continue
-        surf_bias = raw[0] - g
-        bias = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
-        band = thermocline.isotherm_band(depths, raw, bias, TARGET_C)
-        try:
-            patch = nonna.fetch_patch(s.lat, s.lon, half_m=1000, scale_px=280)
-        except Exception as e:  # noqa: BLE001
-            print(f"  {s.id}: NONNA fetch failed ({str(e)[:40]}) — skipping"); continue
-        if patch.coverage_frac < 0.05 or band["central"] is None:
-            print(f"  {s.id}: no NONNA nearshore coverage or no isotherm — skipping plan view")
-            continue
-        card = render_spot(s, patch, band, g, bias, day)
-        card["name"] = s.name
-        cards.append(card)
-        print(f"  {s.id}: iso {band['central']:.1f} m (band {card['iso_lo']:.1f}-{card['iso_hi']:.1f}) "
-              f"reachable={card['reachable']}")
+def analyze_location(ds, grid, day, lat, lon, name, spot_id, bias_stats, *, node=None,
+                     half_m=1000, scale_px=280):
+    """Full per-location analysis for ANY lat/lon (station or arbitrary pin).
+
+    Snaps to the nearest LSOFS water node (if `node` not pre-pinned), pulls the
+    temperature profile, anchors the surface to GLSEA, builds the isotherm band with
+    the pooled subsurface bias, fetches the NONNA patch, and renders the satellite
+    overlay. Returns a card dict (with iso band + reachability) or None if the spot
+    has no usable NONNA coverage / no isotherm in the column.
+    """
+    from types import SimpleNamespace
+    central, lo, hi, n = bias_stats
+    if node is None:
+        node = lsofs_grid.nearest_node(grid, lat, lon, min_depth_m=6.0).node
+    pr = sorted(extract_nodes(ds, {spot_id: node}, PROFILE_DEPTHS), key=lambda r: r.depth_m)
+    depths = [r.depth_m for r in pr]
+    raw = [r.temp_c for r in pr]
+    g = glsea.fetch_sst(lat, lon, day).sst_c
+    bias = thermocline.BiasModel(raw[0] - g, central, lo, hi, n_buoys=n)
+    band = thermocline.isotherm_band(depths, raw, bias, TARGET_C)
+    patch = nonna.fetch_patch(lat, lon, half_m=half_m, scale_px=scale_px)
+    if patch.coverage_frac < 0.05 or band["central"] is None:
+        return None
+    spot = SimpleNamespace(lat=lat, lon=lon, name=name, id=spot_id)
+    card = render_spot(spot, patch, band, g, bias, day)
+    card["name"] = name
+    return card
+
+
+def main(argv) -> int:
+    day = date.fromisoformat(argv[1]) if len(argv) > 1 else date(2026, 8, 4)
+    cfg = load_config()
+    ds, grid = open_lsofs(cfg, day)
+    try:
+        central, lo, hi, detail, n = pooled_subsurface_bias(cfg, day)
+        print(f"pooled subsurface warm bias: central {central:+.2f} band [{lo:+.2f},{hi:+.2f}] n={n}")
+        wind = upwelling_context(day)
+        if wind:
+            print(f"wind: {wind['fav_hours_48']}/48h W-quadrant, {wind['mean_insector_kn']:.1f}kn in-sector")
+
+        cards = []
+        for s in cfg.shore_stations:
+            try:
+                card = analyze_location(ds, grid, day, s.lat, s.lon, s.name, s.id,
+                                        (central, lo, hi, n), node=s.lsofs_node)
+            except Exception as e:  # noqa: BLE001
+                print(f"  {s.id}: analysis failed ({str(e)[:50]}) — skipping"); continue
+            if card is None:
+                print(f"  {s.id}: no NONNA nearshore coverage or no isotherm — skipping"); continue
+            cards.append(card)
+            print(f"  {s.id}: iso {card['iso_central']:.1f} m "
+                  f"(band {card['iso_lo']:.1f}-{card['iso_hi']:.1f}) reachable={card['reachable']}")
+    finally:
+        ds.close()
 
     if not cards:
         print("no plan views produced")
