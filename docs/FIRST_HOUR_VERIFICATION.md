@@ -104,3 +104,26 @@ PLAN task 2's "Oct 2022 → present" and ADR-004's "tune 2022–2024" — propos
 - **Human (from kickoff):** CHS/DFO harbour water-level ID; LRCA logger permission; ntfy
   topic + Routine API key; verify current model lineup before wiring the Routine.
 - **Sign-off:** ADR-017 / ADR-018 / ADR-019.
+
+---
+
+## POSTSCRIPT (2026-08-05) — allowlist opened; all six verifications now pass
+
+The five hosts above were allowlisted. Re-ran the blocked checks against live data:
+
+- **#3 ERA5 wind** ✅ Open-Meteo returns hourly speed(kn)/dir/gust at 48.4 N,−89.2 W.
+- **#4 GLSEA** ✅ via GLERL ERDDAP (`apps.glerl.noaa.gov/erddap`): `GLSEA_ACSPO_GCS`
+  daily SST **2006→present** (truth for 2024–26), `GLSEA_GCS` **1995→2023** (climatology).
+  Coastal pixels are land-masked → sample nearest valid water pixel. Full details and the
+  21 GeoMet station IDs (#5) are in `docs/DATA_SOURCES.md`.
+- **#5 GeoMet** ✅ 21 hydrometric stations incl. Kam 02AB006/007/025/026, McIntyre
+  02AB016/020, Neebing 02AB008/024, Current 02AB014/015/021, McVicar 02AB019, and
+  02AB018 "Lake Superior at Thunder Bay" (candidate harbour level → CHS/DFO human task).
+- **NDBC 45136** ✅ WTMP 8.8 °C — far colder than the embayment (secondary proxy only).
+
+**First real gate read:** G1 was run for real (LSOFS surface vs GLSEA, July + August
+2025) — see `docs/G1_SCORECARD.md`. Headline: G1 **fails** both months (pooled MAE
+2.03–2.30 °C), error concentrated at the exposed upwelling nodes; sheltered Marina passes
+in August. Cause is real upwelling variability GLSEA smooths (the logger adjudicates,
+ADR-019). The 2024 ice-free tune season is `regulargrid`-only (ADR-018) — a separate
+reader is the next build for G2/G4 threshold tuning.

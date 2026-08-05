@@ -44,6 +44,30 @@ def valid_time_from_dataset(dataset) -> datetime:
     return datetime.fromisoformat(s.split(".")[0]).replace(tzinfo=timezone.utc)
 
 
+@dataclass(frozen=True)
+class SurfaceRow:
+    station_id: str
+    node: int
+    temp_c: float          # topmost sigma layer = model SST (skin-comparable)
+    valid_time: datetime   # UTC
+
+
+def extract_surface(dataset, station_nodes: dict[str, int]) -> list[SurfaceRow]:
+    """Model SST = temperature at the shallowest sigma layer (siglay index 0, ~0.3 m).
+
+    This is the depth-appropriate model quantity to compare against GLSEA skin SST
+    (G1) — no interpolation, no 2 m/skin mismatch. FVCOM orders siglay surface-first
+    (verified: -0.025 at index 0), so index 0 is the surface-most layer.
+    """
+    nodes = list(station_nodes.values())
+    vt = valid_time_from_dataset(dataset)
+    surf = np.asarray(dataset.variables["temp"][0, 0, nodes], dtype=float)  # layer 0
+    return [
+        SurfaceRow(station_id=sid, node=int(node), temp_c=float(surf[col]), valid_time=vt)
+        for col, (sid, node) in enumerate(station_nodes.items())
+    ]
+
+
 def extract_nodes(
     dataset,
     station_nodes: dict[str, int],

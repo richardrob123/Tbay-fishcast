@@ -18,7 +18,7 @@ import fsspec
 import netCDF4 as nc
 
 from ..config import Config
-from .lsofs_extract import TempRow, extract_nodes
+from .lsofs_extract import SurfaceRow, TempRow, extract_nodes, extract_surface
 from .lsofs_paths import LsofsFile, candidate_urls
 
 # Remote read strategy (benchmarked live 2026-08-04):
@@ -70,6 +70,19 @@ def extract_item(cfg: Config, item: BackfillItem,
     ds = _open_first(urls)
     try:
         return extract_nodes(ds, station_nodes, cfg.lsofs.target_depths_m)
+    finally:
+        ds.close()
+
+
+def extract_surface_item(cfg: Config, item: BackfillItem,
+                         station_nodes: dict[str, int]) -> list[SurfaceRow]:
+    """Model SST (topmost sigma layer) for one nowcast hour, from live S3."""
+    f = LsofsFile(day=item.day, cycle=item.cycle, kind="n", hour=item.hour)
+    urls = candidate_urls(f, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket,
+                          byterange=False)
+    ds = _open_first(urls)
+    try:
+        return extract_surface(ds, station_nodes)
     finally:
         ds.close()
 

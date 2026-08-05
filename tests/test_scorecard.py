@@ -15,6 +15,19 @@ def test_mae_bias_rmse_basic():
     assert s.mae == pytest.approx((1 + 1 + 0) / 3)
     assert s.bias == pytest.approx((-1 + 1 + 0) / 3)
     assert s.rmse == pytest.approx(math.sqrt((1 + 1 + 0) / 3))
+    assert s.median_abs == pytest.approx(1.0)
+    assert s.p90_abs == pytest.approx(1.0, abs=0.2)
+
+
+def test_pearson_r_perfect_correlation():
+    s = temperature_error([1.0, 2.0, 3.0, 4.0], [2.0, 3.0, 4.0, 5.0])  # truth = model+1
+    assert s.pearson_r == pytest.approx(1.0)
+    assert s.bias == pytest.approx(-1.0)
+
+
+def test_pearson_r_nan_without_variance():
+    s = temperature_error([5.0, 5.0, 5.0], [1.0, 2.0, 3.0])  # model constant
+    assert math.isnan(s.pearson_r)
 
 
 def test_nan_pairs_dropped():

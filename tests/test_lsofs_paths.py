@@ -18,6 +18,14 @@ def test_archive_key_layout():
     assert f.archive_key() == "lsofs/netcdf/2026/01/01/lsofs.t12z.20260101.fields.f024.nc"
 
 
+def test_archive_flat_key_layout():
+    f = LsofsFile(day=date(2024, 7, 15), cycle="t00z", kind="f", hour=0)
+    assert f.archive_flat_key("regulargrid") == \
+        "lsofs/netcdf/202407/lsofs.t00z.20240715.regulargrid.f000.nc"
+    assert f.archive_flat_key("fields") == \
+        "lsofs/netcdf/202407/lsofs.t00z.20240715.fields.f000.nc"
+
+
 def test_recent_url_has_byterange_suffix():
     f = LsofsFile(day=date(2026, 8, 4), cycle="t06z", kind="n", hour=3)
     u = recent_url(f, "noaa-ofs-pds")

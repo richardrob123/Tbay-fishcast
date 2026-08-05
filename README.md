@@ -22,12 +22,20 @@ data-source reality check.
 - **Upwelling-event detector** and **Wedderburn** susceptibility — real, deterministic
   physics with provisional (to-be-calibrated) thresholds.
 
-## Blocked in this environment
+- **First real gate read (G1).** LSOFS surface SST vs GLSEA over a validation month
+  (`scripts/g1_scorecard.py`): daily-mean model (diurnal aliasing removed, QC'd) vs GLSEA
+  nearest-valid-pixel, scored MAE/bias/RMSE/median/p90/r per station + pooled. July 2025:
+  ~0 bias but MAE 2.30 °C (fails ≤2.0) with low day-to-day correlation — real upwelling
+  variability the satellite smooths. See `docs/G1_SCORECARD.md`.
 
-Reference ingests — ERA5 wind (Open-Meteo), GLSEA SST, GeoMet/HYDAT flows, NDBC Slate
-buoy — are written to their real API shapes but their hosts are **blocked by the
-environment's egress policy**; they raise `SourceUnavailable` until allowlisted. Only the
-AWS S3 LSOFS buckets are reachable. See the verification report for the allowlist ask.
+## Data sources
+
+All verified live (`docs/DATA_SOURCES.md`): LSOFS (S3), GLSEA SST (GLERL ERDDAP —
+`GLSEA_ACSPO_GCS` 2006→present for truth, `GLSEA_GCS` 1995→2023 for climatology), ERA5
+wind (Open-Meteo), ECCC GeoMet/HYDAT (21 local stations, IDs recorded), NDBC Slate buoy.
+Reference-ingest hosts require a **Custom** egress allowlist on the cloud environment
+(keep "include default package managers" on, so the LSOFS S3 buckets stay reachable);
+the clients raise `SourceUnavailable` if a host is blocked, so the system degrades loudly.
 
 ## Layout
 

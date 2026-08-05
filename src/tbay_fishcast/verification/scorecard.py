@@ -24,6 +24,9 @@ class ErrorStats:
     mae: float
     bias: float  # mean(model - truth)
     rmse: float
+    median_abs: float  # median |error| — robust to outliers
+    p90_abs: float     # 90th-percentile |error| — tail behaviour
+    pearson_r: float   # model-truth correlation (tracks the signal, not just level)
     depth_caveat: str
 
 
@@ -57,14 +60,24 @@ def temperature_error(
         raise ValueError("model and truth must have matching shape")
     valid = ~(np.isnan(m) | np.isnan(o))
     m, o = m[valid], o[valid]
+    nan = float("nan")
     if m.size == 0:
-        return ErrorStats(0, float("nan"), float("nan"), float("nan"), depth_caveat)
+        return ErrorStats(0, nan, nan, nan, nan, nan, nan, depth_caveat)
     diff = m - o
+    abs_diff = np.abs(diff)
+    # Pearson r needs variance in both series and >=2 points.
+    if m.size >= 2 and np.std(m) > 0 and np.std(o) > 0:
+        r = float(np.corrcoef(m, o)[0, 1])
+    else:
+        r = nan
     return ErrorStats(
         n=int(m.size),
-        mae=float(np.mean(np.abs(diff))),
+        mae=float(np.mean(abs_diff)),
         bias=float(np.mean(diff)),
         rmse=float(np.sqrt(np.mean(diff**2))),
+        median_abs=float(np.median(abs_diff)),
+        p90_abs=float(np.percentile(abs_diff, 90)),
+        pearson_r=r,
         depth_caveat=depth_caveat,
     )
 

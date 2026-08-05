@@ -39,6 +39,8 @@ stations:
     lsofs_node: 29434             # pinned by scripts/bootstrap_grid.py (min_depth 10 m)
     node_depth_m: 11.92
     node_dist_m: 1182.9
+    node_lat: 48.45863           # modeled water column — truth sources sample HERE
+    node_lon: -89.15445
     coord_tier: T4
     field_verify: true
 
@@ -51,6 +53,8 @@ stations:
     lsofs_node: 29446             # 2.5 km offshore — at LSOFS cell scale; provisional
     node_depth_m: 13.83
     node_dist_m: 2493.7
+    node_lat: 48.47858
+    node_lon: -89.11142
     coord_tier: T4
     field_verify: true
 
@@ -63,6 +67,8 @@ stations:
     lsofs_node: 29138
     node_depth_m: 16.33
     node_dist_m: 439.1
+    node_lat: 48.42956
+    node_lon: -89.20456
     coord_tier: T4
     field_verify: true
 

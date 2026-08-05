@@ -28,6 +28,8 @@ class Station:
     lsofs_node: int | None = None
     node_depth_m: float | None = None
     node_dist_m: float | None = None
+    node_lat: float | None = None
+    node_lon: float | None = None
     coord_tier: str = "T4"
     field_verify: bool = True
 
@@ -122,6 +124,8 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
             lsofs_node=s.get("lsofs_node"),
             node_depth_m=s.get("node_depth_m"),
             node_dist_m=s.get("node_dist_m"),
+            node_lat=s.get("node_lat"),
+            node_lon=s.get("node_lon"),
             coord_tier=s.get("coord_tier", "T4"),
             field_verify=bool(s.get("field_verify", True)),
         )
