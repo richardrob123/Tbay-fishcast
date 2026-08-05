@@ -63,9 +63,14 @@ def push_ntfy(title: str, body: str, tags: str, priority: str = "default") -> bo
     # `or` (not a default arg): CI passes NTFY_SERVER="" for an undefined var, and
     # os.environ.get would return that empty string, breaking the URL host.
     server = (os.environ.get("NTFY_SERVER") or "https://ntfy.sh").rstrip("/")
+    # HTTP headers must be latin-1: strip emoji / normalise the em-dash so Title+Tags
+    # encode (emoji rides in the Tags shortcodes and the UTF-8 body instead).
+    def _hdr(s: str) -> str:
+        return (s.replace("—", "-").replace("’", "'")
+                .encode("latin-1", "ignore").decode("latin-1").strip())
     req = urllib.request.Request(
         f"{server}/{topic}", data=body.encode("utf-8"), method="POST",
-        headers={"Title": title, "Tags": tags, "Priority": priority})
+        headers={"Title": _hdr(title), "Tags": _hdr(tags), "Priority": priority})
     try:
         urllib.request.urlopen(req, timeout=20)
         return True
@@ -126,12 +131,14 @@ def main(argv) -> int:
     if transitions:
         opened = [t for t in transitions if t[1]]
         closed = [t for t in transitions if not t[1]]
-        title = ("🎣 " + ", ".join(t[0] for t in opened) + " open" if opened
+        # emoji rides in ntfy Tags shortcodes (headers are latin-1; no raw emoji there)
+        title = (", ".join(t[0] for t in opened) + " open" if opened
                  else "Window closed: " + ", ".join(t[0] for t in closed))
         body = "\n".join(f"{t[0]}: {t[2]}" for t in transitions)
         if stale:
             body += f"\n⚠️ data {age_h:.0f} h old"
-        push_ntfy(title, body, tags="fish", priority="high" if opened else "default")
+        tags = "fishing_pole_and_fish" if opened else "wind_blowing_face"
+        push_ntfy(title, body, tags=tags, priority="high" if opened else "default")
     else:
         print("(no change since last run — no push)")
 
