@@ -134,10 +134,14 @@ map.on('load', async () => {
   document.getElementById('load').style.display='none';
   document.getElementById('ctl').style.display='block';
 
-  // add each stretch's day-0 image; we swap the URL when the slider moves
+  // add each stretch's day-0 image; we swap the URL when the slider moves.
+  // cache-bust by build time so a new daily deploy isn't masked by cached PNGs
+  // (overlay filenames are stable across builds).
+  const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
+  man._v = V;
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
-    map.addSource('ov'+i, { type:'image', url: s.days[0].png, coordinates: s.corners });
+    map.addSource('ov'+i, { type:'image', url: s.days[0].png + V, coordinates: s.corners });
     map.addLayer({ id:'ov'+i, type:'raster', source:'ov'+i,
       paint:{ 'raster-opacity': 0.82, 'raster-resampling':'nearest', 'raster-fade-duration':0 } });
     s.corners.forEach(c => bounds.extend(c));
@@ -189,7 +193,7 @@ function setDay(i){
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
     const src = map.getSource('ov'+k);
-    if(src && src.updateImage) src.updateImage({ url: day.png });
+    if(src && src.updateImage) src.updateImage({ url: day.png + (MAN._v || '') });
   });
   const d0 = man.stretches[0].days[i];
   document.getElementById('dlab').textContent = d0.label + (i===0?'  (now)':'');
