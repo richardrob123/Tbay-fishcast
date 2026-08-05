@@ -7,8 +7,12 @@ depth and location, full 2024–25 seasons at 1 m plus 2026 at 6 m. Reproduce:
 
 ## Verdict
 
-**Raw LSOFS is not accurate enough to ship — it fails G1 at every depth (MAE 2.7–3.7 °C vs
-a 2.0 target) — BUT the failure mode is depth-dependent and, at 6 m, largely correctable:**
+**Raw LSOFS is not accurate enough to ship (fails G1, MAE 2.5–3.7 °C), BUT at mid-depth
+(2.4–6 m) it has real, spatially-replicated skill at predicting upwelling TIMING that beats
+climatology — so the layer is KEPT, as a bias-corrected mid-depth product. Near-surface
+(1 m) is unusable. See "the decision metric" below for the load-bearing evidence.**
+
+The original single-season framing (updated after replication):
 
 - **1 m (near-surface): irreducible.** Error is variance-dominated (centered RMSE ~4 °C);
   removing the bias barely helps and correlation is weak (r 0.36–0.62). LSOFS cannot track the
@@ -56,12 +60,47 @@ from *validator* to *calibrator* — the single most valuable thing you can depl
   behaviour (which transfers — same model, same lake), but the **bias magnitude is likely
   location-specific**, so a Thunder Bay bias correction still needs the Thunder Bay logger.
 
+## The decision metric — anomaly skill vs climatology (REPLICATED across sites)
+
+Raw MAE is not the ADR-006 test, and the raw r≈0.7 is inflated by the shared seasonal
+cycle. The decision metric is **detrended anomaly skill**: does LSOFS predict the
+*deviation from the seasonal normal* (the upwelling events) better than assuming a normal
+day? Tested at 4 independent site/depth combinations:
+
+| site | depth | anomaly r (timing) | skill score vs climatology¹ | warm bias |
+|---|---|---|---|---|
+| 45023 central | 2.4 m | **+0.85** | **+0.37** | +3.4 °C |
+| 45027 western | 6.0 m | +0.67 | +0.08 | +3.6 °C |
+| 45216 south-central | 2.4 m | +0.44 | +0.07 | +2.4 °C |
+| 45027 western | 1.0 m | +0.33 | **−0.99** | — |
+
+¹ skill score = 1 − MAE(LSOFS anomaly)/MAE(always-climatology); >0 beats climatology.
+
+**Findings (evidence-based, spatially replicated):**
+- **Mid-depth (2.4–6 m) anomaly TIMING skill is real and replicates** — r = +0.44 to +0.85
+  at three independent locations, all positive, none a one-season fluke.
+- **It beats climatology at all three mid-depth sites** (+0.07 to +0.37), strongly at 45023
+  (37% error reduction), marginally at the others. So the magnitude skill is
+  marginal-to-good; the timing skill is robustly good.
+- **1 m is worse than climatology** (skill −0.99) — confirms LSOFS cannot be used near-surface.
+- **The +2.4 to +3.5 °C warm bias replicates at every mid-depth site/location** → it is a
+  MODEL-WIDE systematic tendency (LSOFS under-cools upwelled water), hence predictable and
+  bias-correctable, though the magnitude varies enough by site (~1 °C) that a Thunder Bay
+  correction still needs local data.
+
 ## Consequence for the commissioning decision (ADR-006)
 
-- **Raw LSOFS: do NOT ship** — fails G1/G2 against ground truth at every depth.
-- **Do NOT fully demote either** — at 6 m the error is bias-dominated with r 0.68 and POD 0.60,
-  i.e. there is real, extractable signal once calibrated.
-- **The product is a bias-corrected LSOFS 6 m layer**, and the enabling step is an in-situ 6 m
-  logger at (ideally) each shore station for the local offset. Next analysis: does bias-corrected
-  LSOFS 6 m beat day-of-year climatology (the ADR-006 bar)? — the remaining piece to close the
-  keep/demote call.
+- **Raw LSOFS: do NOT ship** — fails G1 (MAE 2.5–3.7) at every depth; near-surface (1 m) is
+  worse than climatology and unusable.
+- **KEEP the mid-depth (2.4–6 m) layer** — the pre-registered keep criterion (anomaly skill
+  replicates positive across independent sites) is MET: r +0.44 to +0.85, beats climatology at
+  all three mid-depth sites. This is well-powered evidence (n=300+ samples/site, 3 sites), unlike
+  the event/POD numbers which remain structurally underpowered (2–5 events/season → CIs span
+  [0,1]; not decidable at any depth).
+- **The product is a bias-corrected LSOFS mid-depth layer whose actionable output is upwelling
+  TIMING** (LSOFS reliably says *when* it's colder-than-normal; the absolute value needs the
+  −(2.4…3.6 °C) bias correction). Magnitude skill beyond climatology is marginal-to-good.
+- **Remaining gaps:** (a) the western/central-Superior bias magnitude varies ~1 °C, so a Thunder
+  Bay offset still needs the local logger; (b) event POD/FAR needs *years* of events, not a
+  method fix; (c) the 6 m case is one partial season — the 2.4 m replication (two sites, full
+  seasons) is the stronger evidence and should anchor the conclusion.
