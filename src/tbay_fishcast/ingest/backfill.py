@@ -19,7 +19,8 @@ import netCDF4 as nc
 
 from ..config import Config
 from .lsofs_extract import SurfaceRow, TempRow, extract_nodes, extract_surface
-from .lsofs_paths import LsofsFile, candidate_urls
+from .lsofs_paths import LsofsFile, archive_flat_url, candidate_urls
+from .lsofs_regulargrid import PixelMatch, extract_regulargrid
 
 # Remote read strategy (benchmarked live 2026-08-04):
 #   netCDF `#mode=bytes` open  ... ~37 s/file  (many latency-bound range GETs)
@@ -44,19 +45,23 @@ def station_node_map(cfg: Config) -> dict[str, int]:
     return {s.id: int(s.lsofs_node) for s in cfg.stations if s.has_lsofs}
 
 
+def _open_bytes(url: str):
+    """Fetch one URL's bytes and open in-memory (netCDF4)."""
+    fs = fsspec.filesystem("https", block_size=_FSSPEC_BLOCK)
+    return nc.Dataset("inmem", mode="r", memory=fs.cat_file(url))
+
+
 def _open_first(urls: list[str]):
     """Fetch the first reachable URL's bytes and open it in-memory (netCDF4).
 
     Recent bucket first, then archive. FileNotFoundError only if none open."""
-    fs = fsspec.filesystem("https", block_size=_FSSPEC_BLOCK)
     last: Exception | None = None
     for u in urls:
         try:
-            data = fs.cat_file(u)
+            return _open_bytes(u)
         except Exception as e:  # noqa: BLE001 - fsspec raises varied transport errors
             last = e
             continue
-        return nc.Dataset("inmem", mode="r", memory=data)
     raise FileNotFoundError(f"no candidate URL opened; last error: {last}")
 
 
@@ -83,6 +88,21 @@ def extract_surface_item(cfg: Config, item: BackfillItem,
     ds = _open_first(urls)
     try:
         return extract_surface(ds, station_nodes)
+    finally:
+        ds.close()
+
+
+def extract_regulargrid_item(cfg: Config, item: BackfillItem,
+                             station_pixels: dict[str, PixelMatch],
+                             target_depths_m) -> list[TempRow]:
+    """Extract station temps from a flat-archive `regulargrid` nowcast file (the 2024
+    ice-free tune-season source). 6 m is an exact z-level here — no sigma interp."""
+    f = LsofsFile(day=item.day, cycle=item.cycle, kind="n", hour=item.hour)
+    url = archive_flat_url(f, cfg.lsofs.archive_bucket, product="regulargrid",
+                           byterange=False)
+    ds = _open_bytes(url)
+    try:
+        return extract_regulargrid(ds, station_pixels, target_depths_m)
     finally:
         ds.close()
 

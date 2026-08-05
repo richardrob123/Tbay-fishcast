@@ -13,8 +13,13 @@ the next session doesn't re-discover them.
   - `noaa-ofs-pds` — recent ≤~30 d: `lsofs.YYYYMMDD/lsofs.tHHz.YYYYMMDD.fields.{n,f}NNN.nc`
   - `noaa-nos-ofs-pds` — archive. **Nested** native fields (nowcast+forecast):
     `lsofs/netcdf/YYYY/MM/DD/…` present for **2024/11, 2024/12, 2025, 2026**.
-    **Flat** months `lsofs/netcdf/YYYYMM/…` for **2024-03..2024-12** are
-    `regulargrid`-dominated with sparse/inconsistent `fields`/nowcast.
+    **Flat** months `lsofs/netcdf/YYYYMM/…` for **2024-03..2024-12** carry BOTH
+    `regulargrid` (nowcast+forecast) AND `fields` (nowcast+forecast), but `fields`
+    nowcast coverage is day-inconsistent; `regulargrid` nowcast is the reliable,
+    complete tune-season source and gives **6 m as an exact z-level**. (Corrected
+    2026-08-05: an earlier probe hit an incomplete day and wrongly concluded flat
+    months were regulargrid-only.) The two 6 m instruments agree to r=0.99 / RMSE
+    0.28 °C (see docs/G2_PREREGISTRATION.md).
 - **Earliest data:** 2024-03-26 (regulargrid). Node-`fields` nowcast: ~2024-11 →.
 - **Access:** fsspec bulk-fetch (~4–5 s/file) + in-memory netCDF (ADR-017). THREDDS
   OPeNDAP is blocked/irrelevant. Cycles t00/06/12/18z; nowcast n000–n006; fcst f000–f120.
