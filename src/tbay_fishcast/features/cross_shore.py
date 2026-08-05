@@ -57,13 +57,16 @@ def isotherm_depth(depths, temps, target_c: float, colder_is_target: bool = True
         if (t0 - target_c) * (t1 - target_c) < 0:
             frac = (target_c - t0) / (t1 - t0)
             return float(z[i] + frac * (z[i + 1] - z[i]))
-    # no crossing: is the whole column on the target side?
-    if colder_is_target and np.min(t) > target_c:
-        return None  # nowhere cold enough — no laker water in the column
-    if not colder_is_target and np.max(t) < target_c:
-        return None
-    # target is beyond the deepest sample on the cold side → treat as at/below bottom
-    return float(z[-1]) if (colder_is_target and t[-1] <= target_c) else None
+    # no crossing found. Two whole-column cases:
+    if colder_is_target:
+        if np.min(t) > target_c:
+            return None            # whole column warmer — no cold water anywhere
+        # whole column at/below target (fully cold, e.g. strong upwelling): the target
+        # water reaches the surface, so the isotherm is at the top, not the bottom.
+        return float(z[0])
+    if np.max(t) < target_c:
+        return None                # whole column colder than a warm-water target
+    return float(z[0])
 
 
 def depth_to_distance(bathy_dist, bathy_depth, target_depth_m: float) -> float | None:

@@ -31,17 +31,17 @@ temporal_split:
 
 stations:
   - id: silver_harbour_outer
-    name: "Silver Harbour — outer rocks"
-    lat: 48.4690
-    lon: -89.1580
+    name: "Silver Harbour Conservation Area — point"
+    lat: 48.5085                  # CORRECTED 2026-08-05: geocoded to the real Conservation
+    lon: -88.9746                 # Area point (curved outcrop); old coord was ~15 km W (T4 error)
     lsofs_shore: true
-    exposure_bearing_deg: 135      # faces SE toward open bay; W-quadrant wind => upwelling on this shore
-    lsofs_node: 29434             # pinned by scripts/bootstrap_grid.py (min_depth 10 m)
-    node_depth_m: 11.92
-    node_dist_m: 1182.9
-    node_lat: 48.45863           # modeled water column — truth sources sample HERE
-    node_lon: -89.15445
-    coord_tier: T4
+    exposure_bearing_deg: 160      # curved point faces S/SE into open water; W-wind => upwelling here
+    lsofs_node: 29448             # re-pinned for the corrected coord (min_depth 10 m)
+    node_depth_m: 14.90
+    node_dist_m: 721.6
+    node_lat: 48.50255           # modeled water column — truth sources sample HERE
+    node_lon: -88.97852
+    coord_tier: T2                # geocoded (Nominatim) + satellite/photo match; was T4
     field_verify: true
 
   - id: mackenzie_point

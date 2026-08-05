@@ -1,11 +1,11 @@
 {
   "silver_harbour_outer": {
-    "node": 29434,
-    "node_depth_m": 11.92,
-    "dist_m": 1182.9,
-    "node_lat": 48.45863,
-    "node_lon": 270.84555,
-    "fixture_node": 72
+    "node": 29448,
+    "node_depth_m": 14.90,
+    "dist_m": 721.6,
+    "node_lat": 48.50255,
+    "node_lon": 271.02148,
+    "fixture_node": 86
   },
   "mackenzie_point": {
     "node": 29446,

@@ -12,7 +12,7 @@ import pytest
 from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset
 
 GOLDEN = {
-    "silver_harbour_outer": {2.0: 17.682, 6.0: 12.938, 10.0: 11.794},
+    "silver_harbour_outer": {2.0: 14.558, 6.0: 11.141, 10.0: 10.171},
     "mackenzie_point": {2.0: 17.772, 6.0: 13.146, 10.0: 11.546},
     "marina_east_mcvicar": {2.0: 18.201, 6.0: 13.964, 10.0: 12.366},
 }

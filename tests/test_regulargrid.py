@@ -10,7 +10,7 @@ from tbay_fishcast.ingest.lsofs_regulargrid import (
 
 FIXTURE_NAME = "lsofs_regulargrid_tbay.nc"
 GOLDEN_6M = {
-    "silver_harbour_outer": 13.928,
+    "silver_harbour_outer": 13.594,
     "mackenzie_point": 13.119,
     "marina_east_mcvicar": 13.872,
 }

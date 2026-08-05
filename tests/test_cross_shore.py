@@ -22,6 +22,12 @@ def test_isotherm_absent_when_column_all_warm():
     assert isotherm_depth([0, 5, 10], [20, 18, 16], 12.0) is None  # never gets to 12
 
 
+def test_isotherm_at_surface_when_column_all_cold():
+    # strong upwelling: whole column <= 12 C -> cold water reaches the top, not the bottom
+    z = isotherm_depth([1, 5, 10, 15], [11, 10, 9, 8], 12.0)
+    assert z == 1.0  # shallowest sample (surface), i.e. maximally reachable — not 15 (bottom)
+
+
 def test_depth_to_distance_interpolates():
     d = depth_to_distance(BDIST, BDEPTH, 6.0)
     assert d == pytest.approx(75.0)  # 6 m bottom at 75 m per the bathy table
