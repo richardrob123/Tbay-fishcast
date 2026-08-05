@@ -59,6 +59,10 @@
     justify-content:space-between;gap:8px;border-top:1px solid var(--hair);padding-top:9px}
   .stat b{color:var(--ink);font-variant-numeric:tabular-nums}
   .note{font-size:12px;color:var(--muted);line-height:1.45}
+  .bsrc{font-family:var(--mono);font-size:10.5px;color:var(--muted);opacity:.8;
+    margin-top:6px;line-height:1.4}
+  .bsrc .warn{color:var(--out)}
+  .attrib{margin-top:10px;font-size:10.5px;opacity:.75;font-style:italic}
   footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;
     font-size:12px;color:var(--muted);line-height:1.55}
   footer b{color:var(--ink)}
@@ -144,26 +148,256 @@ const DATA = {
    ],
    "bathy": [
     [
-     0,
-     0
+     0.0,
+     0.0
     ],
     [
-     75,
-     6
+     6.6,
+     0.17
     ],
     [
-     300,
-     9
+     13.3,
+     0.17
     ],
     [
-     1183,
-     11.9
+     19.9,
+     0.49
+    ],
+    [
+     26.5,
+     0.43
+    ],
+    [
+     33.1,
+     0.28
+    ],
+    [
+     39.8,
+     0.28
+    ],
+    [
+     46.4,
+     0.45
+    ],
+    [
+     53.0,
+     0.84
+    ],
+    [
+     59.6,
+     0.84
+    ],
+    [
+     66.3,
+     0.76
+    ],
+    [
+     72.9,
+     0.7
+    ],
+    [
+     79.5,
+     0.81
+    ],
+    [
+     86.1,
+     0.81
+    ],
+    [
+     92.8,
+     1.05
+    ],
+    [
+     99.4,
+     1.23
+    ],
+    [
+     106.0,
+     1.31
+    ],
+    [
+     112.7,
+     1.31
+    ],
+    [
+     119.3,
+     1.33
+    ],
+    [
+     125.9,
+     1.37
+    ],
+    [
+     132.5,
+     1.37
+    ],
+    [
+     139.2,
+     1.46
+    ],
+    [
+     145.8,
+     1.6
+    ],
+    [
+     152.4,
+     1.6
+    ],
+    [
+     159.0,
+     1.77
+    ],
+    [
+     165.7,
+     2.01
+    ],
+    [
+     172.3,
+     2.01
+    ],
+    [
+     178.9,
+     2.19
+    ],
+    [
+     185.6,
+     2.61
+    ],
+    [
+     192.2,
+     2.82
+    ],
+    [
+     198.8,
+     2.82
+    ],
+    [
+     205.4,
+     3.0
+    ],
+    [
+     212.1,
+     3.19
+    ],
+    [
+     218.7,
+     3.19
+    ],
+    [
+     225.3,
+     3.53
+    ],
+    [
+     231.9,
+     3.53
+    ],
+    [
+     238.6,
+     3.53
+    ],
+    [
+     245.2,
+     3.87
+    ],
+    [
+     251.8,
+     3.87
+    ],
+    [
+     258.4,
+     3.87
+    ],
+    [
+     265.1,
+     4.26
+    ],
+    [
+     271.7,
+     4.26
+    ],
+    [
+     278.3,
+     4.26
+    ],
+    [
+     285.0,
+     4.66
+    ],
+    [
+     291.6,
+     4.66
+    ],
+    [
+     298.2,
+     4.66
+    ],
+    [
+     304.8,
+     5.18
+    ],
+    [
+     311.5,
+     5.18
+    ],
+    [
+     318.1,
+     5.42
+    ],
+    [
+     324.7,
+     5.69
+    ],
+    [
+     331.3,
+     5.69
+    ],
+    [
+     338.0,
+     6.27
+    ],
+    [
+     344.6,
+     6.27
+    ],
+    [
+     351.2,
+     6.27
+    ],
+    [
+     357.9,
+     6.7
+    ],
+    [
+     364.5,
+     6.7
+    ],
+    [
+     371.1,
+     6.7
+    ],
+    [
+     377.7,
+     7.19
+    ],
+    [
+     384.4,
+     7.19
+    ],
+    [
+     391.0,
+     7.41
+    ],
+    [
+     397.6,
+     7.6
     ]
    ],
+   "bathy_source": "CHS NONNA-10 (WCS GetCoverage, EPSG:3857) \u00b7 7 m \u00b7 T1",
+   "coarse": false,
    "isotherm_depth": 3.0,
-   "in_range_dist": 37.0,
-   "in_range": true,
-   "note": "12C water meets bottom at 37 m from shore (IN cast range 75 m)"
+   "in_range_dist": 204.9,
+   "in_range": false,
+   "note": "12C water meets bottom at 205 m from shore (out of cast range 75 m)"
   },
   {
    "id": "mackenzie_point",
@@ -204,22 +438,176 @@ const DATA = {
    ],
    "bathy": [
     [
-     0,
-     0
+     0.0,
+     0.0
     ],
     [
-     500,
-     7
+     77.0,
+     14.34
     ],
     [
-     2494,
-     13.8
+     154.1,
+     15.14
+    ],
+    [
+     231.1,
+     15.74
+    ],
+    [
+     308.2,
+     15.04
+    ],
+    [
+     385.2,
+     14.24
+    ],
+    [
+     462.2,
+     14.74
+    ],
+    [
+     539.3,
+     14.74
+    ],
+    [
+     616.3,
+     13.84
+    ],
+    [
+     693.4,
+     12.74
+    ],
+    [
+     770.4,
+     13.14
+    ],
+    [
+     847.4,
+     13.44
+    ],
+    [
+     924.5,
+     12.34
+    ],
+    [
+     1001.5,
+     12.64
+    ],
+    [
+     1078.5,
+     11.14
+    ],
+    [
+     1155.6,
+     11.54
+    ],
+    [
+     1232.6,
+     10.44
+    ],
+    [
+     1309.7,
+     10.74
+    ],
+    [
+     1386.7,
+     9.74
+    ],
+    [
+     1463.7,
+     10.04
+    ],
+    [
+     1540.8,
+     9.14
+    ],
+    [
+     1617.8,
+     9.54
+    ],
+    [
+     1694.9,
+     8.24
+    ],
+    [
+     1771.9,
+     8.64
+    ],
+    [
+     1848.9,
+     7.74
+    ],
+    [
+     1926.0,
+     8.04
+    ],
+    [
+     2003.0,
+     7.24
+    ],
+    [
+     2080.1,
+     7.54
+    ],
+    [
+     2157.1,
+     6.64
+    ],
+    [
+     2234.1,
+     6.64
+    ],
+    [
+     2311.2,
+     5.64
+    ],
+    [
+     2388.2,
+     5.94
+    ],
+    [
+     2465.2,
+     4.84
+    ],
+    [
+     2542.3,
+     5.04
+    ],
+    [
+     2619.3,
+     3.74
+    ],
+    [
+     2696.4,
+     3.94
+    ],
+    [
+     2773.4,
+     2.54
+    ],
+    [
+     2850.4,
+     2.54
+    ],
+    [
+     2927.5,
+     0.84
+    ],
+    [
+     3004.5,
+     1.04
+    ],
+    [
+     3081.6,
+     0.24
     ]
    ],
+   "bathy_source": "NCEI Lake Superior grid (~92 m, coarse fallback) \u00b7 77 m \u00b7 T2",
+   "coarse": true,
    "isotherm_depth": 4.1,
-   "in_range_dist": 295.0,
-   "in_range": false,
-   "note": "12C water meets bottom at 295 m from shore (out of cast range 75 m)"
+   "in_range_dist": 22.2,
+   "in_range": true,
+   "note": "12C water meets bottom at 22 m from shore (IN cast range 75 m)"
   },
   {
    "id": "marina_east_mcvicar",
@@ -255,29 +643,264 @@ const DATA = {
     ],
     [
      20.0,
-     7.25
+     7.54
     ]
    ],
    "bathy": [
     [
-     0,
-     0
+     0.0,
+     0.0
     ],
     [
-     120,
-     6
+     6.6,
+     3.55
     ],
     [
-     439,
-     16.3
+     13.3,
+     3.55
+    ],
+    [
+     19.9,
+     3.55
+    ],
+    [
+     26.5,
+     3.59
+    ],
+    [
+     33.2,
+     3.48
+    ],
+    [
+     39.8,
+     3.53
+    ],
+    [
+     46.4,
+     3.57
+    ],
+    [
+     53.1,
+     3.57
+    ],
+    [
+     59.7,
+     3.5
+    ],
+    [
+     66.3,
+     3.5
+    ],
+    [
+     72.9,
+     3.75
+    ],
+    [
+     79.6,
+     5.34
+    ],
+    [
+     86.2,
+     7.04
+    ],
+    [
+     92.8,
+     7.04
+    ],
+    [
+     99.5,
+     6.5
+    ],
+    [
+     106.1,
+     6.5
+    ],
+    [
+     112.7,
+     7.45
+    ],
+    [
+     119.4,
+     8.11
+    ],
+    [
+     126.0,
+     8.11
+    ],
+    [
+     132.6,
+     8.16
+    ],
+    [
+     139.3,
+     8.16
+    ],
+    [
+     145.9,
+     7.97
+    ],
+    [
+     152.5,
+     7.97
+    ],
+    [
+     159.2,
+     7.89
+    ],
+    [
+     165.8,
+     7.89
+    ],
+    [
+     172.4,
+     7.89
+    ],
+    [
+     179.1,
+     7.98
+    ],
+    [
+     185.7,
+     7.98
+    ],
+    [
+     192.3,
+     8.47
+    ],
+    [
+     198.9,
+     8.47
+    ],
+    [
+     205.6,
+     8.49
+    ],
+    [
+     212.2,
+     8.49
+    ],
+    [
+     218.8,
+     8.53
+    ],
+    [
+     225.5,
+     8.53
+    ],
+    [
+     232.1,
+     8.72
+    ],
+    [
+     238.7,
+     8.72
+    ],
+    [
+     245.4,
+     8.72
+    ],
+    [
+     252.0,
+     8.7
+    ],
+    [
+     258.6,
+     8.84
+    ],
+    [
+     265.3,
+     8.9
+    ],
+    [
+     271.9,
+     8.9
+    ],
+    [
+     278.5,
+     8.76
+    ],
+    [
+     285.2,
+     8.76
+    ],
+    [
+     291.8,
+     9.12
+    ],
+    [
+     298.4,
+     9.12
+    ],
+    [
+     305.1,
+     9.01
+    ],
+    [
+     311.7,
+     9.01
+    ],
+    [
+     318.3,
+     9.01
+    ],
+    [
+     324.9,
+     9.16
+    ],
+    [
+     331.6,
+     9.16
+    ],
+    [
+     338.2,
+     9.19
+    ],
+    [
+     344.8,
+     9.19
+    ],
+    [
+     351.5,
+     9.19
+    ],
+    [
+     358.1,
+     9.31
+    ],
+    [
+     364.7,
+     9.31
+    ],
+    [
+     371.4,
+     9.07
+    ],
+    [
+     378.0,
+     9.07
+    ],
+    [
+     384.6,
+     9.01
+    ],
+    [
+     391.3,
+     9.01
+    ],
+    [
+     397.9,
+     9.21
     ]
    ],
+   "bathy_source": "CHS NONNA-10 (WCS GetCoverage, EPSG:3857) \u00b7 7 m \u00b7 T1",
+   "coarse": false,
    "isotherm_depth": 2.9,
-   "in_range_dist": 58.0,
+   "in_range_dist": 5.4,
    "in_range": true,
-   "note": "12C water meets bottom at 58 m from shore (IN cast range 75 m)"
+   "note": "12C water meets bottom at 5 m from shore (IN cast range 75 m)"
   }
- ]
+ ],
+ "attribution": "Bathymetry: NOAA National Centers for Environmental Information (NCEI). Contains intellectual property of the Canadian Hydrographic Service (CHS), Fisheries and Oceans Canada. Not for navigation."
 };
 
 const TEMP_STOPS = [[6,'--t6'],[9,'--t9'],[12,'--t12'],[15,'--t15'],[18,'--t18'],[21,'--t21']];
@@ -412,6 +1035,10 @@ function build(){
     stat.innerHTML=`<span>cold water from <b>${st.in_range_dist??'—'} m</b></span>`+
       `<span>${surf}→${deep}°C surface→deep</span>`;
     card.appendChild(stat);
+    const bsrc=document.createElement('div');bsrc.className='bsrc';
+    bsrc.innerHTML=`bathymetry: ${st.bathy_source}`+
+      (st.coarse?` <span class="warn">· coarse, no NONNA-10 nearshore here</span>`:``);
+    card.appendChild(bsrc);
     grid.appendChild(card);
   }
   document.getElementById('foot').innerHTML=
@@ -420,7 +1047,8 @@ function build(){
     `${DATA.target_c} °C laker ceiling; the orange line is your ${DATA.cast_range_m} m cast range. `+
     `Where the rising lakebed meets the dashed line is the closest point cold water sits on the `+
     `bottom — the green wedge is the slice of that cold water you can actually reach. `+
-    `Offset ${DATA.offset_c} °C · a tbay-fishcast proxy, refined by real bathymetry + a local logger.`;
+    `Offset ${DATA.offset_c} °C · a tbay-fishcast proxy, refined by real bathymetry + a local logger.`+
+    (DATA.attribution?`<div class="attrib">${DATA.attribution}</div>`:``);
 }
 build();
 new MutationObserver(()=>{document.getElementById('grid').innerHTML='';build();})
