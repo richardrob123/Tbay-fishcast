@@ -141,32 +141,22 @@ def score(detected_eps, truth_eps):
     return hits, misses, fa, per
 
 
-def no_skill_pod(detected_eps, truth_eps, season_days=107, trials=2000):
-    """Random-alarm baseline: for each station, place the SAME number of alarms at
-    random season days, cluster+match identically, average POD over trials. Deterministic
-    (index-seeded, no RNG per workflow rules -> use evenly spaced random-like offsets)."""
-    base_start = date(2025, 6, 15)
-    pods = []
-    for tno in range(trials):
-        h = m = 0
-        for sid in EXPOSED:
-            ndet = len(detected_eps.get(sid, []))
-            tr = truth_eps.get(sid, [])
-            if not tr:
-                continue
-            # spread ndet alarms deterministically by trial index (no Math.random)
-            offs = [((tno * 7 + k * 13) % season_days) for k in range(ndet)]
-            alarms = cluster_episodes([_day(base_start, o) for o in offs], MERGE_GAP)
-            res = match_episodes(tr, alarms, TAU_DAYS)
-            h += res.hits; m += res.misses
-        if h + m:
-            pods.append(h / (h + m))
-    return float(np.mean(pods)) if pods else float("nan")
-
-
-def _day(base, off):
-    from datetime import timedelta
-    return base + timedelta(days=int(off))
+def no_skill_pod(detected_eps, truth_eps, season_days=107):
+    """Analytic no-skill POD: if a station's `ndet` alarms were placed uniformly at
+    random over the season, the chance a given truth event is hit within +-tau days is
+    p = 1 - (1 - (2*tau+1)/season_days)**ndet. Expected pooled POD = sum(n_truth*p) /
+    sum(n_truth). This is what the detector's POD must beat to be more than luck."""
+    win = (2 * TAU_DAYS + 1) / season_days
+    exp_hits = n_truth = 0.0
+    for sid in EXPOSED:
+        ndet = len(detected_eps.get(sid, []))
+        nt = len(truth_eps.get(sid, []))
+        if nt == 0:
+            continue
+        p = 1.0 - (1.0 - win) ** ndet
+        exp_hits += nt * p
+        n_truth += nt
+    return float(exp_hits / n_truth) if n_truth else float("nan")
 
 
 def main() -> int:
