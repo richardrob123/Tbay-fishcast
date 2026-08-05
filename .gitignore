@@ -11,3 +11,4 @@ data/
 *.nc
 !tests/fixtures/*.nc
 .DS_Store
+scratch/

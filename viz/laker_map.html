@@ -1,0 +1,428 @@
+<title>Laker Cross-Shore — Thunder Bay</title>
+<style>
+  :root{
+    --ground:#e9edee; --panel:#f6f8f8; --ink:#152229; --muted:#5c7079;
+    --line:#c7d2d6; --hair:#dbe3e5;
+    --go:#2f9e63; --go-soft:#2f9e6322; --out:#8794a0;
+    --isotherm:#0a3a52; --castline:#c85a3c;
+    --accent:#2f7fa8;
+    /* temperature scale, cold -> warm */
+    --t6:#173a5c; --t9:#296f9c; --t12:#2f97a6; --t15:#79c199; --t18:#dcb84e; --t21:#d9793b;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --ground:#0c1417; --panel:#121e22; --ink:#dde7ea; --muted:#8aa0a8;
+      --line:#26383e; --hair:#1b2a2f; --out:#6d7d86; --isotherm:#7fd0ec; --castline:#e58a5f; }
+  }
+  :root[data-theme="light"]{ --ground:#e9edee; --panel:#f6f8f8; --ink:#152229; --muted:#5c7079;
+    --line:#c7d2d6; --hair:#dbe3e5; --out:#8794a0; --isotherm:#0a3a52; --castline:#c85a3c; }
+  :root[data-theme="dark"]{ --ground:#0c1417; --panel:#121e22; --ink:#dde7ea; --muted:#8aa0a8;
+    --line:#26383e; --hair:#1b2a2f; --out:#6d7d86; --isotherm:#7fd0ec; --castline:#e58a5f; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:32px 20px 56px}
+  header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;
+    gap:16px;border-bottom:1px solid var(--line);padding-bottom:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  h1{font-size:26px;line-height:1.15;margin:0;text-wrap:balance;font-weight:640}
+  h1 .thin{color:var(--muted);font-weight:400}
+  .stamp{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
+  .verdict{font-family:var(--mono);font-size:13px;margin:18px 0 4px;color:var(--ink)}
+  .verdict b{color:var(--go)}
+  .legend{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;margin:14px 0 26px;
+    font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .scale{display:flex;align-items:center;gap:8px}
+  .scale .bar{height:10px;width:150px;border-radius:2px;
+    background:linear-gradient(90deg,var(--t6),var(--t9),var(--t12),var(--t15),var(--t18),var(--t21))}
+  .key{display:inline-flex;align-items:center;gap:6px}
+  .key .swatch{width:12px;height:12px;border-radius:2px}
+  .dash{width:16px;border-top:2px dashed var(--isotherm)}
+  .cast{width:16px;border-top:2px solid var(--castline)}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr 1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;
+    display:flex;flex-direction:column;gap:10px}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .card h2{font-size:15px;margin:0;font-weight:600;line-height:1.25}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;
+    padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .chip.go{background:var(--go-soft);color:var(--go);border:1px solid var(--go)}
+  .chip.out{background:transparent;color:var(--out);border:1px solid var(--line)}
+  .fig{width:100%;overflow-x:auto}
+  svg{display:block;width:100%;height:auto;font-family:var(--mono)}
+  .stat{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;
+    justify-content:space-between;gap:8px;border-top:1px solid var(--hair);padding-top:9px}
+  .stat b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .note{font-size:12px;color:var(--muted);line-height:1.45}
+  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;
+    font-size:12px;color:var(--muted);line-height:1.55}
+  footer b{color:var(--ink)}
+  .caveat{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--castline);
+    border-radius:8px;padding:12px 14px;margin-top:14px;font-size:12.5px}
+  code{font-family:var(--mono);font-size:.92em;background:var(--hair);padding:1px 5px;border-radius:4px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">tbay-fishcast · cross-shore laker brief</p>
+      <h1>Where the cold water<br><span class="thin">meets casting range</span></h1>
+    </div>
+    <div class="stamp" id="stamp"></div>
+  </header>
+
+  <p class="verdict" id="verdict"></p>
+  <div class="legend">
+    <div class="scale"><span>6°C</span><span class="bar"></span><span>21°C+</span></div>
+    <span class="key"><span class="dash"></span>12 °C laker ceiling</span>
+    <span class="key"><span class="cast"></span>cast range (75 m)</span>
+    <span class="key"><span class="swatch" style="background:var(--go)"></span>reachable cold water</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="caveat">
+    <b>Read this as a proxy, not a survey.</b> The temperature comes from LSOFS (NOAA's Lake
+    Superior model) with a <b>provisional −3 °C correction</b> — pending a Thunder Bay logger,
+    the “GO” calls are directionally right but the exact distances can move. Bathymetry is
+    <b>coarse</b> (a few soundings + a model anchor; MacKenzie’s slope is barely measured).
+    LSOFS can’t resolve inside the cast zone, so this answers <b>“is the cold water shallow &amp;
+    close today?”</b> — not a metre-accurate inshore map. Real contour data drops straight in.
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const DATA = {
+ "day": "2026-08-04",
+ "cast_range_m": 75.0,
+ "target_c": 12.0,
+ "offset_c": -3.0,
+ "stations": [
+  {
+   "id": "silver_harbour_outer",
+   "name": "Silver Harbour \u2014 outer rocks",
+   "profile": [
+    [
+     1.0,
+     14.7
+    ],
+    [
+     2.0,
+     13.32
+    ],
+    [
+     4.0,
+     10.64
+    ],
+    [
+     6.0,
+     9.4
+    ],
+    [
+     8.0,
+     8.53
+    ],
+    [
+     10.0,
+     8.22
+    ],
+    [
+     15.0,
+     7.57
+    ],
+    [
+     20.0,
+     7.57
+    ]
+   ],
+   "bathy": [
+    [
+     0,
+     0
+    ],
+    [
+     75,
+     6
+    ],
+    [
+     300,
+     9
+    ],
+    [
+     1183,
+     11.9
+    ]
+   ],
+   "isotherm_depth": 3.0,
+   "in_range_dist": 37.0,
+   "in_range": true,
+   "note": "12C water meets bottom at 37 m from shore (IN cast range 75 m)"
+  },
+  {
+   "id": "mackenzie_point",
+   "name": "MacKenzie Point \u2014 flat-rock point",
+   "profile": [
+    [
+     1.0,
+     15.16
+    ],
+    [
+     2.0,
+     15.14
+    ],
+    [
+     4.0,
+     12.13
+    ],
+    [
+     6.0,
+     10.2
+    ],
+    [
+     8.0,
+     8.9
+    ],
+    [
+     10.0,
+     7.99
+    ],
+    [
+     15.0,
+     6.91
+    ],
+    [
+     20.0,
+     6.91
+    ]
+   ],
+   "bathy": [
+    [
+     0,
+     0
+    ],
+    [
+     500,
+     7
+    ],
+    [
+     2494,
+     13.8
+    ]
+   ],
+   "isotherm_depth": 4.1,
+   "in_range_dist": 295.0,
+   "in_range": false,
+   "note": "12C water meets bottom at 295 m from shore (out of cast range 75 m)"
+  },
+  {
+   "id": "marina_east_mcvicar",
+   "name": "Marina Park east / McVicar mouth",
+   "profile": [
+    [
+     1.0,
+     13.93
+    ],
+    [
+     2.0,
+     13.51
+    ],
+    [
+     4.0,
+     10.19
+    ],
+    [
+     6.0,
+     9.39
+    ],
+    [
+     8.0,
+     8.84
+    ],
+    [
+     10.0,
+     8.5
+    ],
+    [
+     15.0,
+     7.54
+    ],
+    [
+     20.0,
+     7.25
+    ]
+   ],
+   "bathy": [
+    [
+     0,
+     0
+    ],
+    [
+     120,
+     6
+    ],
+    [
+     439,
+     16.3
+    ]
+   ],
+   "isotherm_depth": 2.9,
+   "in_range_dist": 58.0,
+   "in_range": true,
+   "note": "12C water meets bottom at 58 m from shore (IN cast range 75 m)"
+  }
+ ]
+};
+
+const TEMP_STOPS = [[6,'--t6'],[9,'--t9'],[12,'--t12'],[15,'--t15'],[18,'--t18'],[21,'--t21']];
+function cssv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function tempColor(t){
+  const s=TEMP_STOPS;
+  if(t<=s[0][0])return cssv(s[0][1]);
+  if(t>=s[s.length-1][0])return cssv(s[s.length-1][1]);
+  for(let i=0;i<s.length-1;i++){if(t>=s[i][0]&&t<=s[i+1][0]){
+    const f=(t-s[i][0])/(s[i+1][0]-s[i][0]);return mix(cssv(s[i][1]),cssv(s[i+1][1]),f);}}
+  return cssv(s[0][1]);
+}
+function hex(c){const m=c.match(/\w\w/g);return m?m.map(x=>parseInt(x,16)):[0,0,0];}
+function mix(a,b,f){const A=hex(a),B=hex(b);return'#'+A.map((x,i)=>
+  Math.round(x+(B[i]-x)*f).toString(16).padStart(2,'0')).join('');}
+
+function interpDepthTemp(profile,z){
+  // profile: [[depth,temp]] ascending
+  if(z<=profile[0][0])return profile[0][1];
+  for(let i=0;i<profile.length-1;i++){const[z0,t0]=profile[i],[z1,t1]=profile[i+1];
+    if(z>=z0&&z<=z1){return t0+(t1-t0)*(z-z0)/(z1-z0);}}
+  return profile[profile.length-1][1];
+}
+function bathyDepth(bathy,x){
+  if(x<=bathy[0][0])return bathy[0][0]===0?0:bathy[0][1];
+  for(let i=0;i<bathy.length-1;i++){const[x0,d0]=bathy[i],[x1,d1]=bathy[i+1];
+    if(x>=x0&&x<=x1){return d0+(d1-d0)*(x-x0)/(x1-x0);}}
+  return bathy[bathy.length-1][1];
+}
+
+function render(st,cast,target){
+  const W=360,H=210, m={l:34,r:12,t:12,b:26};
+  const iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const inr=st.in_range_dist, iso=st.isotherm_depth;
+  const XMAX=Math.max(cast*1.7, (inr||cast)*1.25, 120);
+  const YMAX=Math.max(15, (iso||6)+8);
+  const X=x=>m.l+(x/XMAX)*iw, Y=d=>m.t+(d/YMAX)*ih;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('role','img');
+  svg.setAttribute('aria-label',`${st.name}: ${st.note}`);
+  const add=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);
+    if(p)p.appendChild(e);else svg.appendChild(e);return e;};
+
+  // temperature-filled water column: vertical strips colored by profile temp at each depth,
+  // clipped to the water region (above bathymetry). Draw column by column.
+  const cols=90;
+  for(let c=0;c<cols;c++){
+    const x0=(c/cols)*XMAX, x1=((c+1)/cols)*XMAX;
+    const bd=bathyDepth(st.bathy,(x0+x1)/2);
+    const rows=42;
+    for(let r=0;r<rows;r++){
+      const d0=(r/rows)*YMAX, d1=((r+1)/rows)*YMAX;
+      if(d0>=bd)continue; // below lakebed
+      const dd=Math.min(d1,bd);
+      const t=interpDepthTemp(st.profile,(d0+dd)/2);
+      add('rect',{x:X(x0).toFixed(1),y:Y(d0).toFixed(1),
+        width:(X(x1)-X(x0)+0.6).toFixed(1),height:(Y(dd)-Y(d0)+0.4).toFixed(1),
+        fill:tempColor(t)});
+    }
+  }
+  // reachable cold-water zone: bottom, beyond the isotherm/bottom intersection, within cast
+  if(inr!==null && inr<=cast){
+    let path=`M ${X(inr)} ${Y(iso)}`;
+    for(let x=inr;x<=cast;x+=4){path+=` L ${X(x)} ${Y(bathyDepth(st.bathy,x))}`;}
+    path+=` L ${X(cast)} ${Y(iso)} Z`;
+    add('path',{d:path,fill:cssv('--go'),'fill-opacity':.28,stroke:cssv('--go'),
+      'stroke-width':1});
+  }
+  // lakebed line + fill under it
+  let bp=`M ${X(0)} ${Y(bathyDepth(st.bathy,0))}`;
+  for(let x=0;x<=XMAX;x+=4){bp+=` L ${X(x)} ${Y(bathyDepth(st.bathy,x))}`;}
+  const bedFill=bp+` L ${X(XMAX)} ${Y(YMAX)} L ${X(0)} ${Y(YMAX)} Z`;
+  add('path',{d:bedFill,fill:cssv('--panel')});
+  add('path',{d:bedFill,fill:cssv('--ink'),'fill-opacity':.10});
+  add('path',{d:bp,fill:'none',stroke:cssv('--ink'),'stroke-width':1.4,'stroke-opacity':.55});
+  // shore wedge label
+  add('text',{x:X(0)+2,y:Y(YMAX)-4,'font-size':9,fill:cssv('--muted')},null).textContent='shore';
+
+  // 12°C isotherm
+  if(iso!==null){
+    add('line',{x1:X(0),y1:Y(iso),x2:X(XMAX),y2:Y(iso),stroke:cssv('--isotherm'),
+      'stroke-width':1.6,'stroke-dasharray':'5 4'});
+    const lab=add('text',{x:X(XMAX)-2,y:Y(iso)-4,'text-anchor':'end','font-size':9.5,
+      fill:cssv('--isotherm')});lab.textContent=`${target}°C @ ${iso} m`;
+  }
+  // cast range line
+  add('line',{x1:X(cast),y1:m.t,x2:X(cast),y2:Y(YMAX),stroke:cssv('--castline'),
+    'stroke-width':1.4});
+  const cl=add('text',{x:X(cast)+3,y:m.t+10,'font-size':9,fill:cssv('--castline')});
+  cl.textContent=`${cast} m`;
+  // intersection marker
+  if(inr!==null){
+    const inRange=inr<=cast;
+    add('circle',{cx:X(inr),cy:Y(iso),r:4.5,fill:inRange?cssv('--go'):cssv('--out'),
+      stroke:cssv('--panel'),'stroke-width':1.5});
+    const t=add('text',{x:X(inr),y:Y(iso)+(iso<3?18:-9),'text-anchor':'middle','font-size':10,
+      'font-weight':600,fill:inRange?cssv('--go'):cssv('--out')});
+    t.textContent=`${inr} m`;
+  }
+  // axes
+  add('line',{x1:m.l,y1:m.t,x2:m.l,y2:Y(YMAX),stroke:cssv('--line'),'stroke-width':1});
+  add('line',{x1:m.l,y1:Y(YMAX),x2:W-m.r,y2:Y(YMAX),stroke:cssv('--line'),'stroke-width':1});
+  for(const d of [0,5,10,15]){if(d>YMAX)continue;
+    const tk=add('text',{x:m.l-4,y:Y(d)+3,'text-anchor':'end','font-size':8.5,fill:cssv('--muted')});
+    tk.textContent=d+'m';}
+  for(const x of [0,50,100,150,200,300]){if(x>XMAX)continue;
+    const tk=add('text',{x:X(x),y:H-6,'text-anchor':'middle','font-size':8.5,fill:cssv('--muted')});
+    tk.textContent=x+'m';}
+  return svg;
+}
+
+function build(){
+  document.getElementById('stamp').innerHTML=
+    `${DATA.day}<br>LSOFS t12z · valid 12:00 UTC`;
+  const gos=DATA.stations.filter(s=>s.in_range);
+  const v=document.getElementById('verdict');
+  v.innerHTML = gos.length
+    ? `Today: <b>${gos.map(s=>s.name.split(' — ')[0].split(' / ')[0]).join(' &amp; ')}</b> — laker water within cast range.`
+    : `Today: no station has ≤12 °C water inside cast range — lakers are offshore/deep.`;
+  const grid=document.getElementById('grid');
+  for(const st of DATA.stations){
+    const card=document.createElement('div');card.className='card';
+    const short=st.name;
+    card.innerHTML=`<div class="top"><h2>${short}</h2>
+      <span class="chip ${st.in_range?'go':'out'}">${st.in_range?'GO':'OUT'}</span></div>`;
+    const fig=document.createElement('div');fig.className='fig';
+    fig.appendChild(render(st,DATA.cast_range_m,DATA.target_c));card.appendChild(fig);
+    const surf=st.profile[0][1], deep=st.profile[st.profile.length-1][1];
+    const stat=document.createElement('div');stat.className='stat';
+    stat.innerHTML=`<span>cold water from <b>${st.in_range_dist??'—'} m</b></span>`+
+      `<span>${surf}→${deep}°C surface→deep</span>`;
+    card.appendChild(stat);
+    grid.appendChild(card);
+  }
+  document.getElementById('foot').innerHTML=
+    `<b>How to read a panel.</b> Left edge is shore; going right is farther out and deeper. `+
+    `Water is colored by temperature (warm at top, cold below). The dashed line is the `+
+    `${DATA.target_c} °C laker ceiling; the orange line is your ${DATA.cast_range_m} m cast range. `+
+    `Where the rising lakebed meets the dashed line is the closest point cold water sits on the `+
+    `bottom — the green wedge is the slice of that cold water you can actually reach. `+
+    `Offset ${DATA.offset_c} °C · a tbay-fishcast proxy, refined by real bathymetry + a local logger.`;
+}
+build();
+new MutationObserver(()=>{document.getElementById('grid').innerHTML='';build();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
