@@ -182,6 +182,20 @@ def main(station: str, year: int) -> int:
           f"{lsofs_anom_mae:.2f}C | SKILL SCORE = {skill:+.2f}  "
           f"[{'beats climatology' if skill > 0 else 'WORSE than climatology'}]")
 
+    # --- BIAS CORRECTION, held-out (fit offset on first 60%, apply to last 40%) ---
+    from tbay_fishcast.features.calibration import BiasCorrection
+    n = len(j); cut = int(n * 0.6)
+    fit, test = j.iloc[:cut], j.iloc[cut:]
+    bc = BiasCorrection.fit(fit["lsofs"].to_numpy(), fit["buoy"].to_numpy(),
+                            fit_note="early-season fit")
+    raw_mae = float(np.mean(np.abs(test["lsofs"] - test["buoy"])))
+    corr_mae = float(np.mean(np.abs(bc.apply(test["lsofs"].to_numpy()) - test["buoy"].to_numpy())))
+    print(f"\n  BIAS CORRECTION (offset {bc.offset_c:+.2f}C fit on early {bc.n_fit} pts, "
+          f"applied to HELD-OUT late season):")
+    print(f"    MAE  raw={raw_mae:.2f}C -> corrected={corr_mae:.2f}C  "
+          f"({100*(raw_mae-corr_mae)/raw_mae:+.0f}% "
+          f"{'improvement' if corr_mae < raw_mae else 'WORSE'})")
+
     e_l, e_b = events(j["lsofs"]), events(j["buoy"])
     m = match_episodes(e_b, e_l, tau_days=1)
     c = Contingency(m.hits, m.misses, m.false_alarms, correct_neg=0)

@@ -32,6 +32,10 @@ class Station:
     node_lon: float | None = None
     coord_tier: str = "T4"
     field_verify: bool = True
+    # Additive LSOFS bias correction (°C), fit against co-located in-situ truth
+    # (buoy/logger). None until such data exists for this station — never a guess.
+    # Buoy validation shows LSOFS runs +2.4…3.6 °C warm at mid-depth (docs/BUOY_VALIDATION.md).
+    calibration_offset_c: float | None = None
 
     @property
     def has_lsofs(self) -> bool:
@@ -126,6 +130,7 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
             node_dist_m=s.get("node_dist_m"),
             node_lat=s.get("node_lat"),
             node_lon=s.get("node_lon"),
+            calibration_offset_c=s.get("calibration_offset_c"),
             coord_tier=s.get("coord_tier", "T4"),
             field_verify=bool(s.get("field_verify", True)),
         )
