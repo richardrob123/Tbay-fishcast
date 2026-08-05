@@ -54,11 +54,23 @@ Verified station IDs (bbox −89.7,48.2 / −89.0,48.7):
 | McVicar | 02AB019 (McVicar Creek at TBay) |
 | Other | 02AB018 **LAKE SUPERIOR AT THUNDER BAY** (harbour level? → relevant to the CHS/DFO human task), 02AB022 Corbett, 02AB023 Slate R., 02AB027 Whitefish R., 02AB002/009 Shebandowan |
 
-## NDBC Slate Island buoy 45136 (`www.ndbc.noaa.gov`)
+## NDBC buoys — in-situ water temperature (`www.ndbc.noaa.gov`)
 
-- `data/realtime2/45136.txt`, col `WTMP` (water temp °C). Read 8.8 °C @ 2026-08-05 00:00Z.
-- ~165 km E, ~1 m, exposed open lake → far colder than the Thunder Bay embayment
-  (secondary proxy for event co-occurrence, not absolute temperature).
+**The Phase-0 breakthrough truth source** (found 2026-08-05 after an earlier wrong
+conclusion that no independent subsurface truth existed). NDBC `.ocean` files carry
+water temperature at a real thermistor depth (`DEPTH`, `OTMP`). LSOFS is a whole-lake
+model, so any Superior buoy is independent truth for its subsurface/upwelling skill.
+
+| buoy | location | water depth | sensor | archive |
+|---|---|---|---|---|
+| **45027** | 46.860 N, 91.930 W (western Superior, McQuade) | 52 m | 1 m (2024–25), 6 m (2026) | `historical/ocean/45027o<YR>.txt.gz` 2024, 2025 full Jun–Sep; `realtime2/45027.ocean` last ~45 d |
+| **45028** | 46.814 N, 91.829 W (western Superior) | 49 m | 1 m | 2024 (to Aug 9), 2025 full |
+| 45136 (Slate I., EC) | ~165 km E of TBay | — | 1 m surface | secondary; too distant/surface |
+
+These sit on the "Duluth twin" upwelling shore (seed corpus) and witness upwelling
+in situ (45027 2025: 1 m range 7.4–24 °C, max 48 h drop 12 °C — a real thermistor sees
+the events GLSEA's smoothed daily composite cannot). Client: `ingest/ndbc.py`.
+Used by `scripts/validate_buoy.py` for the real G1/G2 (`docs/BUOY_VALIDATION.md`).
 
 ## Reachability note
 
