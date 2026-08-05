@@ -27,7 +27,6 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
-from scipy.ndimage import distance_transform_edt
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import matplotlib  # noqa: E402
@@ -36,6 +35,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 
 from tbay_fishcast.config import load_config  # noqa: E402
+from tbay_fishcast.features import reachability as reachability_mod  # noqa: E402
 from tbay_fishcast.features import thermocline  # noqa: E402
 from tbay_fishcast.features.wind import in_sector, FAVORABLE_SECTOR  # noqa: E402
 from tbay_fishcast.ingest import basemap, era5_wind, glsea, ndbc, nonna  # noqa: E402
@@ -130,7 +130,7 @@ def render_spot(station, patch, band, surf_c, bias, day):
     d = patch.depth
     res = nonna.ground_res_m(patch.res_mercator_m, station.lat)
     water = np.isfinite(d)
-    dist = distance_transform_edt(water) * res
+    dist = reachability_mod.shore_distance_m(d, res)
     iso_c = band["central"]
     lo = band["shallow"] if band["shallow"] is not None else iso_c
     hi = band["deep"] if band["deep"] is not None else iso_c
@@ -138,10 +138,9 @@ def render_spot(station, patch, band, surf_c, bias, day):
     ext = [-nx / 2 * res, nx / 2 * res, -ny / 2 * res, ny / 2 * res]
     dd = np.where(water, d, np.nan)
 
-    # reachable cold water: bottom at/below isotherm AND within cast range
-    reachable = water & (dd >= iso_c) & (dist <= CAST_M)
-    reach_area = int(reachable.sum()) * res * res
-    reach_dist = float(dist[reachable].min()) if reachable.any() else None
+    # reachable cold water: bottom at/below isotherm AND within cast range (shared logic)
+    reachable = reachability_mod.reachable_mask(d, dist, iso_c, CAST_M)
+    _, reach_dist, reach_area = reachability_mod.reachability(d, dist, iso_c, CAST_M, res)
 
     # satellite basemap for georeference validation (aligned to the patch's 3857 bounds)
     sat = None
