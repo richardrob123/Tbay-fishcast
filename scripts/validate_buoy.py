@@ -162,6 +162,26 @@ def main(station: str, year: int) -> int:
           f"std lsofs={j['lsofs'].std():.2f} buoy={j['buoy'].std():.2f} | "
           f"seasonal(30d) MAE={seas.mae:.2f}")
 
+    # --- DECISION METRIC (ADR-006): skill vs climatology, on DETRENDED anomalies ---
+    # Both series trivially rise through summer; climatology predicts that for free.
+    # LSOFS earns its keep only if it predicts the DEVIATION from the seasonal normal.
+    # Seasonal normal = 15-day centered rolling mean (per series); anomaly = value - normal.
+    win = 60  # 6-hourly samples over 15 days
+    la = (j["lsofs"] - j["lsofs"].rolling(win, center=True, min_periods=win // 2).mean())
+    ba = (j["buoy"] - j["buoy"].rolling(win, center=True, min_periods=win // 2).mean())
+    an = pd.concat({"l": la, "b": ba}, axis=1).dropna()
+    anom_r = float(np.corrcoef(an["l"], an["b"])[0, 1]) if len(an) > 5 else float("nan")
+    # climatology baseline = predict zero anomaly (i.e. the seasonal normal itself).
+    clim_mae = float(np.mean(np.abs(an["b"])))             # error of "always normal"
+    lsofs_anom_mae = float(np.mean(np.abs(an["l"] - an["b"])))  # error of LSOFS's anomaly call
+    skill = 1.0 - lsofs_anom_mae / clim_mae if clim_mae > 0 else float("nan")
+    print(f"\n  ANOMALY SKILL (the decision metric, detrended):")
+    print(f"    corr(LSOFS anomaly, buoy anomaly) = {anom_r:+.2f}  (this is the REAL skill,"
+          f" not the {st.pearson_r:+.2f} inflated by the shared seasonal cycle)")
+    print(f"    climatology MAE (always-normal) = {clim_mae:.2f}C | LSOFS-anomaly MAE = "
+          f"{lsofs_anom_mae:.2f}C | SKILL SCORE = {skill:+.2f}  "
+          f"[{'beats climatology' if skill > 0 else 'WORSE than climatology'}]")
+
     e_l, e_b = events(j["lsofs"]), events(j["buoy"])
     m = match_episodes(e_b, e_l, tau_days=1)
     c = Contingency(m.hits, m.misses, m.false_alarms, correct_neg=0)
