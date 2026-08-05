@@ -13,8 +13,8 @@ from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_da
 
 GOLDEN = {
     "silver_harbour_outer": {2.0: 14.558, 6.0: 11.141, 10.0: 10.171},
-    "mackenzie_point": {2.0: 17.772, 6.0: 13.146, 10.0: 11.546},
-    "marina_east_mcvicar": {2.0: 18.201, 6.0: 13.964, 10.0: 12.366},
+    "mackenzie_point": {2.0: 12.509, 6.0: 11.087, 10.0: 9.452},
+    "marina_east_mcvicar": {2.0: 18.120, 6.0: 14.033, 10.0: 12.760},
 }
 VALID_TIME = datetime(2026, 8, 3, 18, 0, tzinfo=timezone.utc)
 

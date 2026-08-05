@@ -1,26 +1,26 @@
 {
   "silver_harbour_outer": {
     "node": 29448,
-    "node_depth_m": 14.90,
+    "node_depth_m": 14.9,
     "dist_m": 721.6,
     "node_lat": 48.50255,
     "node_lon": 271.02148,
     "fixture_node": 86
   },
   "mackenzie_point": {
-    "node": 29446,
-    "node_depth_m": 13.83,
-    "dist_m": 2493.7,
-    "node_lat": 48.47858,
-    "node_lon": 270.88858,
-    "fixture_node": 84
+    "node": 29162,
+    "node_depth_m": 16.77,
+    "dist_m": 1076.1,
+    "node_lat": 48.51826,
+    "node_lon": 271.06943,
+    "fixture_node": 60
   },
   "marina_east_mcvicar": {
-    "node": 29138,
-    "node_depth_m": 16.33,
-    "dist_m": 439.1,
-    "node_lat": 48.42956,
-    "node_lon": 270.79544,
-    "fixture_node": 36
+    "node": 28850,
+    "node_depth_m": 15.92,
+    "dist_m": 194.5,
+    "node_lat": 48.4334,
+    "node_lon": 270.78662,
+    "fixture_node": 14
   }
 }

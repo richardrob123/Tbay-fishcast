@@ -45,32 +45,32 @@ stations:
     field_verify: true
 
   - id: mackenzie_point
-    name: "MacKenzie Point — flat-rock point"
-    lat: 48.5010
-    lon: -89.1120
+    name: "MacKenzie Point Conservation Area — point"
+    lat: 48.52294                 # CORRECTED 2026-08-05: operator GPS (48°31'22.6\"N 88°56'36.1\"W);
+    lon: -88.94336                # old coord was ~15 km W and inland (T4 error)
     lsofs_shore: true
-    exposure_bearing_deg: 120
-    lsofs_node: 29446             # 2.5 km offshore — at LSOFS cell scale; provisional
-    node_depth_m: 13.83
-    node_dist_m: 2493.7
-    node_lat: 48.47858
-    node_lon: -89.11142
-    coord_tier: T4
-    field_verify: true
+    exposure_bearing_deg: 140      # rocky point faces S/SE into open water
+    lsofs_node: 29162             # re-pinned for the corrected coord (min_depth 10 m)
+    node_depth_m: 16.77
+    node_dist_m: 1076.0
+    node_lat: 48.51826
+    node_lon: -88.93057
+    coord_tier: T2                # operator-supplied GPS + satellite match
+    field_verify: false
 
   - id: marina_east_mcvicar
-    name: "Marina Park east / McVicar mouth"
-    lat: 48.4335
-    lon: -89.2050
+    name: "Marina Park — Prince Arthur's Landing point"
+    lat: 48.43514                 # CORRECTED 2026-08-05: operator GPS (48°26'06.5\"N 89°12'48.8\"W);
+    lon: -89.21356                # old coord was ~600 m offshore (T4 error)
     lsofs_shore: true
     exposure_bearing_deg: 110      # breakwall-filtered; upwelling signal attenuated
-    lsofs_node: 29138
-    node_depth_m: 16.33
-    node_dist_m: 439.1
-    node_lat: 48.42956
-    node_lon: -89.20456
-    coord_tier: T4
-    field_verify: true
+    lsofs_node: 28850             # re-pinned for the corrected coord (min_depth 10 m)
+    node_depth_m: 15.92
+    node_dist_m: 194.0
+    node_lat: 48.43340
+    node_lon: -89.21338
+    coord_tier: T2                # operator-supplied GPS + satellite match
+    field_verify: false
 
   # --- River / warmwater stations: NO LSOFS node (lake model does not represent them) ---
   - id: mountdale_kam
