@@ -128,6 +128,7 @@ def main(argv) -> int:
     print(brief)
 
     # notify only on a change (or a fresh open)
+    pushed = True
     if transitions:
         opened = [t for t in transitions if t[1]]
         closed = [t for t in transitions if not t[1]]
@@ -138,11 +139,17 @@ def main(argv) -> int:
         if stale:
             body += f"\n⚠️ data {age_h:.0f} h old"
         tags = "fishing_pole_and_fish" if opened else "wind_blowing_face"
-        push_ntfy(title, body, tags=tags, priority="high" if opened else "default")
+        pushed = push_ntfy(title, body, tags=tags, priority="high" if opened else "default")
     else:
         print("(no change since last run — no push)")
 
-    STATE.write_text(json.dumps(state))
+    # only advance the alert state when the push actually went out (or there was
+    # nothing to send / dry-run): a failed delivery must retry on the next run,
+    # not be silently marked as alerted.
+    if pushed or not transitions or not os.environ.get("NTFY_TOPIC"):
+        STATE.write_text(json.dumps(state))
+    else:
+        print("push failed — state not advanced; will retry next run")
     return 0
 
 
