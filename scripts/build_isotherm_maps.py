@@ -38,7 +38,7 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import thermocline  # noqa: E402
 from tbay_fishcast.features.wind import in_sector, FAVORABLE_SECTOR  # noqa: E402
-from tbay_fishcast.ingest import era5_wind, glsea, ndbc, nonna  # noqa: E402
+from tbay_fishcast.ingest import basemap, era5_wind, glsea, ndbc, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first, station_node_map  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_nodes, valid_time_from_dataset  # noqa: E402
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
@@ -143,31 +143,49 @@ def render_spot(station, patch, band, surf_c, bias, day):
     reach_area = int(reachable.sum()) * res * res
     reach_dist = float(dist[reachable].min()) if reachable.any() else None
 
+    # satellite basemap for georeference validation (aligned to the patch's 3857 bounds)
+    sat = None
+    try:
+        sat = basemap.fetch_imagery_3857(patch.bounds_3857, size_px=700)
+    except Exception as e:  # noqa: BLE001
+        print(f"    (satellite basemap unavailable: {str(e)[:50]})")
+
+    from matplotlib.patheffects import withStroke
+    halo = [withStroke(linewidth=2.2, foreground="black")]
+
     fig, ax = plt.subplots(figsize=(6.4, 6.4))
-    ax.set_facecolor("#efe9df")
-    im = ax.imshow(np.ma.masked_invalid(d), origin="upper", extent=ext,
-                   cmap=BATHY_CMAP, vmin=0, vmax=max(12, float(np.nanpercentile(dd, 98))))
+    ax.set_facecolor("#0a0d10")
+    if sat is not None:
+        ax.imshow(sat, origin="upper", extent=ext, interpolation="bilinear")
+        depth_alpha, shore_col, sl_w = 0.42, "#8ff7ff", 1.6
+    else:
+        ax.set_facecolor("#efe9df")
+        depth_alpha, shore_col, sl_w = 1.0, "#333333", 1.1
+    im = ax.imshow(np.ma.masked_invalid(d), origin="upper", extent=ext, cmap=BATHY_CMAP,
+                   vmin=0, vmax=max(12, float(np.nanpercentile(dd, 98))), alpha=depth_alpha)
     cb = plt.colorbar(im, shrink=0.82, pad=0.02); cb.set_label("depth (m)")
+    # shoreline = NONNA water/land edge; the alignment check against the imagery
     ax.contour(np.where(water, d, -1), levels=[0.02], extent=ext, origin="upper",
-               colors="#333", linewidths=1.1)
+               colors=shore_col, linewidths=sl_w)
     ax.contour(dist, levels=[CAST_M], extent=ext, origin="upper",
-               colors="#e8791a", linewidths=1.2, linestyles="dashed")
+               colors="#ffb84d", linewidths=1.3, linestyles="dashed")
     if lo != hi:
         ax.contourf(dd, levels=sorted([lo, hi]), extent=ext, origin="upper",
-                    colors=["#d21f3c"], alpha=0.16)
+                    colors=["#ff2d55"], alpha=0.20)
     if iso_c is not None:
         ax.contour(dd, levels=[iso_c], extent=ext, origin="upper",
-                   colors="#c1121f", linewidths=2.4)
+                   colors="#ff173a", linewidths=2.6)
     if reachable.any():
         ax.contourf(reachable.astype(float), levels=[0.5, 1.5], extent=ext,
-                    origin="upper", colors=["#2e8b57"], alpha=0.45, hatches=["///"])
+                    origin="upper", colors=["#39d353"], alpha=0.5, hatches=["///"])
     ax.plot(0, 0, marker="*", ms=15, color="w", mec="k")
-    # scale bar 200 m + north
-    ax.plot([ext[0] + 60, ext[0] + 260], [ext[2] + 55, ext[2] + 55], "k", lw=3)
-    ax.text(ext[0] + 60, ext[2] + 78, "200 m", fontsize=8)
-    ax.annotate("N", xy=(ext[1] - 45, ext[3] - 42), fontsize=11, fontweight="bold", ha="center")
+    ax.plot([ext[0] + 60, ext[0] + 260], [ext[2] + 55, ext[2] + 55], "w", lw=3,
+            path_effects=halo)
+    ax.text(ext[0] + 60, ext[2] + 78, "200 m", fontsize=8, color="w", path_effects=halo)
+    ax.annotate("N", xy=(ext[1] - 45, ext[3] - 42), fontsize=11, fontweight="bold",
+                ha="center", color="w", path_effects=halo)
     ax.annotate("", xy=(ext[1] - 45, ext[3] - 48), xytext=(ext[1] - 45, ext[3] - 120),
-                arrowprops=dict(arrowstyle="->", lw=1.4))
+                arrowprops=dict(arrowstyle="->", lw=1.6, color="w"))
     band_txt = f"{lo:.1f}–{hi:.1f} m" if lo != hi else f"{iso_c:.1f} m"
     ax.set_title(f"{station.name}\n{day} · surface {surf_c:.1f}°C · "
                  f"{TARGET_C:.0f}°C isotherm {band_txt}", fontsize=9.5)
@@ -179,7 +197,7 @@ def render_spot(station, patch, band, surf_c, bias, day):
         "png_b64": base64.b64encode(buf.getvalue()).decode(),
         "reach_area_m2": reach_area, "reach_dist_m": reach_dist,
         "iso_central": iso_c, "iso_lo": lo, "iso_hi": hi,
-        "reachable": bool(reachable.any()),
+        "reachable": bool(reachable.any()), "has_sat": sat is not None,
         "coverage": float(water.mean()), "res_m": res,
     }
 
@@ -260,12 +278,15 @@ th{{color:var(--ink)}}
 </style>
 <div class="wrap">
   <h1>Laker threshold lines — Thunder Bay</h1>
-  <div class="sub">{day} · looking straight down. The red line is where the lake bottom
-    crosses the {TARGET_C:.0f} °C laker ceiling — the closest cold water sits to shore.
-    Green hatch = cold water you can actually reach ( ≤ {CAST_M:.0f} m ).</div>
+  <div class="sub">{day} · analysis overlaid on satellite imagery, looking straight down.
+    The red line is where the lake bottom crosses the {TARGET_C:.0f} °C laker ceiling —
+    the closest cold water sits to shore. Green hatch = cold water you can actually
+    reach ( ≤ {CAST_M:.0f} m ). The cyan line is the depth-model shoreline — it should
+    hug the real land/water edge in the imagery; that it does is the georeference check.</div>
   {f'<div class="wind">{wind_line}</div>' if wind_line else ''}
 
   <div class="legend">
+    <span><span class="sw" style="border-top:2px solid #29c5d6"></span><b>shoreline</b> depth-model vs imagery (alignment check)</span>
     <span><span class="sw" style="border-top:2.4px solid var(--accent)"></span><b>12 °C line</b> bottom meets the laker ceiling</span>
     <span><span class="sw" style="background:#d21f3c;opacity:.25;height:12px"></span><b>uncertainty band</b> (measured subsurface-bias spread)</span>
     <span><span class="sw" style="border-top:2px dashed #e8791a"></span><b>cast range</b> {CAST_M:.0f} m from shore</span>
@@ -300,7 +321,8 @@ th{{color:var(--ink)}}
       the depth the isotherm sits at, so the map shows a band, not a line.</p>
     <div class="attrib">Bathymetry contains intellectual property of the Canadian
       Hydrographic Service (CHS), Fisheries and Oceans Canada — not for navigation.
-      Surface SST: NOAA GLSEA. Subsurface truth: NDBC. Wind: ERA5 via Open-Meteo.</div>
+      Surface SST: NOAA GLSEA. Subsurface truth: NDBC. Wind: ERA5 via Open-Meteo.
+      Satellite basemap: Imagery © Esri, Maxar, Earthstar Geographics.</div>
   </div>
 </div>"""
 

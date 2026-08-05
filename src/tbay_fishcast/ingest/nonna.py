@@ -206,6 +206,9 @@ class Patch:
     lat: float
     lon: float
     coverage_frac: float       # fraction of the patch that is water
+    # actual EPSG:3857 bounds of the returned grid (left, bottom, right, top) —
+    # the ground truth for aligning any co-registered basemap (e.g. satellite).
+    bounds_3857: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
 
 
 def _wcs_geotiff_url(lat: float, lon: float, half_m: float, scale_px: int | None) -> str:
@@ -245,10 +248,13 @@ def fetch_patch(lat: float, lon: float, *, half_m: float = 1500.0,
         res_merc = abs(ds.transform.a)
         x, y = to_mercator(lat, lon)
         c0, r0 = (~ds.transform) * (x, y)
+        b = ds.bounds
+        bounds = (float(b.left), float(b.bottom), float(b.right), float(b.top))
     depth = depths_from_raw(band)
     cov = float(np.isfinite(depth).mean())
     return Patch(depth=depth, r0=int(round(r0)), c0=int(round(c0)),
-                 res_mercator_m=res_merc, lat=lat, lon=lon, coverage_frac=cov)
+                 res_mercator_m=res_merc, lat=lat, lon=lon, coverage_frac=cov,
+                 bounds_3857=bounds)
 
 
 def build_profile(lat: float, lon: float, *, bearing_deg: float | None = None,
