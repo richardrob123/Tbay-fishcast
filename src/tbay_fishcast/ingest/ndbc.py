@@ -37,10 +37,13 @@ class Buoy:
     name: str
 
 
-# Western Lake Superior (the "Duluth twin" upwelling shore, seed corpus).
+# Lake Superior buoys with subsurface `.ocean` thermistors (verified 2026-08-05).
+# Spread across the lake so replication tests whether LSOFS bias is model-wide or local.
 BUOYS = {
-    "45027": Buoy("45027", 46.860, -91.930, "Western Lake Superior (McQuade)"),
-    "45028": Buoy("45028", 46.814, -91.829, "Western Lake Superior"),
+    "45027": Buoy("45027", 46.860, -91.930, "Western Superior (McQuade)"),
+    "45028": Buoy("45028", 46.814, -91.829, "Western Superior"),
+    "45023": Buoy("45023", 47.270, -88.610, "Central Superior"),
+    "45216": Buoy("45216", 46.910, -89.350, "South-central Superior (Ontonagon)"),
 }
 
 
