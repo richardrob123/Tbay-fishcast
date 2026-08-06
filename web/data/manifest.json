@@ -1,16 +1,16 @@
 {
- "issue": "2026-08-05",
- "issued_utc": "2026-08-05T12:00:00Z",
- "built_utc": "2026-08-06T12:59:35Z",
- "age_h": 25.0,
- "stale": true,
+ "issue": "2026-08-06",
+ "issued_utc": "2026-08-06T12:00:00Z",
+ "built_utc": "2026-08-06T15:06:42Z",
+ "age_h": 3.1,
+ "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
  "n_leads": 6,
  "bias": {
   "central": 3.8,
-  "lo": 1.3,
-  "hi": 6.2,
+  "lo": 0.9,
+  "hi": 5.7,
   "n": 12
  },
  "stretches": [
@@ -43,34 +43,34 @@
    "anchor_day": "2026-08-05",
    "days": [
     {
-     "label": "Wed Aug 5",
-     "lead": 0,
-     "reach_ha": 63.4
-    },
-    {
      "label": "Thu Aug 6",
-     "lead": 24,
-     "reach_ha": 72.2
+     "lead": 0,
+     "reach_ha": 69.6
     },
     {
      "label": "Fri Aug 7",
-     "lead": 48,
-     "reach_ha": 100.4
+     "lead": 24,
+     "reach_ha": 88.0
     },
     {
      "label": "Sat Aug 8",
-     "lead": 72,
-     "reach_ha": 90.1
+     "lead": 48,
+     "reach_ha": 72.9
     },
     {
      "label": "Sun Aug 9",
-     "lead": 96,
-     "reach_ha": 79.2
+     "lead": 72,
+     "reach_ha": 63.8
     },
     {
      "label": "Mon Aug 10",
+     "lead": 96,
+     "reach_ha": 64.4
+    },
+    {
+     "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 65.4
+     "reach_ha": 61.4
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -105,34 +105,34 @@
    "anchor_day": "2026-08-05",
    "days": [
     {
-     "label": "Wed Aug 5",
-     "lead": 0,
-     "reach_ha": 52.7
-    },
-    {
      "label": "Thu Aug 6",
-     "lead": 24,
-     "reach_ha": 64.2
+     "lead": 0,
+     "reach_ha": 63.7
     },
     {
      "label": "Fri Aug 7",
-     "lead": 48,
-     "reach_ha": 60.2
+     "lead": 24,
+     "reach_ha": 62.8
     },
     {
      "label": "Sat Aug 8",
-     "lead": 72,
-     "reach_ha": 57.7
+     "lead": 48,
+     "reach_ha": 48.8
     },
     {
      "label": "Sun Aug 9",
-     "lead": 96,
-     "reach_ha": 44.1
+     "lead": 72,
+     "reach_ha": 42.8
     },
     {
      "label": "Mon Aug 10",
+     "lead": 96,
+     "reach_ha": 56.9
+    },
+    {
+     "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 42.4
+     "reach_ha": 57.4
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -167,34 +167,34 @@
    "anchor_day": "2026-08-05",
    "days": [
     {
-     "label": "Wed Aug 5",
-     "lead": 0,
-     "reach_ha": 51.1
-    },
-    {
      "label": "Thu Aug 6",
-     "lead": 24,
-     "reach_ha": 53.1
+     "lead": 0,
+     "reach_ha": 3.9
     },
     {
      "label": "Fri Aug 7",
-     "lead": 48,
-     "reach_ha": 51.6
+     "lead": 24,
+     "reach_ha": 2.8
     },
     {
      "label": "Sat Aug 8",
-     "lead": 72,
-     "reach_ha": 50.1
+     "lead": 48,
+     "reach_ha": 0.7
     },
     {
      "label": "Sun Aug 9",
-     "lead": 96,
-     "reach_ha": 50.0
+     "lead": 72,
+     "reach_ha": 1.3
     },
     {
      "label": "Mon Aug 10",
+     "lead": 96,
+     "reach_ha": 2.0
+    },
+    {
+     "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 50.1
+     "reach_ha": 1.4
     }
    ],
    "area": "data/areas/current_barepoint.geojson",
@@ -229,34 +229,34 @@
    "anchor_day": "2026-08-05",
    "days": [
     {
-     "label": "Wed Aug 5",
-     "lead": 0,
-     "reach_ha": 77.9
-    },
-    {
      "label": "Thu Aug 6",
-     "lead": 24,
-     "reach_ha": 76.5
+     "lead": 0,
+     "reach_ha": 16.9
     },
     {
      "label": "Fri Aug 7",
-     "lead": 48,
-     "reach_ha": 72.5
+     "lead": 24,
+     "reach_ha": 14.2
     },
     {
      "label": "Sat Aug 8",
-     "lead": 72,
-     "reach_ha": 69.3
+     "lead": 48,
+     "reach_ha": 12.8
     },
     {
      "label": "Sun Aug 9",
-     "lead": 96,
-     "reach_ha": 70.9
+     "lead": 72,
+     "reach_ha": 15.0
     },
     {
      "label": "Mon Aug 10",
+     "lead": 96,
+     "reach_ha": 15.5
+    },
+    {
+     "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 72.0
+     "reach_ha": 17.0
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",
@@ -274,37 +274,37 @@
    "surf_sst": 17.6,
    "traj": [
     {
-     "label": "Wed",
-     "lead": 0,
-     "iso": 3.0,
-     "reach": true
-    },
-    {
      "label": "Thu",
-     "lead": 24,
-     "iso": 3.2,
+     "lead": 0,
+     "iso": 3.4,
      "reach": true
     },
     {
      "label": "Fri",
-     "lead": 48,
-     "iso": 3.7,
+     "lead": 24,
+     "iso": 3.9,
      "reach": true
     },
     {
      "label": "Sat",
-     "lead": 72,
-     "iso": 4.1,
+     "lead": 48,
+     "iso": 4.3,
      "reach": true
     },
     {
      "label": "Sun",
-     "lead": 96,
-     "iso": 4.1,
+     "lead": 72,
+     "iso": 3.9,
      "reach": true
     },
     {
      "label": "Mon",
+     "lead": 96,
+     "iso": 3.9,
+     "reach": true
+    },
+    {
+     "label": "Tue",
      "lead": 120,
      "iso": 4.1,
      "reach": true
@@ -321,39 +321,39 @@
    "surf_sst": 17.8,
    "traj": [
     {
-     "label": "Wed",
-     "lead": 0,
-     "iso": 3.1,
-     "reach": true
-    },
-    {
      "label": "Thu",
-     "lead": 24,
-     "iso": 3.3,
+     "lead": 0,
+     "iso": 3.5,
      "reach": true
     },
     {
      "label": "Fri",
-     "lead": 48,
-     "iso": 4.3,
+     "lead": 24,
+     "iso": 4.4,
      "reach": true
     },
     {
      "label": "Sat",
-     "lead": 72,
-     "iso": 4.7,
+     "lead": 48,
+     "iso": 4.8,
      "reach": true
     },
     {
      "label": "Sun",
-     "lead": 96,
+     "lead": 72,
      "iso": 4.5,
      "reach": true
     },
     {
      "label": "Mon",
+     "lead": 96,
+     "iso": 4.1,
+     "reach": true
+    },
+    {
+     "label": "Tue",
      "lead": 120,
-     "iso": 4.4,
+     "iso": 3.9,
      "reach": true
     }
    ]
@@ -368,39 +368,39 @@
    "surf_sst": 16.6,
    "traj": [
     {
-     "label": "Wed",
-     "lead": 0,
-     "iso": 2.0,
-     "reach": true
-    },
-    {
      "label": "Thu",
-     "lead": 24,
-     "iso": 1.1,
+     "lead": 0,
+     "iso": 1.0,
      "reach": true
     },
     {
      "label": "Fri",
-     "lead": 48,
-     "iso": 1.5,
+     "lead": 24,
+     "iso": 1.0,
      "reach": true
     },
     {
      "label": "Sat",
-     "lead": 72,
-     "iso": 1.7,
+     "lead": 48,
+     "iso": 1.8,
      "reach": true
     },
     {
      "label": "Sun",
-     "lead": 96,
-     "iso": 3.1,
+     "lead": 72,
+     "iso": 2.8,
      "reach": true
     },
     {
      "label": "Mon",
+     "lead": 96,
+     "iso": 1.1,
+     "reach": true
+    },
+    {
+     "label": "Tue",
      "lead": 120,
-     "iso": 3.2,
+     "iso": 1.7,
      "reach": true
     }
    ]
