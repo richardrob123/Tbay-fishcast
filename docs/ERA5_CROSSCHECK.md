@@ -51,9 +51,19 @@ three subsurface buoys, 2026-07-19→08-01 (39 records):
   45027 show LSOFS "MLD" of 14–28 m, which is the surface−1 °C *threshold breaking on a
   cold near-uniform column* — a definition artifact, not a real bias.
 
+**Independent confirmation via the clean gate.** When GLOS came back, the isotherm-DEPTH
+gate (product's 12 °C-crossing depth vs observed thermistor profiles — definition-
+consistent, no MLD-threshold trap) corroborated it: at **45216 the product isotherm is
+11.8 m vs observed 8–9 m — ~3 m too deep**, matching the FLake diagnosis. But it is
+**site-dependent** (Duluth LLO1 error only 0.3–2.0 m), and GLOS realtime returned only 2
+chain-days per site (n=4) — too sparse to fit a robust site/condition-aware correction now.
+
 **Verdict:** a corroborated, real tendency — **LSOFS's thermocline runs too deep in
-stratified conditions** (FLake and buoys agree) — but NOT a clean constant correction: too
-noisy, regime-dependent, and confounded by the MLD definition. Shipping a −3 m shift would
+stratified conditions** (FLake, buoys, AND the observed-profile gate all agree) — but NOT
+a clean constant correction: too noisy, site/regime-dependent, and (for the MLD proxy)
+confounded by definition. Shipping it needs **more isotherm-depth-gate observations
+accumulated over the season** (the standing gate now runs — GLOS is back) then a
+LOBO-surviving site-aware fit. Shipping a −3 m shift would
 fail the same generalization bar the wind-conditioning idea failed (DATA_AUDIT). The clean
 finish is the **isotherm-depth gate against GLOS profiles** (validates the product's actual
 12 °C-crossing output with a consistent definition, sidestepping the MLD-definition trap);
