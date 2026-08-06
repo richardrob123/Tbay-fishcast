@@ -9,7 +9,10 @@ URL on a phone, no local run. Lives in `web/`, deploys to GitHub Pages.
 - **Cold-water + isotherm overlays** for four overlapping stretches spanning the arc
   from the Kaministiquia mouth to MacKenzie Point / Silver Harbour, precomputed from
   CHS NONNA-10 bathymetry × the LSOFS isotherm field (same engine + native-sigma
-  correction as the per-spot product).
+  correction as the per-spot product). NONNA leaves unsurveyed water as no-data exactly
+  like land, so the shore is defined against the **Esri basemap as land/water ground
+  truth** (dark, lake-connected no-data = water; bright = land) — otherwise the
+  unsurveyed nearshore apron reads as coast and casts "reachable" water far offshore.
 - **Forecast slider** (+ Play) stepping the whole coast through the 5-day forecast.
 - **Station pins** with today's verdict, the isotherm-depth trajectory, and surface SST.
 - **Upwelling-wind probability** per day (ensemble) and a **data-age / STALE** banner.

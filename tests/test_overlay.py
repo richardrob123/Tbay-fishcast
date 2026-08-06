@@ -11,6 +11,7 @@ from tbay_fishcast.features.overlay import (
     cold_front_features,
     cold_reachable,
     fill_unsurveyed_water,
+    imagery_unsurveyed_water,
     isobath_line_features,
     isobath_line_rgba,
     land_shore_distance,
@@ -154,6 +155,39 @@ def test_fill_unsurveyed_water_drops_midwater_seam_not_real_coast():
     _, reach = cold_reachable(filled, iso, dist, cast_m=75.0, min_reach_px=5)
     assert reach.any()                             # real nearshore cold water still reachable
     assert not reach[27:34, 38:44].any()           # the mid-water artifact is gone
+
+
+def test_imagery_prunes_unsurveyed_water_apron_not_inland_dark():
+    """The satellite basemap distinguishes NONNA's unsurveyed-water no-data (dark, joined
+    to the lake -> water) from real land (bright) and inland dark patches (not joined ->
+    land). Excluding the apron moves the cast to the true coast, so green stops appearing
+    hundreds of metres offshore off the no-data edge."""
+    depth = np.full((60, 60), 8.0)            # open water 8 m
+    depth[:, :10] = np.nan                     # solid mainland (left)
+    depth[:, 10] = 1.5                         # shallow surveyed water along the coast (shore)
+    depth[28:32, 10:26] = np.nan               # unsurveyed no-data apron: a tongue off the coast
+    depth[50:55, 2:7] = np.nan                 # (already mainland) an inland pocket, dark below
+    iso = np.full_like(depth, 3.0)
+
+    gray = np.full((60, 60), 20.0)             # water is dark everywhere...
+    gray[:, :10] = 120.0                        # ...mainland is bright
+    gray[50:55, 2:7] = 20.0                     # an inland DARK pocket, surrounded by bright land
+
+    not_land = imagery_unsurveyed_water(depth, gray)
+    assert not_land[30, 20]                     # apron: dark + joined to the lake -> water
+    assert not not_land[52, 4]                  # inland dark pocket: not joined to lake -> land
+    assert not not_land[:, :10].any()           # bright mainland (cols 0-9) never flagged
+
+    # raw shore treats the apron as coast and casts green off its offshore edge, in the bay
+    dist_raw, _ = land_shore_distance(depth, 10.0)
+    _, reach_raw = cold_reachable(depth, iso, dist_raw, cast_m=75.0, min_reach_px=5)
+    assert reach_raw[28:32, 27:32].any()
+
+    # with the imagery mask the apron isn't shore -> that offshore green is gone
+    dist_fix, _ = land_shore_distance(depth, 10.0, not_land=not_land)
+    _, reach_fix = cold_reachable(depth, iso, dist_fix, cast_m=75.0, min_reach_px=5)
+    assert not reach_fix[28:32, 27:32].any()
+    assert reach_fix.any()                      # real nearshore cold water still reachable
 
 
 def test_cold_front_traces_green_warm_interface_and_stays_coherent():

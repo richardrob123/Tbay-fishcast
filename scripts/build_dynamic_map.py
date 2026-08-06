@@ -37,7 +37,8 @@ import matplotlib.image as mpimg  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_reachable, fill_unsurveyed_water, isobath_line_rgba, land_shore_distance, merc)
+    cold_reachable, fill_unsurveyed_water, imagery_unsurveyed_water, isobath_line_rgba,
+    land_shore_distance, merc)
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -68,7 +69,6 @@ def main(argv) -> int:
     res = nonna.ground_res_m(patch.res_mercator_m, clat)
     depth = fill_unsurveyed_water(patch.depth, res)   # drop mid-water NONNA survey gaps
     water = np.isfinite(depth)
-    dist, _land = land_shore_distance(depth, res)
     ny, nx = depth.shape
     x0, y0, x1, y1 = patch.bounds_3857
     # pixel-centre 3857 coords (row 0 = top = y1)
@@ -76,6 +76,10 @@ def main(argv) -> int:
     ys = np.linspace(y1, y0, ny)
     gx, gy = np.meshgrid(xs, ys)
     sat = basemap.fetch_imagery_3857(patch.bounds_3857, size_px=PX)
+    # the basemap is ground truth for land vs water: drop the unsurveyed no-data apron
+    # so the shore-cast is measured from the true coast, not the offshore no-data edge.
+    not_land = imagery_unsurveyed_water(depth, sat.mean(axis=2))
+    dist, _land = land_shore_distance(depth, res, not_land=not_land)
     print(f"patch {depth.shape} res {res:.0f} m, water {patch.coverage_frac:.0%}")
 
     # --- LSOFS nodes in the box ---

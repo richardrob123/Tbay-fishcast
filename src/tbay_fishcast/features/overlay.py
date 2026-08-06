@@ -271,8 +271,35 @@ def fill_unsurveyed_water(depth: np.ndarray, res_m: float, *, scan_m: float = 65
     return d
 
 
+def imagery_unsurveyed_water(depth: np.ndarray, gray: np.ndarray, *,
+                             water_below: float = 62.0):
+    """No-data pixels that are DARK in the basemap imagery AND connected to the surveyed
+    lake — i.e. unsurveyed water, not shore.
+
+    NONNA leaves the shallow nearshore (and some offshore water) unsurveyed (NaN) exactly
+    like land, so the shore logic treats that no-data apron as coastline and casts off its
+    OFFSHORE edge — putting 'reachable' water hundreds of metres out in the bay (the wide
+    mid-water green band). The Esri basemap — already the map's backdrop, a fixed
+    deterministic mosaic — is ground truth for land vs water: over Lake Superior water is
+    dark and land is bright. A no-data pixel that is dark AND flood-connected to the
+    surveyed water is lake, not land; a dark INLAND patch (a shadow, a separate pond) is
+    not connected to the lake, so it stays land. `gray` is per-pixel brightness (0-255),
+    co-registered with `depth`. Returns the boolean mask of such unsurveyed-water pixels
+    (pass it to `land_shore_distance(not_land=...)`).
+    """
+    water = np.isfinite(depth)
+    cand = (~water) & (gray < water_below)
+    lbl, _ = label(water | cand)                     # flood surveyed water through dark gaps
+    lake = set(np.unique(lbl[water]).tolist())
+    lake.discard(0)
+    if not lake:
+        return np.zeros_like(water)
+    return cand & np.isin(lbl, list(lake))
+
+
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,
-                        min_land_px: int = 12, mainland_only: bool = True):
+                        min_land_px: int = 12, mainland_only: bool = True,
+                        not_land: np.ndarray | None = None):
     """Distance-to-shore (ground metres) keeping only GENUINE, walk-to land as shore.
 
     A NaN component counts as land only if it (a) borders water shallower than
@@ -284,10 +311,18 @@ def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2
     reaches the image border — i.e. the connected coast a person can walk. Isolated
     offshore islands, breakwaters, and shoals in the harbour interior are dropped, so
     the map shows cold water reachable FROM the shore, not around mid-lake structures
-    or NONNA tile-seam/no-data-boundary artifacts. Returns (dist_m, shore_mask).
+    or NONNA tile-seam/no-data-boundary artifacts.
+
+    `not_land` (e.g. `imagery_unsurveyed_water(...)`) is a mask of NaN pixels that are
+    really unsurveyed WATER, not land; they are excluded from the shore so the cast is
+    measured from the true coastline, not the offshore edge of a no-data apron. Returns
+    (dist_m, shore_mask).
     """
     water = np.isfinite(depth)
-    lbl, n = label(~water)
+    nodata = ~water
+    if not_land is not None:
+        nodata = nodata & ~not_land
+    lbl, n = label(nodata)
     land = np.zeros_like(water)
     for c in range(1, n + 1):
         comp = lbl == c
