@@ -38,6 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: claude/tbay-fishcast-phase-0-6kh5lx   # stay on the branch so obs logs can be committed back
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -58,5 +60,34 @@ jobs:
           git commit -q -m "coast-site build ${GITHUB_SHA::7}"
           git push -q --force \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # --- Standing observation logs (deterministic, no LLM — ADR-001) -----------------
+      # Two accuracy datasets that must accumulate over the season, appended once per day:
+      #   * data/gate_log.csv       — observed vs corrected 12 C isotherm-DEPTH error (GLOS chains)
+      #   * data/nearshore_anchor.csv — Landsat shore skin-temp vs GLSEA offshore anchor (per clear pass)
+      # Both scripts are idempotent (skip already-logged keys), so re-runs never duplicate.
+      # continue-on-error: a flaky upstream fetch must never fail the map deploy above.
+      - name: Accumulate the isotherm-depth gate (GLOS vs product)
+        continue-on-error: true
+        run: python scripts/accumulate_gate.py
+      - name: Accumulate the nearshore anchor (Landsat vs GLSEA)
+        continue-on-error: true
+        run: python scripts/accumulate_anchor.py
+      - name: Commit the observation logs back to the branch
+        continue-on-error: true
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "coast-site bot"
+          git add data/gate_log.csv data/nearshore_anchor.csv
+          if git diff --staged --quiet; then
+            echo "no new observations to commit"; exit 0
+          fi
+          # [skip ci] + data/** absent from this workflow's push paths => no build loop.
+          git commit -q -m "data: accumulate isotherm-gate + nearshore-anchor logs [skip ci]"
+          git pull --rebase --autostash origin claude/tbay-fishcast-phase-0-6kh5lx || true
+          git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:claude/tbay-fishcast-phase-0-6kh5lx
         env:
           GITHUB_TOKEN: ${{ github.token }}

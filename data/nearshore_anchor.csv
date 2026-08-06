@@ -1,0 +1,4 @@
+scene_date,station,landsat_st_c,dist_m,scene,cloud_pct,glsea_sst_c,glsea_dist_km,delta_c,retrieved_utc
+2026-07-28,silver_harbour_outer,19.57,0.0,LC09_L2SP_025026_20260728_02_T1,15.9,17.64,0.57,1.93,2026-08-06T21:41:41Z
+2026-07-28,mackenzie_point,19.44,85.0,LC09_L2SP_025026_20260728_02_T1,15.9,17.76,0.59,1.68,2026-08-06T21:41:41Z
+2026-07-28,marina_east_mcvicar,18.13,150.0,LC09_L2SP_025026_20260728_02_T1,15.9,16.64,1.28,1.49,2026-08-06T21:41:41Z

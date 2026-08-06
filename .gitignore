@@ -5,8 +5,12 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-# data artifacts — never commit bulk NetCDF/parquet (fixtures under tests/ are the exception)
-data/
+# data artifacts — never commit bulk NetCDF/parquet (fixtures under tests/ are the exception).
+# data/* excludes bulk bronze/calib but leaves the two small, deterministic accumulation
+# logs tracked: they ARE the standing accuracy record the daily Action appends to.
+data/*
+!data/gate_log.csv
+!data/nearshore_anchor.csv
 *.parquet
 *.nc
 !tests/fixtures/*.nc
