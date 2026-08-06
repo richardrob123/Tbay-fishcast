@@ -21,7 +21,7 @@ import io
 import json
 import math
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -73,6 +73,27 @@ def _png(rgba) -> bytes:
     buf = io.BytesIO()
     mpimg.imsave(buf, rgba, format="png")
     return buf.getvalue()
+
+
+def _resolve_issue(cfg, issue, max_back=3):
+    """Most recent issue day whose t12z nowcast is actually posted.
+
+    The daily Action can fire before today's t12z cycle reaches NODD (or on a slow
+    posting day); rather than crash, walk back to the latest available cycle. The
+    forecast hours of a slightly older cycle still cover the days ahead.
+    """
+    for k in range(max_back + 1):
+        d = issue - timedelta(days=k)
+        try:
+            ds = _open_first(candidate_urls(LsofsFile(d, "t12z", "n", 6),
+                             cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket, byterange=False))
+            ds.close()
+            if k:
+                print(f"issue {issue} t12z not posted yet; using {d}")
+            return d
+        except Exception:  # noqa: BLE001
+            continue
+    return issue  # nothing found — let the downstream open fail loudly
 
 
 def _node_columns_in_box(cfg, issue, clat, clon):
@@ -131,6 +152,7 @@ def main(argv) -> int:
     else:
         issue = datetime.now(timezone.utc).date()
     cfg = load_config()
+    issue = _resolve_issue(cfg, issue)     # fall back if today's t12z isn't posted yet
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "overlays").mkdir(exist_ok=True)
 
