@@ -31,7 +31,9 @@ that real land is forced to the warm side — the line therefore **traces the sh
 wherever cold water reaches the edge (there the front simply *is* the shore) and pulls
 offshore only where a warm shallow apron sits between the shore and the cold water. It
 still marks the front out past casting range (a shallow flat shows the line offshore with
-no green between it and shore) and breaks only over **unsurveyed** bottom. No imagery is
+no green between it and shore). Narrow gaps in the CHS soundings are bridged by nearest-
+sounding interpolation so the band and front connect across them; only larger unsurveyed
+stretches stay blank. No imagery is
 embedded in the deployed overlays (the browser fetches Esri basemap tiles live), though
 the build reads that same imagery to tell land from unsurveyed water.
 

@@ -296,6 +296,32 @@ def imagery_unsurveyed_water(depth: np.ndarray, gray: np.ndarray, *,
     return cand & np.isin(lbl, list(lake))
 
 
+def bridge_survey_gaps(depth: np.ndarray, unsurveyed_water: np.ndarray, res_m: float, *,
+                       max_gap_m: float = 45.0):
+    """Fill SMALL unsurveyed-water gaps (within `max_gap_m` of a real sounding) with the
+    nearest surveyed depth, so the reachable band and the 12 C front connect across them.
+
+    NONNA leaves patches of the immediate nearshore unsurveyed; left as no-data they break
+    the shoreline front into dashes even though the bottom between two nearby soundings is
+    well-constrained. We interpolate (nearest-sounding) only across gaps whose every cell
+    is within `max_gap_m` of surveyed data — i.e. narrow gaps bracketed by real depths —
+    and leave larger unsurveyed areas as no-data (honestly blank). Returns
+    (depth_filled, remaining_unsurveyed_water): the bridged cells become normal water; the
+    still-unsurveyed mask is what to pass on as `not_land`.
+    """
+    surveyed = np.isfinite(depth)
+    if not unsurveyed_water.any() or not surveyed.any():
+        return depth, unsurveyed_water
+    d2s, idx = distance_transform_edt(~surveyed, return_distances=True,
+                                      return_indices=True)
+    fillable = unsurveyed_water & (d2s * res_m <= max_gap_m)
+    if not fillable.any():
+        return depth, unsurveyed_water
+    d = depth.copy()
+    d[fillable] = depth[tuple(idx)][fillable]        # nearest real sounding into the gap
+    return d, unsurveyed_water & ~fillable
+
+
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,
                         min_land_px: int = 12, mainland_only: bool = True,
                         not_land: np.ndarray | None = None):

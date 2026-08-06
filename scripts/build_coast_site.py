@@ -36,8 +36,8 @@ from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_front_features, cold_reachable, fill_unsurveyed_water, imagery_unsurveyed_water,
-    land_shore_distance, merc, reachable_area_features)
+    bridge_survey_gaps, cold_front_features, cold_reachable, fill_unsurveyed_water,
+    imagery_unsurveyed_water, land_shore_distance, merc, reachable_area_features)
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -178,7 +178,10 @@ def main(argv) -> int:
         try:
             rgb = basemap.fetch_imagery_3857(patch.bounds_3857, size_px=depth.shape[0])
             gray = rgb.mean(axis=2)
-            not_land = imagery_unsurveyed_water(depth, gray)
+            unsurv = imagery_unsurveyed_water(depth, gray)
+            # bridge the narrow unsurveyed gaps (interpolate between nearby soundings) so the
+            # reachable band and shoreline front connect across them; larger gaps stay blank.
+            depth, not_land = bridge_survey_gaps(depth, unsurv, res)
         except Exception as e:  # noqa: BLE001
             print(f"    {sid}: basemap unavailable ({str(e)[:40]}); bathymetry-only shore")
         dist, _land = land_shore_distance(depth, res, not_land=not_land)

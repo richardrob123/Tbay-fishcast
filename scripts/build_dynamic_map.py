@@ -68,7 +68,6 @@ def main(argv) -> int:
     patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
     res = nonna.ground_res_m(patch.res_mercator_m, clat)
     depth = fill_unsurveyed_water(patch.depth, res)   # drop mid-water NONNA survey gaps
-    water = np.isfinite(depth)
     ny, nx = depth.shape
     x0, y0, x1, y1 = patch.bounds_3857
     # pixel-centre 3857 coords (row 0 = top = y1)
@@ -76,9 +75,11 @@ def main(argv) -> int:
     ys = np.linspace(y1, y0, ny)
     gx, gy = np.meshgrid(xs, ys)
     sat = basemap.fetch_imagery_3857(patch.bounds_3857, size_px=PX)
-    # the basemap is ground truth for land vs water: drop the unsurveyed no-data apron
-    # so the shore-cast is measured from the true coast, not the offshore no-data edge.
-    not_land = imagery_unsurveyed_water(depth, sat.mean(axis=2))
+    # the basemap is ground truth for land vs water: drop the unsurveyed no-data apron so
+    # the shore-cast is measured from the true coast, then bridge narrow survey gaps.
+    unsurv = imagery_unsurveyed_water(depth, sat.mean(axis=2))
+    depth, not_land = bridge_survey_gaps(depth, unsurv, res)
+    water = np.isfinite(depth)
     dist, _land = land_shore_distance(depth, res, not_land=not_land)
     print(f"patch {depth.shape} res {res:.0f} m, water {patch.coverage_frac:.0%}")
 

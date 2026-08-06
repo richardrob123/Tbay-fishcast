@@ -8,6 +8,7 @@ verified visually, not asserted here.
 import numpy as np
 
 from tbay_fishcast.features.overlay import (
+    bridge_survey_gaps,
     cold_front_features,
     cold_reachable,
     fill_unsurveyed_water,
@@ -188,6 +189,27 @@ def test_imagery_prunes_unsurveyed_water_apron_not_inland_dark():
     _, reach_fix = cold_reachable(depth, iso, dist_fix, cast_m=75.0, min_reach_px=5)
     assert not reach_fix[28:32, 27:32].any()
     assert reach_fix.any()                      # real nearshore cold water still reachable
+
+
+def test_bridge_survey_gaps_fills_narrow_not_wide():
+    """Narrow unsurveyed gaps between soundings get an interpolated depth (so green/front
+    connect); wide unsurveyed areas stay no-data (honestly blank)."""
+    res = 10.0
+    depth = np.full((40, 60), 8.0)
+    narrow = np.zeros_like(depth, dtype=bool); narrow[18:22, 20:23] = True   # ~30 m gap
+    wide = np.zeros_like(depth, dtype=bool);  wide[8:32, 40:56] = True       # big block
+    depth[narrow] = np.nan
+    depth[wide] = np.nan
+    unsurveyed = narrow | wide
+    filled, remaining = bridge_survey_gaps(depth, unsurveyed, res, max_gap_m=45.0)
+    # the narrow gap is fully bridged to real water...
+    assert np.isfinite(filled[narrow]).all()
+    assert not remaining[narrow].any()
+    # ...the wide block's interior stays unsurveyed (only its <=45 m rim fills)
+    assert remaining[wide].any()
+    assert not np.isfinite(filled[20, 48])          # centre of the wide block still no-data
+    # bridged depth is a plausible neighbour value (8 m here), never invented out of range
+    assert np.nanmin(filled[narrow]) == 8.0
 
 
 def test_cold_front_traces_shore_and_pulls_offshore_past_a_warm_apron():
