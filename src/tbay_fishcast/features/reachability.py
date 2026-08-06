@@ -49,7 +49,7 @@ def corrected_fields(depth: np.ndarray, bounds_3857, res_ground_m: float):
     degraded = False
     try:
         rgb = basemap.fetch_imagery_3857(bounds_3857, size_px=depth.shape[0])
-        unsurv = imagery_unsurveyed_water(depth, rgb.mean(axis=2))
+        unsurv = imagery_unsurveyed_water(depth, rgb)   # RGB: dark AND not vegetation = water
         depth, not_land = bridge_survey_gaps(depth, unsurv, res_ground_m)
     except Exception:  # noqa: BLE001
         degraded = True

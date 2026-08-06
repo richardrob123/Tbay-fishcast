@@ -28,8 +28,12 @@
   .age{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .age.stale{color:var(--warn);font-weight:650}
   .spacer{flex:1}
-  #legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center}
-  #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35;opacity:.85}
+  #legend{display:flex;gap:11px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
+  #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:5px;opacity:.9}
+  #legnote summary{cursor:pointer;list-style:none;line-height:1.3}
+  #legnote summary::-webkit-details-marker{display:none}
+  #legnote .more{margin-top:5px;line-height:1.4;opacity:.92}
   .sw{display:inline-block;width:15px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
   /* bottom forecast scrubber */
   #ctl{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));padding:12px 14px 13px}
@@ -80,17 +84,19 @@
   <span class="age" id="age"></span>
   <span class="spacer"></span>
   <div id="legend">
-    <span><span class="sw" style="background:#39d353;opacity:.95"></span>cold water — confident</span>
-    <span><span class="sw" style="background:#39d353;opacity:.45"></span>likely</span>
-    <span><span class="sw" style="background:#39d353;opacity:.18"></span>possible</span>
-    <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C front</span>
+    <span><span class="sw" style="background:#7be08f"></span>≤12°</span>
+    <span><span class="sw" style="background:#22b39a"></span>≤10°<span class="opt">opt</span></span>
+    <span><span class="sw" style="background:#2f83d6"></span>≤8°</span>
+    <span><span class="sw" style="background:#ff1e3c"></span>front</span>
   </div>
-  <div id="legnote">Green = bottom colder than 12&nbsp;°C within a ~75&nbsp;m cast of shore (≤22&nbsp;m deep).
-    The three green tones are the model's honest uncertainty band — the boundary position is
-    uncertain by roughly 100–300&nbsp;m (measured model error), so treat edges as fuzzy, not lines.
-    Red marks where cold water meets warmer shallows; it's absent where the water is cold right
-    to the shore. This forecasts <b>water temperature</b>, not fish. Check current Ontario
-    regulations for seasons and closures before fishing any spot.</div>
+  <details id="legnote">
+    <summary>darker = colder reachable water · 10–12&nbsp;°C = laker sweet spot · ⓘ</summary>
+    <div class="more">Shaded where the bottom is colder than each threshold within a ~75&nbsp;m cast
+      (≤22&nbsp;m deep); nested, so darker = colder. Lakers prefer ~10&nbsp;°C — <b>10–12&nbsp;°C is the
+      sweet spot</b>, ≤8&nbsp;°C marks strongest upwelling (not "colder is better"). Edges are uncertain
+      ~100–300&nbsp;m, so the red front is a fuzzy ribbon. Forecasts <b>water, not fish</b> — check Ontario
+      regs before fishing.</div>
+  </details>
 </div>
 
 <div class="card" id="ctl" style="display:none">
@@ -150,25 +156,26 @@ map.on('load', async () => {
   const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
   man._v = V;
   const lead0 = man.stretches[0].days[0].lead;
-  // day + band filters. Overlays carry band=certain|central|possible (the model's
-  // honest uncertainty band); features without a band tag render as central.
+  // day + thermal-band filters. Area fills carry temp=t12|t10|t8 (nested: t8 ⊆ t10 ⊆ t12);
+  // front lines carry band=central|possible|certain (12 °C uncertainty ribbon).
+  const FT = (l,t) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], t]];
   const FB = (l,b) => ['all', ['==',['get','lead'], l],
                        ['==', ['coalesce',['get','band'],'central'], b]];
+  // Thermal-habitat palette: 12 °C = comfort ceiling (light green), 10 °C = laker
+  // optimum (teal), 8 °C = deep cold / strong upwelling (blue). Painter order t12→t8
+  // so the coldest reachable water reads darkest on top.
+  const TEMP = [['t12','#7be08f',0.30], ['t10','#22b39a',0.40], ['t8','#2f83d6',0.52]];
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
     // Everything is VECTOR so it stays crisp at any zoom (no raster pixelation).
-    // GREEN band, three tones: possible (palest, optimistic end) under central
-    // (best estimate) under certain (solid — reachable across the whole bias band).
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
-      map.addLayer({ id:'arp'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'possible'),
-        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.10 } });
-      map.addLayer({ id:'ar'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'central'),
-        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.26 } });
-      map.addLayer({ id:'arc'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'certain'),
-        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.42 } });
-      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:FB(lead0,'certain'),
-        layout:{ 'line-join':'round' }, paint:{ 'line-color':'#39d353', 'line-width':1.4, 'line-opacity':0.9 } });
+      TEMP.forEach(([t,col,op]) => {
+        map.addLayer({ id:'ar'+t+i, type:'fill', source:'ar'+i, filter:FT(lead0,t),
+          paint:{ 'fill-color':col, 'fill-opacity':op } });
+      });
+      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:FT(lead0,'t12'),
+        layout:{ 'line-join':'round' }, paint:{ 'line-color':'#7be08f', 'line-width':1.2, 'line-opacity':0.85 } });
     }
     // RED 12 C front: central solid with halo; band bookends as faint thin lines so
     // the position uncertainty reads as a ribbon, not a false-precision line.
@@ -229,11 +236,12 @@ map.on('load', async () => {
   t.addEventListener('input', e => setDay(+e.target.value));
   document.getElementById('op').addEventListener('input', e => {
     const o = +e.target.value/100;
-    man.stretches.forEach((s,i)=>{ if(map.getLayer('ar'+i)){
-      map.setPaintProperty('arp'+i,'fill-opacity', o*0.12);
-      map.setPaintProperty('ar'+i,'fill-opacity', o*0.32);
-      map.setPaintProperty('arc'+i,'fill-opacity', o*0.51);
-      map.setPaintProperty('aro'+i,'line-opacity', o); } });
+    man.stretches.forEach((s,i)=>{
+      map.getLayer('art12'+i) && map.setPaintProperty('art12'+i,'fill-opacity', o*0.36);
+      map.getLayer('art10'+i) && map.setPaintProperty('art10'+i,'fill-opacity', o*0.48);
+      map.getLayer('art8'+i)  && map.setPaintProperty('art8'+i,'fill-opacity', o*0.62);
+      map.getLayer('aro'+i)   && map.setPaintProperty('aro'+i,'line-opacity', o*0.85);
+    });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
   setDay(0);
@@ -267,13 +275,16 @@ function localLabel(d){
 function setDay(i){
   cur = i;
   const man = MAN;
+  const FT = (l,t) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], t]];
   const FB = (l,b) => ['all', ['==',['get','lead'], l],
                        ['==', ['coalesce',['get','band'],'central'], b]];
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
-    const per = { ['arp'+k]:'possible', ['ar'+k]:'central', ['arc'+k]:'certain',
-                  ['aro'+k]:'certain', ['lnbpossible'+k]:'possible',
-                  ['lnbcertain'+k]:'certain', ['lnh'+k]:'central', ['ln'+k]:'central' };
+    const tmp = { ['art12'+k]:'t12', ['art10'+k]:'t10', ['art8'+k]:'t8', ['aro'+k]:'t12' };
+    Object.entries(tmp).forEach(([id,t]) => {
+      if(map.getLayer(id)) map.setFilter(id, FT(day.lead, t)); });
+    const per = { ['lnbpossible'+k]:'possible', ['lnbcertain'+k]:'certain',
+                  ['lnh'+k]:'central', ['ln'+k]:'central' };
     Object.entries(per).forEach(([id,b]) => {
       if(map.getLayer(id)) map.setFilter(id, FB(day.lead, b)); });
   });

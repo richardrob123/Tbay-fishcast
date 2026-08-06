@@ -67,6 +67,31 @@ def test_upwelling_run_breaks_across_data_gap():
     assert days == set()     # two 4 h runs, not one 8 h run
 
 
+def test_imagery_masks_trees_but_keeps_teal_water():
+    # A no-data strip: [surveyed | smooth dark TEAL water | mottled dark TREES].
+    # Teal water is green-dominant too, so colour alone would eat it — texture must
+    # keep smooth water as water and reclassify only the mottled canopy (AUDIT_ROUND3).
+    from tbay_fishcast.features.overlay import imagery_unsurveyed_water
+    H, W = 8, 24
+    depth = np.full((H, W), np.nan)
+    depth[:, 0] = 10.0                                   # surveyed water column
+    rng = np.random.RandomState(0)
+    rgb = np.zeros((H, W, 3), np.uint8)
+    teal = slice(1, 12); trees = slice(12, 24)
+    rgb[:, 0] = (10, 62, 52)                             # surveyed pixel: same smooth teal
+    rgb[:, teal] = np.array([6, 63, 51], np.uint8)       # smooth dark teal water (σ≈0)
+    # mottled dark canopy: green-dominant, high local texture
+    canopy = np.stack([rng.randint(10, 40, (H, 12)), rng.randint(45, 95, (H, 12)),
+                       rng.randint(20, 55, (H, 12))], axis=2).astype(np.uint8)
+    rgb[:, trees] = canopy
+    mask = imagery_unsurveyed_water(depth, rgb)
+    # interior columns (skip the ±2 px texture-filter bleed at each material boundary)
+    teal_kept = mask[:, 3:10].mean()
+    trees_kept = mask[:, 15:23].mean()
+    assert teal_kept > 0.8, f"teal water wrongly dropped ({teal_kept:.2f})"
+    assert trees_kept < 0.2, f"canopy wrongly kept as water ({trees_kept:.2f})"
+
+
 def test_forecast_point_band_defaults():
     p = ForecastPoint(datetime(2026, 8, 6, 12, tzinfo=timezone.utc), 0, 8.0, 40.0, True)
     assert p.reachable_certain is False and p.reachable_possible is False

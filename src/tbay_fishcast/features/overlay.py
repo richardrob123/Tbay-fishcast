@@ -278,10 +278,11 @@ def fill_unsurveyed_water(depth: np.ndarray, res_m: float, *, scan_m: float = 65
     return d
 
 
-def imagery_unsurveyed_water(depth: np.ndarray, gray: np.ndarray, *,
-                             water_below: float = 62.0):
-    """No-data pixels that are DARK in the basemap imagery AND connected to the surveyed
-    lake — i.e. unsurveyed water, not shore.
+def imagery_unsurveyed_water(depth: np.ndarray, rgb: np.ndarray, *,
+                             water_below: float = 62.0, veg_margin: float = 8.0,
+                             veg_texture: float = 6.0):
+    """No-data pixels that are DARK, NOT VEGETATION, AND connected to the surveyed lake —
+    i.e. unsurveyed water, not shore.
 
     NONNA leaves the shallow nearshore (and some offshore water) unsurveyed (NaN) exactly
     like land, so the shore logic treats that no-data apron as coastline and casts off its
@@ -290,12 +291,34 @@ def imagery_unsurveyed_water(depth: np.ndarray, gray: np.ndarray, *,
     deterministic mosaic — is ground truth for land vs water: over Lake Superior water is
     dark and land is bright. A no-data pixel that is dark AND flood-connected to the
     surveyed water is lake, not land; a dark INLAND patch (a shadow, a separate pond) is
-    not connected to the lake, so it stays land. `gray` is per-pixel brightness (0-255),
-    co-registered with `depth`. Returns the boolean mask of such unsurveyed-water pixels
+    not connected to the lake, so it stays land.
+
+    Brightness alone is NOT enough: a forested/shadowed outcropping is also dark, so a
+    dark treed point (MacKenzie/Silver) flood-connected through the lake was mistaken for
+    water — green and the front painted across the land (AUDIT: user-caught). But colour
+    alone over-corrects: dark teal Lake Superior water is ALSO green-dominant (G−B≈13),
+    so a green test eats real offshore water. The clean separator is TEXTURE: measured on
+    the actual imagery, dark teal water is smooth (local σ≈1.5) while dark canopy is
+    mottled (σ≈10–18). So a pixel is vegetation only if it is green-dominant AND textured.
+
+    `rgb` is the (H, W, 3) uint8 basemap, co-registered with `depth`. A 2-D brightness
+    array is still accepted (back-compat) but then the vegetation test is skipped — pass
+    RGB to get the tree-masking fix. Returns the boolean mask of unsurveyed-water pixels
     (pass it to `land_shore_distance(not_land=...)`).
     """
+    rgb = np.asarray(rgb)
+    if rgb.ndim == 3:
+        gray = rgb.mean(axis=2)
+        g = rgb[..., 1].astype(np.int16)
+        b = rgb[..., 2].astype(np.int16)
+        m = uniform_filter(gray, size=5)
+        texture = np.sqrt(np.maximum(uniform_filter(gray * gray, size=5) - m * m, 0.0))
+        vegetation = (g - b > veg_margin) & (texture > veg_texture)  # green AND mottled => canopy
+    else:
+        gray = rgb
+        vegetation = np.zeros(gray.shape, dtype=bool)
     water = np.isfinite(depth)
-    cand = (~water) & (gray < water_below)
+    cand = (~water) & (gray < water_below) & (~vegetation)
     lbl, _ = label(water | cand)                     # flood surveyed water through dark gaps
     lake = set(np.unique(lbl[water]).tolist())
     lake.discard(0)

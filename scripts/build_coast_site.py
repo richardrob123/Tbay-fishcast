@@ -111,20 +111,31 @@ def _iso_field(gx, gy, iso_pts, vals):
     return iso
 
 
+# Thermal-habitat targets (°C). Optimal-thermal-habitat mapping for lake trout: the
+# preferendum is ~10 °C (USGS), peak growth ~12.5 °C, comfortable band ~4–12 °C, chronic
+# ceiling ~16 °C. So 12 = outer edge of comfort (the ceiling), 10 = the optimum/sweet
+# spot, 8 = deep cold (marks the strongest upwelling). NOT "colder is better" — colder
+# than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
+TARGETS = (12.0, 10.0, 8.0)
+
+
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod):
     """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
 
-    AUDIT_ROUND3: the honest band (isotherm_band's shallow/central/deep) used to be
-    computed and then discarded — a crisp central-only polygon overclaimed a boundary
-    whose measured position error exceeds the 75 m cast band. Now every lead ships
-    THREE reachability members tagged band=certain|central|possible:
-      certain  = reachable even under the conservative (deep) end of the bias band
-      central  = the best estimate (what was previously the only polygon)
-      possible = reachable under the optimistic (shallow) end
-    and the 12 C front for the central member plus faint bookend fronts.
+    Two honest signals, no false precision:
+    * AREA fills — the reachable region for EACH thermal target (12/10/8 °C), central bias,
+      tagged temp=t12|t10|t8. Nested (colder needs deeper bottom ⇒ t8 ⊆ t10 ⊆ t12), shaded
+      light→deep so the angler reads how cold the reachable water is, with 10–12 °C the
+      laker optimum. Contouring the same corrected LSOFS field at three thresholds — no new
+      data (this is standard optimal-thermal-habitat mapping).
+    * The 12 °C FRONT — central + shallow/deep bias bookends (tagged band=central|possible|
+      certain), so the position UNCERTAINTY (~100–300 m, > the cast band; AUDIT_ROUND3)
+      reads as a ribbon, not a crisp line.
     """
     central, lo, hi, n = bias
-    iso_pts, v_sh, v_ce, v_de = [], [], [], []
+    iso_pts = []
+    tvals = {t: [] for t in TARGETS}          # central isotherm depth per target
+    f_sh, f_ce, f_de = [], [], []             # 12 °C shallow/central/deep for the front ribbon
     for i, nd in enumerate(inbox):
         col = cols.get(str(int(nd)))
         if col is None or len(col.depths_m) < 4:
@@ -132,34 +143,35 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         depths, raw = col.depths_m, col.temps_c
         surf_bias = (raw[0] - g_sst) if g_sst is not None else 0.0
         bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
-        b = thermocline.isotherm_band(depths, raw, bm, prod.target_c)
-        if b["central"] is not None:
-            iso_pts.append(node_xy[i])
-            v_ce.append(b["central"])
-            # a member with no crossing (whole column warm) = unreachable there: carry
-            # a below-bottom sentinel so the interpolated field stays defined
-            v_sh.append(b["shallow"] if b["shallow"] is not None else 999.0)
-            v_de.append(b["deep"] if b["deep"] is not None else 999.0)
+        prim = thermocline.isotherm_band(depths, raw, bm, prod.target_c)
+        if prim["central"] is None:
+            continue
+        iso_pts.append(node_xy[i])
+        # 999 sentinel = no crossing (column never that cold) => below any bottom => unreachable
+        for t in TARGETS:
+            zc = thermocline.isotherm_band(depths, raw, bm, t)["central"]
+            tvals[t].append(zc if zc is not None else 999.0)
+        f_ce.append(prim["central"])
+        f_sh.append(prim["shallow"] if prim["shallow"] is not None else 999.0)
+        f_de.append(prim["deep"] if prim["deep"] is not None else 999.0)
     if len(iso_pts) < 3:
         return None, 0.0, []
     iso_pts = np.array(iso_pts)
     kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m}
     area_feats, lines = [], []
-    reach_px_central = 0.0
-    members = [("possible", v_sh), ("central", v_ce), ("certain", v_de)]
-    for tag, vals in members:
-        iso = _iso_field(gx, gy, iso_pts, vals)
+    reach_px_primary = 0.0
+    for t in TARGETS:
+        iso = _iso_field(gx, gy, iso_pts, tvals[t])
         _cold, reachable = cold_reachable(depth, iso, dist, **kw)
-        if tag == "central":
-            reach_px_central = float(reachable.sum())
+        if t == prod.target_c:
+            reach_px_primary = float(reachable.sum())
         for rings in reachable_area_features(reachable, bounds_3857, res):
-            area_feats.append((tag, rings))
-        # the 12 C front is the isotherm outcrop (depth == iso), drawn to TRACE THE
-        # SHORE where cold water reaches the edge; central solid, bookends faint so the
-        # user sees the measured position uncertainty as a ribbon, not a false line.
+            area_feats.append((f"t{int(t)}", rings))
+    for tag, vals in (("possible", f_sh), ("central", f_ce), ("certain", f_de)):
+        iso = _iso_field(gx, gy, iso_pts, vals)
         for path in cold_front_features(depth, iso, dist, bounds_3857):
             lines.append((tag, path))
-    return area_feats, reach_px_central, lines
+    return area_feats, reach_px_primary, lines
 
 
 def main(argv) -> int:
@@ -243,10 +255,10 @@ def main(argv) -> int:
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
                          "valid_utc": vt.strftime("%Y-%m-%dT%H:%M:%SZ"),
                          "reach_ha": round(reach_px * res * res / 1e4, 1)})
-            for band, rings in area:
+            for temp, rings in area:
                 coords = [[[round(lon, 6), round(lat, 6)] for lon, lat in ring] for ring in rings]
                 area_feats.append({"type": "Feature",
-                                   "properties": {"lead": lead, "band": band},
+                                   "properties": {"lead": lead, "temp": temp},
                                    "geometry": {"type": "Polygon", "coordinates": coords}})
             for band, path in lines:
                 coords = [[round(lon, 6), round(lat, 6)] for lon, lat in path]
@@ -314,6 +326,7 @@ def main(argv) -> int:
         "age_h": round(age_h, 1), "stale": age_h > 18,
         "target_c": cfg.product.target_c, "cast_m": cfg.product.cast_m,
         "max_reach_depth_m": cfg.product.max_reach_depth_m,
+        "targets_c": list(TARGETS),        # thermal-habitat bands shaded on the map
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},
