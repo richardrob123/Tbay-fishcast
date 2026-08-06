@@ -17,7 +17,6 @@ No LLM (ADR-001).
 """
 from __future__ import annotations
 
-import io
 import json
 import math
 import sys
@@ -29,15 +28,13 @@ from scipy.interpolate import griddata
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import matplotlib  # noqa: E402
-matplotlib.use("Agg")
-import matplotlib.image as mpimg  # noqa: E402
 
 import forecast_window as fw  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
-from tbay_fishcast.features.overlay import cold_reachable, isobath_line_features, land_shore_distance, merc  # noqa: E402
+from tbay_fishcast.features.overlay import (  # noqa: E402
+    cold_reachable, isobath_line_features, land_shore_distance, merc, reachable_area_features)
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -67,12 +64,6 @@ def _merc_to_ll(x, y):
     lon = x / _R * 180.0 / math.pi
     lat = (2.0 * math.atan(math.exp(y / _R)) - math.pi / 2.0) * 180.0 / math.pi
     return lon, lat
-
-
-def _png(rgba) -> bytes:
-    buf = io.BytesIO()
-    mpimg.imsave(buf, rgba, format="png")
-    return buf.getvalue()
 
 
 def _resolve_issue(cfg, issue, max_back=3):
@@ -111,11 +102,11 @@ def _node_columns_in_box(cfg, issue, clat, clon):
     return inbox, node_xy
 
 
-def _overlay(depth, water, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857):
-    """Return (green_rgba, reach_px, line_features) for one lead, or (None, 0, []).
+def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res):
+    """Return (area_polys, reach_px, line_features) for one lead, or (None, 0, []).
 
-    The GREEN reachable band is a raster overlay; the RED 12 C line is returned as
-    vector lon/lat polylines (rendered by MapLibre as a crisp line at any zoom).
+    Both products are VECTOR (rendered by MapLibre so they stay crisp at any zoom):
+    the reachable-cold band as smoothed lon/lat polygons, the 12 C front as polylines.
     """
     central, lo, hi, n = bias
     iso_pts, iso_val = [], []
@@ -137,11 +128,9 @@ def _overlay(depth, water, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, boun
     if nan.any():
         iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
     _cold, reachable = cold_reachable(depth, iso, dist, cast_m=CAST_M)
-    ny, nx = depth.shape
-    rgba = np.zeros((ny, nx, 4), dtype=np.uint8)
-    rgba[reachable] = (57, 211, 83, 140)     # reachable cold water — green (raster)
-    lines = isobath_line_features(depth, iso, dist, bounds_3857)   # the 12 C line (vector)
-    return rgba, float(reachable.sum()), lines  # caller scales px by res^2 for ha
+    area = reachable_area_features(reachable, bounds_3857, res)      # green (vector)
+    lines = isobath_line_features(depth, iso, dist, bounds_3857)     # 12 C front (vector)
+    return area, float(reachable.sum()), lines
 
 
 def main(argv) -> int:
@@ -158,7 +147,6 @@ def main(argv) -> int:
     cfg = load_config()
     issue = _resolve_issue(cfg, issue)     # fall back if today's t12z isn't posted yet
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "overlays").mkdir(exist_ok=True)
 
     central, lo, hi, _, n = bias_live.pooled_subsurface_bias(cfg, issue)
     bias = (central, lo, hi, n)
@@ -172,7 +160,6 @@ def main(argv) -> int:
         if patch.coverage_frac < 0.03:
             print(f"skip {sid}: water {patch.coverage_frac:.0%}"); continue
         depth = patch.depth
-        water = np.isfinite(depth)
         res = nonna.ground_res_m(patch.res_mercator_m, clat)
         dist, _land = land_shore_distance(depth, res)
         ny, nx = depth.shape
@@ -196,7 +183,8 @@ def main(argv) -> int:
         corners = [list(tl), list(tr), list(br), list(bl)]
 
         days = []
-        line_feats = []                       # vector 12 C line features, tagged by lead
+        line_feats = []                       # vector 12 C front, tagged by lead
+        area_feats = []                       # vector reachable-cold polygons, tagged by lead
         for kind, fh, lead in LEADS:
             f = LsofsFile(issue, "t12z", kind, fh)
             try:
@@ -206,15 +194,16 @@ def main(argv) -> int:
             vt = valid_time_from_dataset(ds)
             cols = extract_native_columns(ds, {str(int(nd)): int(nd) for nd in inbox})
             ds.close()
-            rgba, reach_px, lines = _overlay(depth, water, dist, gx, gy, inbox, node_xy,
-                                             cols, g_sst, bias, patch.bounds_3857)
-            if rgba is None:
+            area, reach_px, lines = _overlay(depth, dist, gx, gy, inbox, node_xy,
+                                             cols, g_sst, bias, patch.bounds_3857, res)
+            if area is None:
                 continue
-            fname = f"{sid}_{lead:03d}.png"
-            (OUT / "overlays" / fname).write_bytes(_png(rgba))
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
-                         "reach_ha": round(reach_px * res * res / 1e4, 1),
-                         "png": f"data/overlays/{fname}"})
+                         "reach_ha": round(reach_px * res * res / 1e4, 1)})
+            for rings in area:
+                coords = [[[round(lon, 6), round(lat, 6)] for lon, lat in ring] for ring in rings]
+                area_feats.append({"type": "Feature", "properties": {"lead": lead},
+                                   "geometry": {"type": "Polygon", "coordinates": coords}})
             for path in lines:
                 coords = [[round(lon, 6), round(lat, 6)] for lon, lat in path]
                 line_feats.append({"type": "Feature", "properties": {"lead": lead},
@@ -222,11 +211,15 @@ def main(argv) -> int:
         if not days:
             print(f"skip {sid}: no frames"); continue
         (OUT / "lines").mkdir(exist_ok=True)
+        (OUT / "areas").mkdir(exist_ok=True)
         (OUT / "lines" / f"{sid}.geojson").write_text(
             json.dumps({"type": "FeatureCollection", "features": line_feats}))
+        (OUT / "areas" / f"{sid}.geojson").write_text(
+            json.dumps({"type": "FeatureCollection", "features": area_feats}))
         stretches_out.append({"id": sid, "name": name, "corners": corners,
                               "center": [clat, clon], "res_m": round(res, 1),
                               "anchor_day": anchor_day, "days": days,
+                              "area": f"data/areas/{sid}.geojson",
                               "lines": f"data/lines/{sid}.geojson"})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
               f"ha {days[0]['reach_ha']}..{max(d['reach_ha'] for d in days)}")

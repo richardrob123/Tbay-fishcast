@@ -24,8 +24,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest"]
 # geo/render extras — NOT needed for the test suite (hermetic), only for the live
-# heartbeat (rasterio: NONNA bathymetry patch) and the map/validation scripts (matplotlib).
-geo = ["rasterio", "matplotlib"]
+# heartbeat (rasterio: NONNA bathymetry patch) and the map/validation scripts
+# (matplotlib for contours; shapely to polygonize + simplify the vector overlays).
+geo = ["rasterio", "matplotlib", "shapely"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

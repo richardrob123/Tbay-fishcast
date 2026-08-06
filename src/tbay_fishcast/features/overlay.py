@@ -76,6 +76,66 @@ def _chaikin(pts, iters=2):
     return pts
 
 
+def _chaikin_closed(pts, iters=2):
+    """Chaikin corner-cutting for a CLOSED ring (wraps around, stays closed)."""
+    p = list(pts[:-1]) if len(pts) > 1 and pts[0] == pts[-1] else list(pts)
+    for _ in range(iters):
+        n = len(p)
+        if n < 3:
+            break
+        out = []
+        for i in range(n):
+            a, b = p[i], p[(i + 1) % n]
+            out.append((a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25))
+            out.append((a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75))
+        p = out
+    p.append(p[0])
+    return p
+
+
+def reachable_area_features(reachable_mask: np.ndarray, bounds_3857, res_m: float, *,
+                            min_area_m2: float = 900.0, simplify_m: float = 14.0,
+                            smooth_iters: int = 2):
+    """Polygonize the reachable-cold mask into smoothed lon/lat polygons.
+
+    Vector, so the green area (like the red line) stays crisp at any zoom instead of
+    pixelating as a raster overlay does. rasterio.features.shapes traces the mask ->
+    shapely simplifies (topology-preserving Douglas-Peucker) -> Chaikin rounds the
+    pixel staircase. Polygons below `min_area_m2` are dropped. Returns a list of
+    polygons, each a list of rings (exterior first, then holes), each ring a list of
+    [lon, lat].
+    """
+    from rasterio.features import shapes
+    from shapely.geometry import shape as _shape
+
+    ny, nx = reachable_mask.shape
+    x0, y0, x1, y1 = bounds_3857
+    m = reachable_mask.astype(np.uint8)
+
+    def px_to_lonlat(col, row):
+        mx = x0 + (col / nx) * (x1 - x0)          # rasterio traces pixel edges (0..nx)
+        my = y1 - (row / ny) * (y1 - y0)          # row 0 = top = y1
+        return list(_merc_to_lonlat(mx, my))
+
+    tol_px = simplify_m / max(res_m, 1e-6)
+    out = []
+    for geom, val in shapes(m, mask=m.astype(bool)):
+        if val != 1:
+            continue
+        g = _shape(geom)
+        if g.area * res_m * res_m < min_area_m2:  # area is in pixel^2 -> * res^2 = m^2
+            continue
+        g = g.simplify(tol_px, preserve_topology=True)
+        if g.is_empty:
+            continue
+        rings = []
+        for ring in [g.exterior, *g.interiors]:
+            pts = _chaikin_closed(list(ring.coords), smooth_iters)
+            rings.append([px_to_lonlat(c, r) for c, r in pts])
+        out.append(rings)
+    return out
+
+
 def isobath_line_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray,
                           bounds_3857, *, line_band_m: float = 250.0,
                           min_len_m: float = 90.0):

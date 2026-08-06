@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-05",
  "issued_utc": "2026-08-05T12:00:00Z",
- "built_utc": "2026-08-06T11:49:51Z",
- "age_h": 23.8,
+ "built_utc": "2026-08-06T12:59:35Z",
+ "age_h": 25.0,
  "stale": true,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -45,40 +45,35 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 63.4,
-     "png": "data/overlays/kam_mission_000.png"
+     "reach_ha": 63.4
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 72.2,
-     "png": "data/overlays/kam_mission_024.png"
+     "reach_ha": 72.2
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 100.4,
-     "png": "data/overlays/kam_mission_048.png"
+     "reach_ha": 100.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 90.1,
-     "png": "data/overlays/kam_mission_072.png"
+     "reach_ha": 90.1
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 79.2,
-     "png": "data/overlays/kam_mission_096.png"
+     "reach_ha": 79.2
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 65.4,
-     "png": "data/overlays/kam_mission_120.png"
+     "reach_ha": 65.4
     }
    ],
+   "area": "data/areas/kam_mission.geojson",
    "lines": "data/lines/kam_mission.geojson"
   },
   {
@@ -112,40 +107,35 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 52.7,
-     "png": "data/overlays/marina_mcvicar_000.png"
+     "reach_ha": 52.7
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 64.2,
-     "png": "data/overlays/marina_mcvicar_024.png"
+     "reach_ha": 64.2
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 60.2,
-     "png": "data/overlays/marina_mcvicar_048.png"
+     "reach_ha": 60.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 57.7,
-     "png": "data/overlays/marina_mcvicar_072.png"
+     "reach_ha": 57.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 44.1,
-     "png": "data/overlays/marina_mcvicar_096.png"
+     "reach_ha": 44.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 42.4,
-     "png": "data/overlays/marina_mcvicar_120.png"
+     "reach_ha": 42.4
     }
    ],
+   "area": "data/areas/marina_mcvicar.geojson",
    "lines": "data/lines/marina_mcvicar.geojson"
   },
   {
@@ -179,40 +169,35 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 51.1,
-     "png": "data/overlays/current_barepoint_000.png"
+     "reach_ha": 51.1
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 53.1,
-     "png": "data/overlays/current_barepoint_024.png"
+     "reach_ha": 53.1
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 51.6,
-     "png": "data/overlays/current_barepoint_048.png"
+     "reach_ha": 51.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 50.1,
-     "png": "data/overlays/current_barepoint_072.png"
+     "reach_ha": 50.1
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 50.0,
-     "png": "data/overlays/current_barepoint_096.png"
+     "reach_ha": 50.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 50.1,
-     "png": "data/overlays/current_barepoint_120.png"
+     "reach_ha": 50.1
     }
    ],
+   "area": "data/areas/current_barepoint.geojson",
    "lines": "data/lines/current_barepoint.geojson"
   },
   {
@@ -246,40 +231,35 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 77.9,
-     "png": "data/overlays/mackenzie_silver_000.png"
+     "reach_ha": 77.9
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 76.5,
-     "png": "data/overlays/mackenzie_silver_024.png"
+     "reach_ha": 76.5
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 72.5,
-     "png": "data/overlays/mackenzie_silver_048.png"
+     "reach_ha": 72.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 69.3,
-     "png": "data/overlays/mackenzie_silver_072.png"
+     "reach_ha": 69.3
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 70.9,
-     "png": "data/overlays/mackenzie_silver_096.png"
+     "reach_ha": 70.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 72.0,
-     "png": "data/overlays/mackenzie_silver_120.png"
+     "reach_ha": 72.0
     }
    ],
+   "area": "data/areas/mackenzie_silver.geojson",
    "lines": "data/lines/mackenzie_silver.geojson"
   }
  ],

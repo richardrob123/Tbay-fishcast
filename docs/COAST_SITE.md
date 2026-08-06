@@ -17,10 +17,14 @@ URL on a phone, no local run. Lives in `web/`, deploys to GitHub Pages.
 
 ## Architecture
 `web/index.html` is a static MapLibre app (library vendored in `web/vendor/`, no CDN
-dependency). It reads `web/data/manifest.json` — stretch corner coordinates, per-day
-transparent overlay PNGs, station verdicts, wind probabilities, data age — and stacks
-the overlays on the basemap. The overlays are transparent georeferenced PNGs
-(~0.25 MB total); no imagery is embedded (the browser fetches Esri tiles live).
+dependency). It reads `web/data/manifest.json` — stretch metadata, station verdicts,
+wind probabilities, data age — plus one GeoJSON per stretch for the reachable-cold
+**area** (`data/areas/`) and one for the 12 °C **front** (`data/lines/`). BOTH overlays
+are vector (fill+outline polygons and polylines, tagged by forecast lead), so they
+stay crisp at any zoom instead of pixelating like a raster overlay. The area polygons
+are `rasterio`-polygonized then `shapely`-simplified and Chaikin-smoothed; the line is
+a matplotlib contour of `depth − isotherm`, likewise simplified/smoothed. No imagery is
+embedded (the browser fetches Esri basemap tiles live).
 
 `scripts/build_coast_site.py` regenerates `web/data/` for a given issue day
 (defaults to today UTC). No LLM in the build (ADR-001).

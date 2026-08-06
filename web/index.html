@@ -142,23 +142,25 @@ map.on('load', async () => {
   const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
   man._v = V;
   const lead0 = man.stretches[0].days[0].lead;
+  const F = l => ['==',['get','lead'], l];       // day filter
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
-    // GREEN reachable band = raster overlay (an area)
-    map.addSource('ov'+i, { type:'image', url: s.days[0].png + V, coordinates: s.corners });
-    map.addLayer({ id:'ov'+i, type:'raster', source:'ov'+i,
-      paint:{ 'raster-opacity': 0.82, 'raster-resampling':'nearest', 'raster-fade-duration':0 } });
-    // RED 12 C line = VECTOR GeoJSON so it stays a crisp constant-width stroke at any
-    // zoom (a raster line pixelates into blocks up close). Filtered to the active day.
+    // Everything is VECTOR so it stays crisp at any zoom (no raster pixelation).
+    // GREEN reachable-cold band = polygon fill + a crisp outline.
+    if(s.area){
+      map.addSource('ar'+i, { type:'geojson', data: s.area + V });
+      map.addLayer({ id:'ar'+i, type:'fill', source:'ar'+i, filter:F(lead0),
+        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.30 } });
+      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:F(lead0),
+        layout:{ 'line-join':'round' }, paint:{ 'line-color':'#39d353', 'line-width':1.4, 'line-opacity':0.9 } });
+    }
+    // RED 12 C front = polyline, with a dark halo so it reads over land and pale shallows.
     if(s.lines){
       map.addSource('ln'+i, { type:'geojson', data: s.lines + V });
-      // dark halo under the red line so it reads over light land and pale shallows too
-      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i,
-        filter:['==',['get','lead'], lead0],
+      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i, filter:F(lead0),
         layout:{ 'line-cap':'round', 'line-join':'round' },
         paint:{ 'line-color':'#0b0f14', 'line-width':4.4, 'line-opacity':0.5 } });
-      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i,
-        filter:['==',['get','lead'], lead0],
+      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i, filter:F(lead0),
         layout:{ 'line-cap':'round', 'line-join':'round' },
         paint:{ 'line-color':'#ff1e3c', 'line-width':2.4, 'line-opacity':0.98 } });
     }
@@ -189,7 +191,9 @@ map.on('load', async () => {
   t.addEventListener('input', e => setDay(+e.target.value));
   document.getElementById('op').addEventListener('input', e => {
     const o = +e.target.value/100;
-    man.stretches.forEach((s,i)=> map.setPaintProperty('ov'+i,'raster-opacity', o));
+    man.stretches.forEach((s,i)=>{ if(map.getLayer('ar'+i)){
+      map.setPaintProperty('ar'+i,'fill-opacity', o*0.38);
+      map.setPaintProperty('aro'+i,'line-opacity', o); } });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
   setDay(0);
@@ -210,10 +214,8 @@ function setDay(i){
   const man = MAN;
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
-    const src = map.getSource('ov'+k);
-    if(src && src.updateImage) src.updateImage({ url: day.png + (MAN._v || '') });
-    if(map.getLayer('ln'+k)){ const flt=['==',['get','lead'], day.lead];   // vector line -> active day
-      map.setFilter('ln'+k, flt); map.setFilter('lnh'+k, flt); }
+    const flt = ['==',['get','lead'], day.lead];               // all vector layers -> active day
+    ['ar'+k,'aro'+k,'ln'+k,'lnh'+k].forEach(id => { if(map.getLayer(id)) map.setFilter(id, flt); });
   });
   const d0 = man.stretches[0].days[i];
   document.getElementById('dlab').textContent = d0.label + (i===0?'  (now)':'');

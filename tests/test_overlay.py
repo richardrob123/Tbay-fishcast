@@ -12,6 +12,7 @@ from tbay_fishcast.features.overlay import (
     isobath_line_features,
     isobath_line_rgba,
     land_shore_distance,
+    reachable_area_features,
 )
 
 RES = 10.0  # m/px
@@ -103,6 +104,26 @@ def test_isobath_line_features_are_vector_paths_length_filtered():
         assert -90.5 < lon < -88.0 and 48.0 < lat < 49.0     # plausible lon/lat
     # an impossibly long minimum filters everything out
     assert isobath_line_features(depth, iso, dist, bounds, min_len_m=1e9) == []
+
+
+def test_reachable_area_features_are_closed_lonlat_polygons():
+    """The reachable area vectorizes to closed lon/lat polygon rings (for a fill layer
+    that stays crisp at any zoom), and sub-threshold blobs are dropped."""
+    depth = _sloping_shore(rows=40, cols=40)
+    dist = np.zeros((40, 40))
+    for c in range(40):
+        dist[:, c] = abs(c - 4) * RES
+    iso = np.full_like(depth, 3.0)
+    _, reach = cold_reachable(depth, iso, dist, cast_m=75.0, min_reach_px=5)
+    bounds = (-9930000.0, 6190000.0, -9920000.0, 6200000.0)
+    polys = reachable_area_features(reach, bounds, RES, min_area_m2=100.0)
+    assert len(polys) >= 1
+    ext = polys[0][0]
+    assert len(ext) >= 4 and ext[0] == ext[-1]       # closed ring
+    lon, lat = ext[0]
+    assert -90.5 < lon < -88.0 and 48.0 < lat < 49.0
+    # an impossibly large minimum area drops everything
+    assert reachable_area_features(reach, bounds, RES, min_area_m2=1e12) == []
 
 
 def test_speck_removal_drops_isolated_reachable():
