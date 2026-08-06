@@ -37,7 +37,7 @@ import forecast_window as fw  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
-from tbay_fishcast.features.overlay import cold_line_reachable, land_shore_distance, merc  # noqa: E402
+from tbay_fishcast.features.overlay import cold_reachable, isobath_line_rgba, land_shore_distance, merc  # noqa: E402
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -132,11 +132,13 @@ def _overlay(depth, water, dist, gx, gy, inbox, node_xy, cols, g_sst, bias):
     nan = ~np.isfinite(iso)
     if nan.any():
         iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
-    _cold, line, reachable = cold_line_reachable(depth, iso, dist, cast_m=CAST_M)
+    _cold, reachable = cold_reachable(depth, iso, dist, cast_m=CAST_M)
     ny, nx = depth.shape
     rgba = np.zeros((ny, nx, 4), dtype=np.uint8)
     rgba[reachable] = (57, 211, 83, 140)     # reachable cold water — green
-    rgba[line] = (255, 30, 60, 255)          # the 12 C line — red
+    line = isobath_line_rgba(depth, iso, dist)   # the 12 C line as a true contour
+    lm = line[:, :, 3] > 40
+    rgba[lm] = line[lm]                       # red isobath over the green band
     return rgba, float(reachable.sum())  # caller scales pixel count by res^2 for ha
 
 

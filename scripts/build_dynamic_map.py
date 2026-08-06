@@ -36,7 +36,7 @@ import matplotlib.image as mpimg  # noqa: E402
 
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
-from tbay_fishcast.features.overlay import cold_line_reachable, land_shore_distance, merc  # noqa: E402
+from tbay_fishcast.features.overlay import cold_reachable, isobath_line_rgba, land_shore_distance, merc  # noqa: E402
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -127,10 +127,12 @@ def main(argv) -> int:
         nanmask = ~np.isfinite(iso_field)
         if nanmask.any():
             iso_field[nanmask] = griddata(iso_pts, iso_val, (gx[nanmask], gy[nanmask]), method="nearest")
-        _cold, line, reachable = cold_line_reachable(depth, iso_field, dist, cast_m=CAST_M)
+        _cold, reachable = cold_reachable(depth, iso_field, dist, cast_m=CAST_M)
         rgba = np.zeros((ny, nx, 4), dtype=np.uint8)
         rgba[reachable] = (57, 211, 83, 120)     # reachable cold water — green
-        rgba[line] = (255, 30, 60, 255)          # the 12 C line — red
+        line = isobath_line_rgba(depth, iso_field, dist)   # 12 C line as a true contour
+        lm = line[:, :, 3] > 40
+        rgba[lm] = line[lm]                       # red isobath over the green band
         frames.append({"label": f"{vt:%a %b %-d}", "lead": lead,
                        "reach_ha": round(float(reachable.sum()) * res * res / 1e4, 1),
                        "png": _png_b64(rgba)})

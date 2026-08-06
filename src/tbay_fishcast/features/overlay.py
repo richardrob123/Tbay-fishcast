@@ -70,39 +70,19 @@ def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2
     return distance_transform_edt(~land) * res_m, land
 
 
-def cold_line_reachable(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray, *,
-                        cast_m: float = 75.0, max_reach_depth_m: float = 22.0,
-                        min_reach_px: int = 20, line_band_m: float = 300.0):
-    """(cold, line, reachable) boolean masks for one isotherm field.
+def cold_reachable(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray, *,
+                   cast_m: float = 75.0, max_reach_depth_m: float = 22.0,
+                   min_reach_px: int = 20):
+    """(cold, reachable) boolean masks for one isotherm field.
 
-    `dist` is distance to the (mainland) shore. Both products are confined to the
-    nearshore so harbour-interior structures and NONNA artifacts don't render:
-
-    cold      = water at/below the isotherm depth (cold water sits on the bottom).
-    line      = the target-isotherm contour within `line_band_m` of shore: cold pixels
-                bordering shallow WARM water that connects to shore (the real drop-off
-                edge), at any strip width. Not drawn where cold merely runs to shore,
-                nor at the offshore/no-data edge, nor around interpolation pinholes,
-                nor out in the lake interior.
-    reachable = cold within a cast of shore AND shallow enough to shore-fish, tiny
-                isolated specks removed.
+    `dist` is distance to the (mainland) shore. cold = water at/below the isotherm
+    depth (cold water sits on the bottom). reachable = cold within a cast of shore
+    AND shallow enough to shore-fish, with tiny isolated specks removed (fake
+    offshore "shore"). The 12 C LINE is rendered separately as a true contour
+    (`isobath_line_rgba`) so complex bathymetry gives a thin line, not a dilated blob.
     """
     water = np.isfinite(depth)
     cold = water & (depth >= iso_field)
-    warm = water & ~cold
-
-    # warm water that connects to shore (the real nearshore shelf) vs deep pinholes
-    lbl, n = label(warm)
-    shore_warm = np.zeros_like(warm)
-    for c in range(1, n + 1):
-        comp = lbl == c
-        if (binary_dilation(comp) & ~water).any():   # touches land / shore
-            shore_warm |= comp
-    line = cold & binary_dilation(shore_warm, iterations=1) & (dist <= line_band_m)
-    # the raw contour is 1 px wide, so on diagonals it staircases into dots. Thicken
-    # it to a continuous stroke (kept in water so it doesn't bleed onto land).
-    line = binary_dilation(line, iterations=2) & water & (dist <= line_band_m)
-
     reachable = cold & (dist <= cast_m) & (depth <= max_reach_depth_m)
     rl, rn = label(reachable)
     clean = np.zeros_like(reachable)
@@ -110,4 +90,45 @@ def cold_line_reachable(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarr
         comp = rl == c
         if comp.sum() >= min_reach_px:
             clean |= comp
-    return cold, line, clean
+    return cold, clean
+
+
+def isobath_line_rgba(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray, *,
+                      line_band_m: float = 300.0, color=(255, 30, 60), linewidth: float = 1.6):
+    """The 12 C line rendered as a TRUE contour (constant width, follows the isobath).
+
+    Contouring `depth - iso_field` at 0 traces exactly where the target isotherm meets
+    the bottom. Rendered by matplotlib at a fixed line width, it stays a clean thin
+    line even where the bottom is complex or near-flat at the isotherm depth — unlike a
+    dilated pixel-boundary, which blobs up there. Confined to `line_band_m` of shore.
+    Returns an (ny, nx, 4) uint8 RGBA with the line drawn (transparent elsewhere).
+    matplotlib is imported lazily so this module stays import-light for pure use.
+    """
+    import io
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    ny, nx = depth.shape
+    water = np.isfinite(depth)
+    field = np.where(water & (dist <= line_band_m), depth - iso_field, np.nan)
+    fig = plt.figure(figsize=(nx / 100.0, ny / 100.0), dpi=100)
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_axis_off()
+    ax.set_xlim(0, nx - 1); ax.set_ylim(ny - 1, 0)
+    try:
+        ax.contour(field, levels=[0.0], colors=[tuple(c / 255 for c in color)],
+                   linewidths=linewidth)
+    except Exception:  # noqa: BLE001  (no contour in this frame)
+        pass
+    # save TRANSPARENT so only the drawn line carries alpha (the canvas buffer would
+    # otherwise be opaque white and wipe everything it's composited over).
+    out = io.BytesIO()
+    fig.savefig(out, format="png", dpi=100, transparent=True)
+    plt.close(fig)
+    out.seek(0)
+    img = Image.open(out).convert("RGBA")
+    if img.size != (nx, ny):
+        img = img.resize((nx, ny), Image.NEAREST)
+    return np.asarray(img).copy()
