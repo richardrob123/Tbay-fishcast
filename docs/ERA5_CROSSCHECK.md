@@ -38,14 +38,28 @@ the number.
   the honest band up on those days), and (b) run a standing check that LSOFS's
   thermocline depth isn't drifting.
 
-## Next step (the potential accuracy *gain*, not just QA)
+## The depth-bias study (done, 13-day window) — real direction, not yet a correction
 
-Compare LSOFS-derived mixed-layer/thermocline depth to FLake MLD across the 2024–26
-record, buoy-adjudicated: if LSOFS is *systematically* deeper/shallower than two
-independent references (FLake + buoys), that is a correctable **depth** bias on top of
-the existing +3.3 °C temperature correction — the first thing that could move the
-isotherm-depth error below its current ~2.4 m. Until that study is done, FLake is wired
-as the independent cross-check; it does not yet change any published number.
+Compared LSOFS-derived mixed-layer depth (surface − 1 °C threshold) to FLake MLD at the
+three subsurface buoys, 2026-07-19→08-01 (39 records):
+
+- **LSOFS deeper than FLake in 92% of records; median +3.2 m** (pooled mean +4.8 m, but
+  outlier-inflated; std 5.8 m).
+- **Leave-one-buoy-out** still improves the held-out buoy, but weakly — residuals 2–5 m.
+- **Buoy adjudication:** where FLake and LSOFS disagree on whether the buoy sits in the
+  mixed layer, **stratified** cases favor FLake (LSOFS too deep ✓); **upwelling** cases at
+  45027 show LSOFS "MLD" of 14–28 m, which is the surface−1 °C *threshold breaking on a
+  cold near-uniform column* — a definition artifact, not a real bias.
+
+**Verdict:** a corroborated, real tendency — **LSOFS's thermocline runs too deep in
+stratified conditions** (FLake and buoys agree) — but NOT a clean constant correction: too
+noisy, regime-dependent, and confounded by the MLD definition. Shipping a −3 m shift would
+fail the same generalization bar the wind-conditioning idea failed (DATA_AUDIT). The clean
+finish is the **isotherm-depth gate against GLOS profiles** (validates the product's actual
+12 °C-crossing output with a consistent definition, sidestepping the MLD-definition trap);
+that endpoint was down at study time. Until then FLake stays a QA cross-check and this
+bias is a documented candidate, not a shipped number. Reproduce the gather logic per
+`scripts/validate_era5_flake.py` extended over a window.
 
 Reproduce: `pip install -e ".[era5]"`, put a CDS key in `~/.cdsapirc`, accept the ERA5
 licence once, then `python scripts/validate_era5_flake.py`.
