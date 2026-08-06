@@ -1,9 +1,15 @@
 name: coast-site
 
-# Builds the hosted whole-coast cold-water forecast map (web/) and deploys it to
-# GitHub Pages. Runs daily after the LSOFS t12z cycle posts, so the phone map stays
-# current. Deterministic build (ADR-001: no LLM). One-time setup: repo Settings ->
-# Pages -> Source: "GitHub Actions".
+# Builds the hosted whole-coast cold-water forecast map (web/) and publishes it to
+# the gh-pages branch, which GitHub Pages serves. Runs daily after the LSOFS t12z
+# cycle posts, so the phone map stays current. Deterministic build (ADR-001: no LLM).
+#
+# We publish to a branch (force-orphan: single-commit, no history bloat) rather than
+# via actions/deploy-pages, whose Pages-deployment API repeatedly got stuck in
+# "deployment_queued" and timed out. A git push has no such queue.
+#
+# One-time setup: repo Settings -> Pages -> Source: "Deploy from a branch" ->
+# Branch: gh-pages, folder: / (root).
 
 on:
   schedule:
@@ -11,8 +17,6 @@ on:
   workflow_dispatch: {}
   push:
     branches: [claude/tbay-fishcast-phase-0-6kh5lx]
-    # rebuild when the app, the builder, the overlay/ingest logic it depends on, or
-    # this workflow change (src/** covers features/overlay.py, ingest/glsea.py, etc.)
     paths:
       - web/**
       - scripts/build_coast_site.py
@@ -21,16 +25,14 @@ on:
       - .github/workflows/coast_site.yml
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write   # to push the built site to gh-pages
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: coast-site
+  cancel-in-progress: true   # a newer push supersedes an in-flight build
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,22 +45,16 @@ jobs:
           pip install -e ".[geo]"
       - name: Build the coast site data (today's issue)
         run: python scripts/build_coast_site.py
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: web
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          # the Pages deployment queue is occasionally slow; the 10-min default has
-          # timed out mid-queue. Give it 25 min so a slow queue isn't a failed deploy.
-          timeout: 1500000
+      - name: Publish web/ to gh-pages
+        run: |
+          cd web
+          touch .nojekyll                      # serve files verbatim (no Jekyll)
+          git init -q -b gh-pages
+          git config user.email "actions@github.com"
+          git config user.name "coast-site bot"
+          git add -A
+          git commit -q -m "coast-site build ${GITHUB_SHA::7}"
+          git push -q --force \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

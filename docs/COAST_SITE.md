@@ -30,12 +30,16 @@ embedded (the browser fetches Esri basemap tiles live).
 (defaults to today UTC). No LLM in the build (ADR-001).
 
 ## Deploy / refresh
-`.github/workflows/coast_site.yml` rebuilds the data and deploys to Pages **daily**
-(after the LSOFS t12z cycle) and on demand (`workflow_dispatch`).
+`.github/workflows/coast_site.yml` rebuilds the data and publishes `web/` to the
+**`gh-pages` branch** (force-orphan single commit) **daily** (after the LSOFS t12z
+cycle) and on demand (`workflow_dispatch`). We publish to a branch rather than via
+`actions/deploy-pages`, whose Pages-deployment API repeatedly got stuck in
+`deployment_queued` and timed out at 10 min; a `git push` has no such queue.
 
-**One-time setup:** repo **Settings → Pages → Source: "GitHub Actions"**. Then run the
-`coast-site` workflow once (Actions tab → Run workflow) or wait for the daily run. The
-map appears at `https://<owner>.github.io/<repo>/` — for this repo,
+**One-time setup:** repo **Settings → Pages → Source: "Deploy from a branch" →
+Branch: `gh-pages`, folder: `/ (root)`**. Then run the `coast-site` workflow once
+(Actions tab → Run workflow) or wait for the daily run. The map appears at
+`https://<owner>.github.io/<repo>/` — for this repo,
 `https://richardrob123.github.io/tbay-fishcast/`.
 
 Note: on a private repo with a free plan the published Pages site is public (the URL is
