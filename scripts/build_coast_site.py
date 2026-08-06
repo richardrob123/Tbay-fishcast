@@ -132,9 +132,11 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
     _cold, reachable = cold_reachable(depth, iso, dist, cast_m=CAST_M)
     area = reachable_area_features(reachable, bounds_3857, res)      # green (vector)
-    # the front is green's warm-facing inshore edge, derived from the SAME mask so red
-    # and green stay coherent (no green without red; red continuous along the green).
-    lines = cold_front_features(depth, iso, reachable, bounds_3857)  # 12 C front (vector)
+    # the 12 C front is the isotherm outcrop (depth == iso) in a nearshore band, drawn to
+    # TRACE THE SHORE where cold water reaches the edge and to pull offshore only where a
+    # warm shallow apron intervenes — so it stays a continuous line (breaking only over
+    # unsurveyed bottom) and still marks where cold water begins beyond casting range.
+    lines = cold_front_features(depth, iso, dist, bounds_3857)       # 12 C front (vector)
     return area, float(reachable.sum()), lines
 
 

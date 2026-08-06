@@ -190,39 +190,32 @@ def test_imagery_prunes_unsurveyed_water_apron_not_inland_dark():
     assert reach_fix.any()                      # real nearshore cold water still reachable
 
 
-def test_cold_front_traces_green_warm_interface_and_stays_coherent():
-    """The 12 C front is green's warm-facing inshore edge: it sits at the warm/green
-    boundary, and it is empty exactly when there is no green-borders-warm interface —
-    so the map never shows green without red from mismatched filters (nor red alone)."""
+def test_cold_front_traces_shore_and_pulls_offshore_past_a_warm_apron():
+    """The 12 C front traces the SHORELINE where cold water reaches the edge, and pulls
+    offshore only where a warm shallow apron sits between the shore and the cold water."""
     from tbay_fishcast.features.overlay import merc
-    depth = _sloping_shore(rows=40, cols=40)   # col5=2 m (warm), col6=4 m (cold) ...
+    res = 10.0
+    depth = np.full((40, 40), 5.0)             # cold everywhere (>= iso 3)
+    depth[:, :10] = np.nan                       # mainland (cols 0-9)
+    depth[20:40, 10:13] = 1.0                    # a warm shallow apron (rows 20-39, cols 10-12)
+    iso = np.full_like(depth, 3.0)
     dist = np.zeros((40, 40))
     for c in range(40):
-        dist[:, c] = abs(c - 4) * RES
-    iso = np.full_like(depth, 3.0)
-    _, reach = cold_reachable(depth, iso, dist, cast_m=75.0, min_reach_px=5)
+        dist[:, c] = max(0.0, c - 9) * res       # 0 on land (cols<=9), grows offshore
     bounds = (-9930000.0, 6190000.0, -9920000.0, 6200000.0)
     x0, _, x1, _ = bounds
-    feats = cold_front_features(depth, iso, reach, bounds, min_len_m=20.0)
+
+    feats = cold_front_features(depth, iso, dist, bounds, band_m=1000.0, min_len_m=20.0)
     assert len(feats) >= 1
-    cols = [(lon_to_col := (merc(lat, lon)[0] - x0) / (x1 - x0) * 39.0)
-            for path in feats for lon, lat in path]
-    # the warm strip is col 5, green starts col 6 -> the interface is ~5.5, never out
-    # near the offshore cast limit or on land
-    assert 4.0 <= min(cols) and max(cols) <= 7.0
+    cols = [(merc(lat, lon)[0] - x0) / (x1 - x0) * 39.0 for p in feats for lon, lat in p]
+    assert min(cols) < 11        # cold-to-shore rows: the front hugs the shoreline (col ~9-10)
+    assert max(cols) > 12        # apron rows: the front pulls offshore of the warm strip
 
-    # no warm apron (cold right to the shore): green exists but has no warm neighbour,
-    # so there is honestly no front -> no red (documents the only green-without-red case)
-    all_cold = np.full((40, 40), 10.0)
-    all_cold[:, :5] = np.nan
-    dist2, _ = land_shore_distance(all_cold, RES)
-    _, reach2 = cold_reachable(all_cold, np.full_like(all_cold, 3.0), dist2, min_reach_px=5)
-    assert reach2.any()
-    assert cold_front_features(all_cold, np.full_like(all_cold, 3.0), reach2, bounds) == []
-
-    # no green at all -> no red (never red without green)
-    empty = np.zeros((40, 40), dtype=bool)
-    assert cold_front_features(depth, iso, empty, bounds) == []
+    # unsurveyed no-data offshore of shore (dist>0, no depth) produces no front through it
+    d2 = depth.copy(); d2[5:9, 20:40] = np.nan   # a mid-water survey gap, not land (dist>0)
+    feats2 = cold_front_features(d2, iso, dist, bounds, band_m=1000.0, min_len_m=20.0)
+    gap_cols = [(merc(lat, lon)[0] - x0) / (x1 - x0) * 39.0 for p in feats2 for lon, lat in p]
+    assert gap_cols and min(gap_cols) < 11       # still traces the shore, not the gap edge
 
 
 def test_speck_removal_drops_isolated_reachable():

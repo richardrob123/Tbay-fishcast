@@ -188,35 +188,34 @@ def isobath_line_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.nda
     return out
 
 
-def cold_front_features(depth: np.ndarray, iso_field: np.ndarray, reachable: np.ndarray,
-                        bounds_3857, *, min_len_m: float = 35.0):
-    """The 12 C front as VECTOR polylines — the interface between the reachable-cold
-    band (green) and the warm shallow water just inshore of it.
+def cold_front_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray,
+                        bounds_3857, *, band_m: float = 200.0, min_len_m: float = 30.0):
+    """The 12 C front as VECTOR polylines — the isotherm outcrop (depth == iso) within a
+    nearshore band, drawn so it TRACES THE SHORE where the water is cold right to the edge.
 
-    Deriving the line from the SAME mask that makes the green area is what keeps the two
-    coherent: red is exactly green's warm-facing inshore edge, so it runs continuously
-    along the green and is never present where there is no green (nor green without it),
-    unlike an independently-contoured/length-filtered isobath. We build a field that is
-    1 on green, 0 on warm water, NaN everywhere else (land, and the cold water offshore
-    of the cast/depth limit) and contour it at 0.5. matplotlib draws a segment only
-    across a quad whose corners are all non-NaN, i.e. only between green and warm cells:
-    the green/land edge (the shoreline) and the green/deep-water edge (the offshore cast
-    limit) are NOT thermal fronts and correctly produce no line. Dust shorter than
-    `min_len_m` is dropped. Returns a list of [[lon, lat], ...] paths.
+    We contour `depth - iso_field` at 0 (deep/cold is positive, shallow/warm negative).
+    Real LAND is forced to the warm side, so the 0-crossing is drawn along the land/water
+    edge wherever cold water meets the shore directly: there the 12 C front simply IS the
+    shoreline, and the red line traces it instead of leaving a gap. It pulls offshore only
+    where a warm shallow apron sits between the shore and the cold water, and it still
+    marks the front out past casting range (a shallow flat shows the line offshore, with
+    no green between it and shore). UNSURVEYED no-data (no depth, but off the true land) is
+    left masked, so the front honestly breaks only where there is no bathymetry. `dist` is
+    distance-to-shore in metres (exactly 0 on land); confining to `band_m` keeps the line
+    near shore. Segments shorter than `min_len_m` are dropped. Returns [[lon, lat], ...].
     """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     ny, nx = depth.shape
-    water = np.isfinite(depth)
-    warm = water & (depth < iso_field)
-    field = np.full(depth.shape, np.nan)
-    field[warm] = 0.0
-    field[reachable] = 1.0                 # green wins where a cell is both (it isn't)
+    land = dist <= 0.0                              # land is exactly distance 0
+    field = depth - iso_field                        # NaN on land AND on unsurveyed no-data
+    field = np.where(land, -1.0, field)              # land -> warm side => front hugs the shore
+    field = np.where(dist <= band_m, field, np.nan)  # nearshore band only (land is dist 0)
     fig = plt.figure()
     try:
-        cs = fig.add_subplot().contour(field, levels=[0.5])
+        cs = fig.add_subplot().contour(field, levels=[0.0])
         segs = list(cs.allsegs[0]) if cs.allsegs else []
     except Exception:  # noqa: BLE001
         segs = []

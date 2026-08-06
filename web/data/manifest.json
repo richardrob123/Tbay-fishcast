@@ -1,15 +1,15 @@
 {
  "issue": "2026-08-06",
  "issued_utc": "2026-08-06T12:00:00Z",
- "built_utc": "2026-08-06T15:06:42Z",
- "age_h": 3.1,
+ "built_utc": "2026-08-06T19:04:38Z",
+ "age_h": 7.1,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
  "n_leads": 6,
  "bias": {
   "central": 3.8,
-  "lo": 0.9,
+  "lo": 0.8,
   "hi": 5.7,
   "n": 12
  },
@@ -45,32 +45,32 @@
     {
      "label": "Thu Aug 6",
      "lead": 0,
-     "reach_ha": 69.6
+     "reach_ha": 50.4
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
-     "reach_ha": 88.0
+     "reach_ha": 62.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
-     "reach_ha": 72.9
+     "reach_ha": 50.8
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
-     "reach_ha": 63.8
+     "reach_ha": 49.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
-     "reach_ha": 64.4
+     "reach_ha": 50.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 61.4
+     "reach_ha": 48.7
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -107,32 +107,32 @@
     {
      "label": "Thu Aug 6",
      "lead": 0,
-     "reach_ha": 63.7
+     "reach_ha": 47.6
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
-     "reach_ha": 62.8
+     "reach_ha": 46.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
-     "reach_ha": 48.8
+     "reach_ha": 34.2
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
-     "reach_ha": 42.8
+     "reach_ha": 29.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
-     "reach_ha": 56.9
+     "reach_ha": 41.2
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 57.4
+     "reach_ha": 42.0
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -169,7 +169,7 @@
     {
      "label": "Thu Aug 6",
      "lead": 0,
-     "reach_ha": 3.9
+     "reach_ha": 3.5
     },
     {
      "label": "Fri Aug 7",
@@ -231,32 +231,32 @@
     {
      "label": "Thu Aug 6",
      "lead": 0,
-     "reach_ha": 16.9
+     "reach_ha": 15.8
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
-     "reach_ha": 14.2
+     "reach_ha": 13.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
-     "reach_ha": 12.8
+     "reach_ha": 11.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
-     "reach_ha": 15.0
+     "reach_ha": 14.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
-     "reach_ha": 15.5
+     "reach_ha": 14.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
-     "reach_ha": 17.0
+     "reach_ha": 15.9
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",

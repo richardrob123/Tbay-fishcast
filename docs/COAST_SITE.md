@@ -26,14 +26,14 @@ wind probabilities, data age — plus one GeoJSON per stretch for the reachable-
 are vector (fill+outline polygons and polylines, tagged by forecast lead), so they
 stay crisp at any zoom instead of pixelating like a raster overlay. The area polygons
 are `rasterio`-polygonized then `shapely`-simplified and Chaikin-smoothed. The 12 °C
-**front is derived from the same reachable-cold mask that makes the green** — it is the
-interface between the green band and the warm shallow water just inshore of it (a
-matplotlib contour of a green=1 / warm=0 / else=NaN field at 0.5, likewise
-simplified/smoothed). Because red is defined as green's warm-facing inshore edge, the
-two are coherent by construction: red runs continuously along the green and never
-appears without it (nor green without it, except where the water is cold right to the
-waterline and there is genuinely no front to draw). No imagery is embedded (the browser
-fetches Esri basemap tiles live).
+**front is the isotherm outcrop** (`depth == iso`) within a nearshore band, contoured so
+that real land is forced to the warm side — the line therefore **traces the shoreline**
+wherever cold water reaches the edge (there the front simply *is* the shore) and pulls
+offshore only where a warm shallow apron sits between the shore and the cold water. It
+still marks the front out past casting range (a shallow flat shows the line offshore with
+no green between it and shore) and breaks only over **unsurveyed** bottom. No imagery is
+embedded in the deployed overlays (the browser fetches Esri basemap tiles live), though
+the build reads that same imagery to tell land from unsurveyed water.
 
 `scripts/build_coast_site.py` regenerates `web/data/` for a given issue day
 (defaults to today UTC). No LLM in the build (ADR-001).
