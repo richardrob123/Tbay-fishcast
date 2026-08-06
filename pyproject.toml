@@ -27,6 +27,9 @@ dev = ["pytest"]
 # heartbeat (rasterio: NONNA bathymetry patch) and the map/validation scripts
 # (matplotlib for contours; shapely to polygonize + simplify the vector overlays).
 geo = ["rasterio", "matplotlib", "shapely"]
+# ERA5 FLake — the independent (non-FVCOM) lake-physics cross-check. Offline validation
+# only (needs a CDS key); never imported by the heartbeat.
+era5 = ["cdsapi"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
