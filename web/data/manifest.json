@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-05",
  "issued_utc": "2026-08-05T12:00:00Z",
- "built_utc": "2026-08-05T20:30:38Z",
- "age_h": 8.5,
+ "built_utc": "2026-08-06T02:34:45Z",
+ "age_h": 14.6,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -45,37 +45,37 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 104.4,
+     "reach_ha": 63.1,
      "png": "data/overlays/kam_mission_000.png"
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 113.3,
+     "reach_ha": 68.7,
      "png": "data/overlays/kam_mission_024.png"
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 156.5,
+     "reach_ha": 99.0,
      "png": "data/overlays/kam_mission_048.png"
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 138.9,
+     "reach_ha": 87.1,
      "png": "data/overlays/kam_mission_072.png"
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 125.0,
+     "reach_ha": 77.6,
      "png": "data/overlays/kam_mission_096.png"
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 106.5,
+     "reach_ha": 63.7,
      "png": "data/overlays/kam_mission_120.png"
     }
    ]
@@ -111,37 +111,37 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 114.8,
+     "reach_ha": 45.9,
      "png": "data/overlays/marina_mcvicar_000.png"
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 132.0,
+     "reach_ha": 57.8,
      "png": "data/overlays/marina_mcvicar_024.png"
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 128.0,
+     "reach_ha": 54.7,
      "png": "data/overlays/marina_mcvicar_048.png"
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 123.8,
+     "reach_ha": 51.2,
      "png": "data/overlays/marina_mcvicar_072.png"
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 100.3,
+     "reach_ha": 35.7,
      "png": "data/overlays/marina_mcvicar_096.png"
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 96.7,
+     "reach_ha": 33.8,
      "png": "data/overlays/marina_mcvicar_120.png"
     }
    ]
@@ -177,37 +177,37 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 67.0,
+     "reach_ha": 50.5,
      "png": "data/overlays/current_barepoint_000.png"
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 68.5,
+     "reach_ha": 51.6,
      "png": "data/overlays/current_barepoint_024.png"
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 67.5,
+     "reach_ha": 50.9,
      "png": "data/overlays/current_barepoint_048.png"
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 65.6,
+     "reach_ha": 49.7,
      "png": "data/overlays/current_barepoint_072.png"
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 65.5,
+     "reach_ha": 49.7,
      "png": "data/overlays/current_barepoint_096.png"
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 65.6,
+     "reach_ha": 49.7,
      "png": "data/overlays/current_barepoint_120.png"
     }
    ]
@@ -243,37 +243,37 @@
     {
      "label": "Wed Aug 5",
      "lead": 0,
-     "reach_ha": 97.6,
+     "reach_ha": 77.1,
      "png": "data/overlays/mackenzie_silver_000.png"
     },
     {
      "label": "Thu Aug 6",
      "lead": 24,
-     "reach_ha": 96.1,
+     "reach_ha": 75.7,
      "png": "data/overlays/mackenzie_silver_024.png"
     },
     {
      "label": "Fri Aug 7",
      "lead": 48,
-     "reach_ha": 90.1,
+     "reach_ha": 71.5,
      "png": "data/overlays/mackenzie_silver_048.png"
     },
     {
      "label": "Sat Aug 8",
      "lead": 72,
-     "reach_ha": 86.1,
+     "reach_ha": 68.7,
      "png": "data/overlays/mackenzie_silver_072.png"
     },
     {
      "label": "Sun Aug 9",
      "lead": 96,
-     "reach_ha": 88.6,
+     "reach_ha": 70.3,
      "png": "data/overlays/mackenzie_silver_096.png"
     },
     {
      "label": "Mon Aug 10",
      "lead": 120,
-     "reach_ha": 90.2,
+     "reach_ha": 71.5,
      "png": "data/overlays/mackenzie_silver_120.png"
     }
    ]
@@ -424,10 +424,6 @@
  ],
  "wind": [
   {
-   "day": "Wed",
-   "p": 0.0
-  },
-  {
    "day": "Thu",
    "p": 0.0
   },
@@ -437,10 +433,14 @@
   },
   {
    "day": "Sat",
-   "p": 0.0
+   "p": 0.03
   },
   {
    "day": "Sun",
+   "p": 0.0
+  },
+  {
+   "day": "Mon",
    "p": 0.0
   }
  ]

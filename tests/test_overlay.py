@@ -48,9 +48,10 @@ def test_line_marks_warm_cold_interface_even_thin():
     dist, _ = land_shore_distance(depth, RES)
     iso = np.full_like(depth, 3.0)
     _, line, _ = cold_line_reachable(depth, iso, dist)
-    # the 3 m crossing sits between col5 (2 m, warm) and col6 (4 m, cold): line on col6
+    # the 3 m crossing sits between col5 (2 m, warm) and col6 (4 m, cold): the line
+    # marks that interface (thickened to a continuous stroke a few px wide)
     assert line[:, 6].all()
-    assert not line[:, 8].any()              # not smeared into deeper cold water
+    assert not line[:, 12].any()             # not smeared far into deeper cold water
 
 
 def test_tiny_nodata_speck_is_not_land():
@@ -68,6 +69,21 @@ def test_deep_warm_pinhole_makes_no_line():
     _, line, _ = cold_line_reachable(depth, iso, dist)
     # the pinhole is warm but does not touch shore -> no line ring around it
     assert not line[14:17, 19:22].any()
+
+
+def test_offshore_island_is_not_mainland_shore():
+    """An interior island (real, borders shallow water, big enough) is dropped when
+    mainland_only — it isn't walk-to shore, so cold water around it isn't 'reachable'."""
+    depth = np.full((30, 30), 10.0)
+    depth[:, :5] = np.nan                 # mainland block (touches the left border)
+    depth[:, 5] = 1.0                     # shallow waterline so the mainland is 'shore'
+    depth[12:19, 12:19] = 1.0             # a shallow patch mid-grid
+    depth[13:18, 13:18] = np.nan          # a 5x5 island inside it, off the border
+    _, shore_main = land_shore_distance(depth, RES, mainland_only=True)
+    _, shore_all = land_shore_distance(depth, RES, mainland_only=False)
+    assert shore_all[15, 15]              # island counts as land without the restriction
+    assert not shore_main[15, 15]         # dropped as non-mainland
+    assert shore_main[10, 2] and shore_all[10, 2]   # the mainland is kept either way
 
 
 def test_speck_removal_drops_isolated_reachable():
