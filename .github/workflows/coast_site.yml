@@ -11,7 +11,14 @@ on:
   workflow_dispatch: {}
   push:
     branches: [claude/tbay-fishcast-phase-0-6kh5lx]
-    paths: [web/index.html, scripts/build_coast_site.py, .github/workflows/coast_site.yml]
+    # rebuild when the app, the builder, the overlay/ingest logic it depends on, or
+    # this workflow change (src/** covers features/overlay.py, ingest/glsea.py, etc.)
+    paths:
+      - web/**
+      - scripts/build_coast_site.py
+      - scripts/forecast_window.py
+      - src/tbay_fishcast/**
+      - .github/workflows/coast_site.yml
 
 permissions:
   contents: read
