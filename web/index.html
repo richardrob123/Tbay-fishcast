@@ -29,6 +29,7 @@
   .age.stale{color:var(--warn);font-weight:650}
   .spacer{flex:1}
   #legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center}
+  #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35;opacity:.85}
   .sw{display:inline-block;width:15px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
   /* bottom forecast scrubber */
   #ctl{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));padding:12px 14px 13px}
@@ -79,8 +80,9 @@
   <span class="spacer"></span>
   <div id="legend">
     <span><span class="sw" style="background:#39d353;opacity:.75"></span>reachable cold water</span>
-    <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C line</span>
+    <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C front</span>
   </div>
+  <div id="legnote">Red marks where the cold water meets warmer shallows — it's absent where the water is cold right to the shore (then the green band is the whole story).</div>
 </div>
 
 <div class="card" id="ctl" style="display:none">
