@@ -20,7 +20,13 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from scipy.ndimage import binary_dilation, binary_opening, distance_transform_edt, label
+from scipy.ndimage import (
+    binary_dilation,
+    binary_opening,
+    distance_transform_edt,
+    label,
+    uniform_filter,
+)
 
 _R = 6378137.0
 
@@ -233,6 +239,36 @@ def cold_front_features(depth: np.ndarray, iso_field: np.ndarray, reachable: np.
         pts = _chaikin(pts, iters=3)       # round the corners into a smooth curve
         out.append([list(_merc_to_lonlat(x, y)) for x, y in pts])
     return out
+
+
+def fill_unsurveyed_water(depth: np.ndarray, res_m: float, *, scan_m: float = 65.0,
+                          water_frac: float = 0.6):
+    """Reclassify NO-DATA that is surrounded by water (a survey gap/seam) as water.
+
+    NONNA leaves unsurveyed water as NaN exactly like land, so a bare distance transform
+    treats every no-data seam, tile-boundary, and unsurveyed offshore patch as coastline
+    and spawns 'reachable cold water' along it, out in the middle of the bay. The tell is
+    local: a NaN pixel on the REAL coast has solid land filling half its neighbourhood,
+    while a NaN pixel in a mid-water seam or speckle field is ringed by water. So we scan
+    a window (~`scan_m`) around each NaN pixel and, where it is more than `water_frac`
+    water, call that pixel a survey gap and fill its depth from the nearest surveyed cell.
+    Solid land (window mostly non-water) is untouched, so the true coastline is preserved.
+    Returns a depth array with the gaps filled (input unmodified).
+
+    This was the fix for green bands tracing a diagonal NONNA seam across open water and
+    for whole stretches (Bare Point, MacKenzie) whose 'reachable' area was ~65-90% an
+    unsurveyed-water artifact rather than real walk-to shore.
+    """
+    water = np.isfinite(depth)
+    win = max(3, int(round(scan_m / max(res_m, 1e-6))) | 1)   # odd window in pixels
+    frac = uniform_filter(water.astype(np.float32), size=win)
+    gap = (~water) & (frac > water_frac)
+    if not gap.any():
+        return depth
+    d = depth.copy()
+    idx = distance_transform_edt(~water, return_distances=False, return_indices=True)
+    d[gap] = depth[tuple(idx)][gap]     # nearest surveyed depth into the gap
+    return d
 
 
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,

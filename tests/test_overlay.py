@@ -10,6 +10,7 @@ import numpy as np
 from tbay_fishcast.features.overlay import (
     cold_front_features,
     cold_reachable,
+    fill_unsurveyed_water,
     isobath_line_features,
     isobath_line_rgba,
     land_shore_distance,
@@ -125,6 +126,34 @@ def test_reachable_area_features_are_closed_lonlat_polygons():
     assert -90.5 < lon < -88.0 and 48.0 < lat < 49.0
     # an impossibly large minimum area drops everything
     assert reachable_area_features(reach, bounds, RES, min_area_m2=1e12) == []
+
+
+def test_fill_unsurveyed_water_drops_midwater_seam_not_real_coast():
+    """A NONNA no-data tendril reaching from the mainland out into open water gets filled
+    (so it can't fake a mid-lake shore and spawn reachable cold water out there), while
+    the solid mainland is left as land. Mirrors the delta seam that put green mid-bay."""
+    depth = np.full((60, 60), 8.0)            # open water, 8 m (cold for iso 3 m, castable)
+    depth[:, :10] = np.nan                     # solid mainland on the left
+    depth[:, 10] = 1.5                         # a shallow warm strip so the coast is 'shore'
+    depth[29:32, 10:45] = np.nan               # unsurveyed tendril from mainland into the bay
+    depth[5:8, 50:53] = np.nan                 # a disconnected offshore no-data speck
+    iso = np.full_like(depth, 3.0)
+
+    # raw (no fill): the tendril, being part of the shore-qualifying mainland component,
+    # fakes a reachable band out in mid-water beside its far end
+    dist_raw, _ = land_shore_distance(depth, 10.0)
+    _, reach_raw = cold_reachable(depth, iso, dist_raw, cast_m=75.0, min_reach_px=5)
+    assert reach_raw[27:34, 38:44].any()       # artifact: green mid-water by the tendril tip
+
+    filled = fill_unsurveyed_water(depth, 10.0, scan_m=90.0)
+    assert np.isfinite(filled[30, 40])         # tendril tip filled to water
+    assert np.isfinite(filled[6, 51])          # offshore speck filled to water
+    assert not np.isfinite(filled[:, :10]).any()   # solid mainland still land
+
+    dist, _ = land_shore_distance(filled, 10.0)
+    _, reach = cold_reachable(filled, iso, dist, cast_m=75.0, min_reach_px=5)
+    assert reach.any()                             # real nearshore cold water still reachable
+    assert not reach[27:34, 38:44].any()           # the mid-water artifact is gone
 
 
 def test_cold_front_traces_green_warm_interface_and_stays_coherent():

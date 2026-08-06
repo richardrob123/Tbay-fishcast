@@ -34,7 +34,8 @@ from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_front_features, cold_reachable, land_shore_distance, merc, reachable_area_features)
+    cold_front_features, cold_reachable, fill_unsurveyed_water, land_shore_distance, merc,
+    reachable_area_features)
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -161,8 +162,10 @@ def main(argv) -> int:
             print(f"skip {sid}: NONNA fetch failed ({str(e)[:50]})"); continue
         if patch.coverage_frac < 0.03:
             print(f"skip {sid}: water {patch.coverage_frac:.0%}"); continue
-        depth = patch.depth
         res = nonna.ground_res_m(patch.res_mercator_m, clat)
+        # NONNA marks unsurveyed water as NaN like land; fill mid-water survey gaps/seams
+        # so they don't fake a coastline and spawn reachable cold water out in the bay.
+        depth = fill_unsurveyed_water(patch.depth, res)
         dist, _land = land_shore_distance(depth, res)
         ny, nx = depth.shape
         x0, y0, x1, y1 = patch.bounds_3857

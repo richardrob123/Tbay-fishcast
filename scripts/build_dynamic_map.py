@@ -36,7 +36,8 @@ import matplotlib.image as mpimg  # noqa: E402
 
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
-from tbay_fishcast.features.overlay import cold_reachable, isobath_line_rgba, land_shore_distance, merc  # noqa: E402
+from tbay_fishcast.features.overlay import (  # noqa: E402
+    cold_reachable, fill_unsurveyed_water, isobath_line_rgba, land_shore_distance, merc)
 from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -64,9 +65,9 @@ def main(argv) -> int:
 
     # --- fixed layers: bathymetry, shore-distance, satellite base ---
     patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
-    depth = patch.depth
-    water = np.isfinite(depth)
     res = nonna.ground_res_m(patch.res_mercator_m, clat)
+    depth = fill_unsurveyed_water(patch.depth, res)   # drop mid-water NONNA survey gaps
+    water = np.isfinite(depth)
     dist, _land = land_shore_distance(depth, res)
     ny, nx = depth.shape
     x0, y0, x1, y1 = patch.bounds_3857
