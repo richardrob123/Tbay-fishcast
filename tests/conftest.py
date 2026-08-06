@@ -1,4 +1,5 @@
 import json
+import socket
 import sys
 from pathlib import Path
 
@@ -6,6 +7,16 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
+
+
+@pytest.fixture(autouse=True)
+def _no_network(monkeypatch):
+    """ENFORCE hermeticity (CLAUDE rule 2 / AUDIT_ROUND3): the suite claims to be
+    fixture-only, but nothing guarded it — a test that silently hit the network would
+    pass locally and flake in CI. Any socket connection now fails loudly."""
+    def _blocked(*a, **k):
+        raise RuntimeError("network access blocked in tests — use a fixture")
+    monkeypatch.setattr(socket.socket, "connect", _blocked)
 
 FIXTURES = REPO / "tests" / "fixtures"
 LSOFS_FIXTURE = FIXTURES / "lsofs_tbay_subset.nc"

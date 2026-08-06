@@ -54,7 +54,10 @@ three subsurface buoys, 2026-07-19→08-01 (39 records):
 **Independent confirmation via the clean gate.** When GLOS came back, the isotherm-DEPTH
 gate (product's 12 °C-crossing depth vs observed thermistor profiles — definition-
 consistent, no MLD-threshold trap) corroborated it: at **45216 the product isotherm is
-11.8 m vs observed 8–9 m — ~3 m too deep**, matching the FLake diagnosis. But it is
+11.8 m vs observed 8–9 m — ~3 m too deep**, matching the FLake diagnosis. (AUDIT_ROUND3
+caveat: those early gate runs used a fit-overlapping window and a GLSEA fallback that
+could leak the truth profile into the prediction; the redesigned `accumulate_gate.py`
+logs cleanly — trust the accumulated log over these first spot numbers.) But it is
 **site-dependent** (Duluth LLO1 error only 0.3–2.0 m), and GLOS realtime returned only 2
 chain-days per site (n=4) — too sparse to fit a robust site/condition-aware correction now.
 

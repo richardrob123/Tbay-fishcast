@@ -176,8 +176,12 @@ def isobath_line_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.nda
     for seg in segs:
         if len(seg) < 2:
             continue
-        xs = x0 + seg[:, 0] / (nx - 1) * (x1 - x0)
-        ys = y1 - seg[:, 1] / (ny - 1) * (y1 - y0)
+        # contour coords are PIXEL CENTERS (index k -> centre of pixel k); map centre
+        # k to (k+0.5)/n of the edge-to-edge extent so lines and the rasterio-shaped
+        # polygons (edge coords / n) land on the same georeference (AUDIT_ROUND3:
+        # the old /(n-1) mapping skewed lines up to ~1 px vs the green areas)
+        xs = x0 + (seg[:, 0] + 0.5) / nx * (x1 - x0)
+        ys = y1 - (seg[:, 1] + 0.5) / ny * (y1 - y0)
         length = float(np.hypot(np.diff(xs), np.diff(ys)).sum())
         if length < min_len_m:
             continue
@@ -228,8 +232,12 @@ def cold_front_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarr
     for seg in segs:
         if len(seg) < 2:
             continue
-        xs = x0 + seg[:, 0] / (nx - 1) * (x1 - x0)
-        ys = y1 - seg[:, 1] / (ny - 1) * (y1 - y0)
+        # contour coords are PIXEL CENTERS (index k -> centre of pixel k); map centre
+        # k to (k+0.5)/n of the edge-to-edge extent so lines and the rasterio-shaped
+        # polygons (edge coords / n) land on the same georeference (AUDIT_ROUND3:
+        # the old /(n-1) mapping skewed lines up to ~1 px vs the green areas)
+        xs = x0 + (seg[:, 0] + 0.5) / nx * (x1 - x0)
+        ys = y1 - (seg[:, 1] + 0.5) / ny * (y1 - y0)
         length = float(np.hypot(np.diff(xs), np.diff(ys)).sum())
         if length < min_len_m:
             continue

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Thunder Bay laker forecast — cold-water map</title>
+<title>Thunder Bay cold-water forecast — shore map</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🎣</text></svg>" />
 <link href="vendor/maplibre-gl.css" rel="stylesheet" />
 <script src="vendor/maplibre-gl.js"></script>
@@ -57,6 +57,7 @@
   .pop .traj .c{flex:1;text-align:center;font-size:10px;padding:3px 0;border-radius:4px;
     background:#eee;color:#333;font-variant-numeric:tabular-nums}
   .pop .traj .c.go{background:#d6f5df}
+  .pop .traj .c.go.soft{background:#edf7e6;color:#667}
   .pop .traj .c .z{display:block;font-weight:700;font-size:11px}
   .maplibregl-popup-content{border-radius:10px;padding:11px 12px}
   #err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;
@@ -75,14 +76,21 @@
 <div id="err"></div>
 
 <div class="card" id="top">
-  <h1><span class="fish">🎣</span> Thunder Bay laker forecast</h1>
+  <h1><span class="fish">🎣</span> Thunder Bay cold-water forecast</h1>
   <span class="age" id="age"></span>
   <span class="spacer"></span>
   <div id="legend">
-    <span><span class="sw" style="background:#39d353;opacity:.75"></span>reachable cold water</span>
+    <span><span class="sw" style="background:#39d353;opacity:.95"></span>cold water — confident</span>
+    <span><span class="sw" style="background:#39d353;opacity:.45"></span>likely</span>
+    <span><span class="sw" style="background:#39d353;opacity:.18"></span>possible</span>
     <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C front</span>
   </div>
-  <div id="legnote">Red marks where the cold water meets warmer shallows — it's absent where the water is cold right to the shore (then the green band is the whole story).</div>
+  <div id="legnote">Green = bottom colder than 12&nbsp;°C within a ~75&nbsp;m cast of shore (≤22&nbsp;m deep).
+    The three green tones are the model's honest uncertainty band — the boundary position is
+    uncertain by roughly 100–300&nbsp;m (measured model error), so treat edges as fuzzy, not lines.
+    Red marks where cold water meets warmer shallows; it's absent where the water is cold right
+    to the shore. This forecasts <b>water temperature</b>, not fish. Check current Ontario
+    regulations for seasons and closures before fishing any spot.</div>
 </div>
 
 <div class="card" id="ctl" style="display:none">
@@ -142,25 +150,40 @@ map.on('load', async () => {
   const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
   man._v = V;
   const lead0 = man.stretches[0].days[0].lead;
-  const F = l => ['==',['get','lead'], l];       // day filter
+  // day + band filters. Overlays carry band=certain|central|possible (the model's
+  // honest uncertainty band); features without a band tag render as central.
+  const FB = (l,b) => ['all', ['==',['get','lead'], l],
+                       ['==', ['coalesce',['get','band'],'central'], b]];
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
     // Everything is VECTOR so it stays crisp at any zoom (no raster pixelation).
-    // GREEN reachable-cold band = polygon fill + a crisp outline.
+    // GREEN band, three tones: possible (palest, optimistic end) under central
+    // (best estimate) under certain (solid — reachable across the whole bias band).
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
-      map.addLayer({ id:'ar'+i, type:'fill', source:'ar'+i, filter:F(lead0),
-        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.30 } });
-      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:F(lead0),
+      map.addLayer({ id:'arp'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'possible'),
+        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.10 } });
+      map.addLayer({ id:'ar'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'central'),
+        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.26 } });
+      map.addLayer({ id:'arc'+i, type:'fill', source:'ar'+i, filter:FB(lead0,'certain'),
+        paint:{ 'fill-color':'#39d353', 'fill-opacity':0.42 } });
+      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:FB(lead0,'certain'),
         layout:{ 'line-join':'round' }, paint:{ 'line-color':'#39d353', 'line-width':1.4, 'line-opacity':0.9 } });
     }
-    // RED 12 C front = polyline, with a dark halo so it reads over land and pale shallows.
+    // RED 12 C front: central solid with halo; band bookends as faint thin lines so
+    // the position uncertainty reads as a ribbon, not a false-precision line.
     if(s.lines){
       map.addSource('ln'+i, { type:'geojson', data: s.lines + V });
-      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i, filter:F(lead0),
+      ['possible','certain'].forEach(b => {
+        map.addLayer({ id:'lnb'+b+i, type:'line', source:'ln'+i, filter:FB(lead0,b),
+          layout:{ 'line-cap':'round', 'line-join':'round' },
+          paint:{ 'line-color':'#ff1e3c', 'line-width':1.1, 'line-opacity':0.35,
+                  'line-dasharray':[2,2] } });
+      });
+      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i, filter:FB(lead0,'central'),
         layout:{ 'line-cap':'round', 'line-join':'round' },
         paint:{ 'line-color':'#0b0f14', 'line-width':4.4, 'line-opacity':0.5 } });
-      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i, filter:F(lead0),
+      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i, filter:FB(lead0,'central'),
         layout:{ 'line-cap':'round', 'line-join':'round' },
         paint:{ 'line-color':'#ff1e3c', 'line-width':2.4, 'line-opacity':0.98 } });
     }
@@ -168,19 +191,34 @@ map.on('load', async () => {
   });
   if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: {top:70,bottom:150,left:30,right:30}, duration:0 });
 
-  // station markers
+  // station markers (solid green only when the WHOLE bias band agrees it's open)
   (man.stations||[]).forEach(st => {
+    const bg = st.now ? (st.now_certain===false ? '#a7d98c' : '#39d353') : '#8894a0';
     const el = document.createElement('div');
     el.style.cssText = 'width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;'+
-      'box-shadow:0 0 0 2px #0009;cursor:pointer;background:'+(st.now?'#39d353':'#8894a0');
+      'box-shadow:0 0 0 2px #0009;cursor:pointer;background:'+bg;
     const pop = new maplibregl.Popup({offset:14, closeButton:false}).setHTML(stationHTML(st));
     new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
   });
 
-  // age banner
+  // age banner — computed CLIENT-SIDE from issued_utc so a dead daily build cannot
+  // display a frozen age forever (the baked age_h is only the build-time value)
   const age = document.getElementById('age');
-  age.textContent = `issue ${man.issue} · ${Math.round(man.age_h)} h old` + (man.stale?' ⚠ STALE':'');
-  if(man.stale) age.classList.add('stale');
+  function renderAge(){
+    let h = man.age_h;
+    if(man.issued_utc){
+      const t = Date.parse(man.issued_utc);
+      if(!isNaN(t)) h = (Date.now() - t) / 3.6e6;
+    }
+    const stale = h > 18;
+    const days = h >= 48 ? ` (${(h/24).toFixed(1)} days)` : '';
+    age.textContent = `issue ${man.issue} · ${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
+    age.classList.toggle('stale', stale);
+    if(man.bias && man.bias.source && man.bias.source !== 'live')
+      age.textContent += ' · ⚠ degraded bias';
+  }
+  renderAge();
+  setInterval(renderAge, 60e3);
 
   // ticks from the first stretch's day labels
   const days = man.stretches[0].days;
@@ -192,7 +230,9 @@ map.on('load', async () => {
   document.getElementById('op').addEventListener('input', e => {
     const o = +e.target.value/100;
     man.stretches.forEach((s,i)=>{ if(map.getLayer('ar'+i)){
-      map.setPaintProperty('ar'+i,'fill-opacity', o*0.38);
+      map.setPaintProperty('arp'+i,'fill-opacity', o*0.12);
+      map.setPaintProperty('ar'+i,'fill-opacity', o*0.32);
+      map.setPaintProperty('arc'+i,'fill-opacity', o*0.51);
       map.setPaintProperty('aro'+i,'line-opacity', o); } });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
@@ -200,29 +240,49 @@ map.on('load', async () => {
 });
 
 function stationHTML(st){
-  const traj = (st.traj||[]).map(p =>
-    `<div class="c ${p.reach?'go':''}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${p.label}</div>`).join('');
+  // cell tone mirrors the band: solid green = whole band agrees, pale = central-only
+  const traj = (st.traj||[]).map(p => {
+    const cls = p.certain ? 'go' : (p.reach ? 'go soft' : '');
+    return `<div class="c ${cls}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${p.label}</div>`;
+  }).join('');
   return `<div class="pop"><b class="v">${st.name.split('—')[0].trim()}</b>`+
     `<div class="v" style="margin-top:3px">${st.verdict}</div>`+
     (st.surf_sst!=null?`<div class="v" style="color:#555;font-size:12px;margin-top:2px">surface ${st.surf_sst}°C</div>`:'')+
     `<div class="traj">${traj}</div>`+
-    `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">green = cold water reachable · number = 12°C depth</div></div>`;
+    `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div></div>`;
+}
+
+function localLabel(d){
+  // each frame is an INSTANT (one model valid time), not a whole day — label it with
+  // the local clock time so "Thu" doesn't imply an all-day state (conditions shift
+  // within a day; seiche period ~40 h)
+  if(!d.valid_utc) return d.label;
+  const t = new Date(d.valid_utc);
+  if(isNaN(+t)) return d.label;
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Thunder_Bay',
+    weekday:'short', month:'short', day:'numeric', hour:'numeric' });
+  return f.format(t).replace(/\./g,'') + ' snapshot';
 }
 
 function setDay(i){
   cur = i;
   const man = MAN;
+  const FB = (l,b) => ['all', ['==',['get','lead'], l],
+                       ['==', ['coalesce',['get','band'],'central'], b]];
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
-    const flt = ['==',['get','lead'], day.lead];               // all vector layers -> active day
-    ['ar'+k,'aro'+k,'ln'+k,'lnh'+k].forEach(id => { if(map.getLayer(id)) map.setFilter(id, flt); });
+    const per = { ['arp'+k]:'possible', ['ar'+k]:'central', ['arc'+k]:'certain',
+                  ['aro'+k]:'certain', ['lnbpossible'+k]:'possible',
+                  ['lnbcertain'+k]:'certain', ['lnh'+k]:'central', ['ln'+k]:'central' };
+    Object.entries(per).forEach(([id,b]) => {
+      if(map.getLayer(id)) map.setFilter(id, FB(day.lead, b)); });
   });
   const d0 = man.stretches[0].days[i];
-  document.getElementById('dlab').textContent = d0.label + (i===0?'  (now)':'');
+  document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');
   const totHa = man.stretches.reduce((a,s)=> a + (s.days[Math.min(i,s.days.length-1)].reach_ha||0), 0);
   document.getElementById('halab').textContent = totHa.toFixed(0)+' ha reachable';
   const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
-  document.getElementById('wlab').innerHTML = w ? `upwelling wind <b>${Math.round(w.p*100)}%</b>` : '';
+  document.getElementById('wlab').innerHTML = w ? `upwelling wind: <b>${Math.round(w.p*100)}%</b> of ens. members` : '';
   document.querySelectorAll('#ticks span').forEach(sp =>
     sp.classList.toggle('on', +sp.dataset.i === i));
   document.getElementById('t').value = i;

@@ -1,5 +1,10 @@
 # Temporal validation — does the correction hold across years?
 
+> **⚠ AUDIT_ROUND3 (2026-08-06):** the held-out cross-year corrected MAE of **3.23 °C**
+> in this document is the honest temporal-transfer number for the product. Where this
+> doc re-anchors trust on the same-month LOBO 1.39 °C, note that figure barely holds
+> anything out (same window, near-identical fold corrections) — see `docs/AUDIT_ROUND3.md`.
+
 CLAUDE.md rule 6: tune on 2024, validate on held-out 2025–26. Everything else so far
 is July–Aug 2026. This asks whether the LSOFS warm bias is a stable, correctable
 feature across seasons and years, or a fluke of one month.

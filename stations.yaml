@@ -21,6 +21,23 @@ lsofs:
   cycles: ["t00z", "t06z", "t12z", "t18z"]
   nowcast_hours: 7                        # n000..n006 per cycle
 
+# Product-defining constants — SINGLE SOURCE OF TRUTH (AUDIT_ROUND3: these were
+# hardcoded in 3+ places and the map/pin depth caps had silently diverged).
+# Provenance:
+#   target_c: 12 C = upper edge of lake trout preferred thermal niche (~8-12 C,
+#     Martin & Olver 1980 laker synthesis; ceiling avoidance above ~14-15 C). Tier T3
+#     (secondary literature, not yet pulled to a primary source); also the operator's
+#     upwelling trigger in the seed corpus. field_verify via catch logs over time.
+#   cast_m: 75 m = OPERATOR-MEASURED max cast (3/4 oz Cleo, 10'6" rig, seed corpus).
+#     Personal to the operator's tackle — most casters reach 40-60 m. Tier T1-operator.
+#   max_reach_depth_m: 22 m = practical bottom-presentation ceiling from shore
+#     (spoon/jig sink time + line angle beyond ~20-25 m makes bottom contact
+#     impractical). Tier T4 judgment call — flagged for field verification.
+product:
+  target_c: 12.0
+  cast_m: 75.0
+  max_reach_depth_m: 22.0
+
 # Temporal split for threshold tuning vs held-out validation (ADR-004, revised by ADR-018).
 # LSOFS has no data before 2024-03, so the original 2022-2024 tune window is infeasible;
 # the split principle (never tune on data you report skill for) is preserved.

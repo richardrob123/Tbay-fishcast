@@ -41,8 +41,8 @@ class ChainStation:
 
 # Thermistor-chain moorings with multi-depth profiles (verified 2026-08-05).
 CHAINS = {
-    "45216": ChainStation("45216", "obs_577_thermistor_latest", 46.932, -89.35,
-                          "Ontonagon (45216) chain 0-12m"),
+    "45216": ChainStation("45216", "obs_577_thermistor_latest", 46.907, -89.354,
+                          "Ontonagon (45216) chain 0-12m"),  # NDBC station_table (official)
     "llo1": ChainStation("llo1", "obs_42_thermistor_latest", 46.86, -91.93,
                          "Duluth LLO1 chain 0-43m"),
 }

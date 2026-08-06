@@ -31,7 +31,10 @@ permissions:
 
 concurrency:
   group: coast-site
-  cancel-in-progress: true   # a newer push supersedes an in-flight build
+  # do NOT cancel in-flight runs: a cancellation between the gh-pages push and the
+  # observation-log commit permanently loses accumulated rows (AUDIT_ROUND3). A
+  # superseded build just means the next run redeploys a few minutes later.
+  cancel-in-progress: false
 
 jobs:
   build-deploy:
@@ -48,6 +51,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[geo]"
       - name: Build the coast site data (today's issue)
+        id: build
         run: python scripts/build_coast_site.py
       - name: Publish web/ to gh-pages
         run: |
@@ -70,14 +74,18 @@ jobs:
       # Both scripts are idempotent (skip already-logged keys), so re-runs never duplicate.
       # continue-on-error: a flaky upstream fetch must never fail the map deploy above.
       - name: Accumulate the isotherm-depth gate (GLOS vs product)
+        id: gate
         continue-on-error: true
         run: python scripts/accumulate_gate.py
       - name: Accumulate the nearshore anchor (Landsat vs GLSEA)
+        id: anchor
         continue-on-error: true
         run: python scripts/accumulate_anchor.py
       - name: Commit the observation logs back to the branch
+        id: datacommit
         continue-on-error: true
         run: |
+          set -e
           git config user.email "actions@github.com"
           git config user.name "coast-site bot"
           git add data/gate_log.csv data/nearshore_anchor.csv
@@ -86,8 +94,31 @@ jobs:
           fi
           # [skip ci] + data/** absent from this workflow's push paths => no build loop.
           git commit -q -m "data: accumulate isotherm-gate + nearshore-anchor logs [skip ci]"
-          git pull --rebase --autostash origin claude/tbay-fishcast-phase-0-6kh5lx || true
+          # Safe push (AUDIT_ROUND3: `pull --rebase || true` could halt mid-rebase and
+          # silently drop the commit): fetch + rebase; on conflict abort AND FAIL so
+          # the failure alert below fires; verify our commit is ahead before pushing.
+          BR=claude/tbay-fishcast-phase-0-6kh5lx
+          git fetch origin "$BR"
+          git rebase "origin/$BR" || { git rebase --abort; echo "rebase conflict — data commit not pushed"; exit 1; }
+          test -n "$(git rev-list origin/$BR..HEAD)" || { echo "commit lost in rebase"; exit 1; }
           git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            HEAD:claude/tbay-fishcast-phase-0-6kh5lx
+            "HEAD:$BR"
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      # Silent failure is the one unrecoverable failure mode (AUDIT_ROUND3): the
+      # accumulation steps are continue-on-error so the map always deploys, which
+      # means nobody would ever learn they've been failing. Push a phone alert when
+      # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
+      - name: Alert on any step failure
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.datacommit.outcome == 'failure')
+        env:
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} data-commit:${{ steps.datacommit.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        run: |
+          echo "$MSG"
+          if [ -n "$NTFY_TOPIC" ]; then
+            curl -sf -X POST "${NTFY_SERVER:-https://ntfy.sh}/$NTFY_TOPIC" \
+              -H "Title: Fishcast pipeline failure" -H "Tags: warning" -d "$MSG" || true
+          fi

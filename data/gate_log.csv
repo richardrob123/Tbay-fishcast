@@ -1,2 +1,1 @@
-date,chain,obs_iso_m,raw_iso_m,corr_iso_m,abs_err_m,retrieved_utc
-2026-08-04,45216,8.25,17.88,11.8,3.55,2026-08-06T21:40:37Z
+date,chain,obs_iso_m,raw_iso_m,corr_iso_frozen_m,abs_err_frozen_m,corr_iso_live_m,abs_err_live_m,bias_source,glsea_anchor,retrieved_utc

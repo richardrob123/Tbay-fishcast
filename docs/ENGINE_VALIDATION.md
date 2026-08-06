@@ -1,5 +1,14 @@
 # Engine validation — temperature skill against buoy truth
 
+> **⚠ AUDIT_ROUND3 (2026-08-06): the headline numbers below are contaminated by
+> fit/validate overlap.** The pooled correction was fit on Aug 1–4 2026 at the same
+> three buoys this document scores it on, over a window containing those days. The
+> decision-skill table (POD 0.81 / FAR 0.00 / acc 0.92) and the 78% band coverage are
+> **in-sample**; LOBO holds out a buoy but not time (fold corrections ≈ identical).
+> Treat every number here as an optimistic in-sample ceiling. The honest numbers are
+> in `docs/AUDIT_ROUND3.md` §honest-numbers; clean re-derivation is accumulating via
+> `data/gate_log.csv`.
+
 **Question.** Thunder Bay has no in-water thermometer. Can LSOFS + our correction
 tell where the target-temperature water sits, well enough to trust — and does it
 *generalize* to a site with no local sensor?

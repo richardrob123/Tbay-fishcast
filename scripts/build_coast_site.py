@@ -36,15 +36,13 @@ from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    bridge_survey_gaps, cold_front_features, cold_reachable, fill_unsurveyed_water,
-    imagery_unsurveyed_water, land_shore_distance, merc, reachable_area_features)
-from tbay_fishcast.ingest import basemap, glsea, lsofs_grid, nonna  # noqa: E402
+    cold_front_features, cold_reachable, merc, reachable_area_features)
+from tbay_fishcast.features.reachability import corrected_fields  # noqa: E402
+from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
 
-TARGET_C = 12.0
-CAST_M = 75.0
 HALF_M = 4200.0
 PX = 760
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
@@ -105,39 +103,63 @@ def _node_columns_in_box(cfg, issue, clat, clon):
     return inbox, node_xy
 
 
-def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res):
-    """Return (area_polys, reach_px, line_features) for one lead, or (None, 0, []).
+def _iso_field(gx, gy, iso_pts, vals):
+    iso = griddata(iso_pts, vals, (gx, gy), method="linear")
+    nan = ~np.isfinite(iso)
+    if nan.any():
+        iso[nan] = griddata(iso_pts, vals, (gx[nan], gy[nan]), method="nearest")
+    return iso
 
-    Both products are VECTOR (rendered by MapLibre so they stay crisp at any zoom):
-    the reachable-cold band as smoothed lon/lat polygons, the 12 C front as polylines.
+
+def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod):
+    """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
+
+    AUDIT_ROUND3: the honest band (isotherm_band's shallow/central/deep) used to be
+    computed and then discarded — a crisp central-only polygon overclaimed a boundary
+    whose measured position error exceeds the 75 m cast band. Now every lead ships
+    THREE reachability members tagged band=certain|central|possible:
+      certain  = reachable even under the conservative (deep) end of the bias band
+      central  = the best estimate (what was previously the only polygon)
+      possible = reachable under the optimistic (shallow) end
+    and the 12 C front for the central member plus faint bookend fronts.
     """
     central, lo, hi, n = bias
-    iso_pts, iso_val = [], []
+    iso_pts, v_sh, v_ce, v_de = [], [], [], []
     for i, nd in enumerate(inbox):
         col = cols.get(str(int(nd)))
         if col is None or len(col.depths_m) < 4:
             continue
         depths, raw = col.depths_m, col.temps_c
-        surf_bias = (raw[0] - g_sst) if g_sst else 0.0
+        surf_bias = (raw[0] - g_sst) if g_sst is not None else 0.0
         bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
-        zc = thermocline.isotherm_band(depths, raw, bm, TARGET_C)["central"]
-        if zc is not None:
-            iso_pts.append(node_xy[i]); iso_val.append(zc)
+        b = thermocline.isotherm_band(depths, raw, bm, prod.target_c)
+        if b["central"] is not None:
+            iso_pts.append(node_xy[i])
+            v_ce.append(b["central"])
+            # a member with no crossing (whole column warm) = unreachable there: carry
+            # a below-bottom sentinel so the interpolated field stays defined
+            v_sh.append(b["shallow"] if b["shallow"] is not None else 999.0)
+            v_de.append(b["deep"] if b["deep"] is not None else 999.0)
     if len(iso_pts) < 3:
         return None, 0.0, []
     iso_pts = np.array(iso_pts)
-    iso = griddata(iso_pts, iso_val, (gx, gy), method="linear")
-    nan = ~np.isfinite(iso)
-    if nan.any():
-        iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
-    _cold, reachable = cold_reachable(depth, iso, dist, cast_m=CAST_M)
-    area = reachable_area_features(reachable, bounds_3857, res)      # green (vector)
-    # the 12 C front is the isotherm outcrop (depth == iso) in a nearshore band, drawn to
-    # TRACE THE SHORE where cold water reaches the edge and to pull offshore only where a
-    # warm shallow apron intervenes — so it stays a continuous line (breaking only over
-    # unsurveyed bottom) and still marks where cold water begins beyond casting range.
-    lines = cold_front_features(depth, iso, dist, bounds_3857)       # 12 C front (vector)
-    return area, float(reachable.sum()), lines
+    kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m}
+    area_feats, lines = [], []
+    reach_px_central = 0.0
+    members = [("possible", v_sh), ("central", v_ce), ("certain", v_de)]
+    for tag, vals in members:
+        iso = _iso_field(gx, gy, iso_pts, vals)
+        _cold, reachable = cold_reachable(depth, iso, dist, **kw)
+        if tag == "central":
+            reach_px_central = float(reachable.sum())
+        for rings in reachable_area_features(reachable, bounds_3857, res):
+            area_feats.append((tag, rings))
+        # the 12 C front is the isotherm outcrop (depth == iso), drawn to TRACE THE
+        # SHORE where cold water reaches the edge; central solid, bookends faint so the
+        # user sees the measured position uncertainty as a ribbon, not a false line.
+        for path in cold_front_features(depth, iso, dist, bounds_3857):
+            lines.append((tag, path))
+    return area_feats, reach_px_central, lines
 
 
 def main(argv) -> int:
@@ -155,8 +177,10 @@ def main(argv) -> int:
     issue = _resolve_issue(cfg, issue)     # fall back if today's t12z isn't posted yet
     OUT.mkdir(parents=True, exist_ok=True)
 
-    central, lo, hi, _, n = bias_live.pooled_subsurface_bias(cfg, issue)
+    central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
     bias = (central, lo, hi, n)
+    if bias_src != "live":
+        print("⚠ live buoy bias unavailable — frozen prior in use (degraded mode)")
 
     stretches_out = []
     for sid, name, clat, clon in STRETCHES:
@@ -167,27 +191,21 @@ def main(argv) -> int:
         if patch.coverage_frac < 0.03:
             print(f"skip {sid}: water {patch.coverage_frac:.0%}"); continue
         res = nonna.ground_res_m(patch.res_mercator_m, clat)
-        # NONNA marks unsurveyed water as NaN like land; fill mid-water survey gaps/seams
-        # so they don't fake a coastline and spawn reachable cold water out in the bay.
-        depth = fill_unsurveyed_water(patch.depth, res)
-        # ...and use the satellite basemap (ground truth for land vs water) to drop the
-        # unsurveyed nearshore/offshore NO-DATA apron that a bathymetry-only shore would
-        # cast off, putting green hundreds of metres out in open water. Degrade to
-        # bathymetry-only if imagery is unavailable, so the build never fails on it.
-        not_land = None
-        try:
-            rgb = basemap.fetch_imagery_3857(patch.bounds_3857, size_px=depth.shape[0])
-            gray = rgb.mean(axis=2)
-            unsurv = imagery_unsurveyed_water(depth, gray)
-            # bridge the narrow unsurveyed gaps (interpolate between nearby soundings) so the
-            # reachable band and shoreline front connect across them; larger gaps stay blank.
-            depth, not_land = bridge_survey_gaps(depth, unsurv, res)
-        except Exception as e:  # noqa: BLE001
-            print(f"    {sid}: basemap unavailable ({str(e)[:40]}); bathymetry-only shore")
-        dist, _land = land_shore_distance(depth, res, not_land=not_land)
+        # the ONE corrected land/water pipeline (shared with the pin verdicts via
+        # reachability.corrected_fields so map and pins cannot re-diverge): fill
+        # mid-water survey seams, imagery shore mask, bridge narrow unsurveyed gaps,
+        # mainland-only shore distance. Degrades to bathymetry-only shore on imagery
+        # failure — loudly.
+        depth, dist, degraded = corrected_fields(patch.depth, patch.bounds_3857, res)
+        if degraded:
+            print(f"    {sid}: basemap unavailable — bathymetry-only shore (degraded)")
         ny, nx = depth.shape
         x0, y0, x1, y1 = patch.bounds_3857
-        gx, gy = np.meshgrid(np.linspace(x0, x1, nx), np.linspace(y1, y0, ny))
+        # pixel CENTERS (not edge-inclusive linspace): keeps the interpolated iso field
+        # on the same georeference as the depth raster and the contour mapping
+        cx = x0 + (np.arange(nx) + 0.5) / nx * (x1 - x0)
+        cy = y1 - (np.arange(ny) + 0.5) / ny * (y1 - y0)
+        gx, gy = np.meshgrid(cx, cy)
         inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon)
         if len(inbox) == 0:
             print(f"skip {sid}: no LSOFS nodes"); continue
@@ -218,18 +236,22 @@ def main(argv) -> int:
             cols = extract_native_columns(ds, {str(int(nd)): int(nd) for nd in inbox})
             ds.close()
             area, reach_px, lines = _overlay(depth, dist, gx, gy, inbox, node_xy,
-                                             cols, g_sst, bias, patch.bounds_3857, res)
+                                             cols, g_sst, bias, patch.bounds_3857, res,
+                                             cfg.product)
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
+                         "valid_utc": vt.strftime("%Y-%m-%dT%H:%M:%SZ"),
                          "reach_ha": round(reach_px * res * res / 1e4, 1)})
-            for rings in area:
+            for band, rings in area:
                 coords = [[[round(lon, 6), round(lat, 6)] for lon, lat in ring] for ring in rings]
-                area_feats.append({"type": "Feature", "properties": {"lead": lead},
+                area_feats.append({"type": "Feature",
+                                   "properties": {"lead": lead, "band": band},
                                    "geometry": {"type": "Polygon", "coordinates": coords}})
-            for path in lines:
+            for band, path in lines:
                 coords = [[round(lon, 6), round(lat, 6)] for lon, lat in path]
-                line_feats.append({"type": "Feature", "properties": {"lead": lead},
+                line_feats.append({"type": "Feature",
+                                   "properties": {"lead": lead, "band": band},
                                    "geometry": {"type": "LineString", "coordinates": coords}})
         if not days:
             print(f"skip {sid}: no frames"); continue
@@ -258,10 +280,17 @@ def main(argv) -> int:
             continue
         traj = [{"label": f"{p.valid_time:%a}", "lead": p.lead_h,
                  "iso": round(p.isotherm_depth_m, 1) if p.isotherm_depth_m is not None else None,
-                 "reach": bool(p.reachable)} for p in pts]
+                 "reach": bool(p.reachable), "certain": bool(p.reachable_certain),
+                 "possible": bool(p.reachable_possible)} for p in pts]
+        verdict = summarize(pts, wins)
+        if pts[0].reachable and not pts[0].reachable_certain:
+            verdict += " (edge of band — uncertain)"
         stations.append({"id": s.id, "name": s.name, "lat": s.lat, "lon": s.lon,
-                         "now": bool(pts[0].reachable), "verdict": summarize(pts, wins),
-                         "surf_sst": round(meta["surf_sst"], 1) if meta.get("surf_sst") else None,
+                         "now": bool(pts[0].reachable),
+                         "now_certain": bool(pts[0].reachable_certain),
+                         "verdict": verdict,
+                         "surf_sst": (round(meta["surf_sst"], 1)
+                                      if meta.get("surf_sst") is not None else None),
                          "traj": traj})
 
     # ensemble upwelling-wind probability per day
@@ -280,10 +309,14 @@ def main(argv) -> int:
     manifest = {
         "issue": issue.isoformat(), "issued_utc": f"{issue}T12:00:00Z",
         "built_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # age_h/stale are the BUILD-TIME values; the page recomputes age client-side
+        # from issued_utc so a dead build can't display a frozen age (AUDIT_ROUND3)
         "age_h": round(age_h, 1), "stale": age_h > 18,
-        "target_c": TARGET_C, "cast_m": CAST_M,
+        "target_c": cfg.product.target_c, "cast_m": cfg.product.cast_m,
+        "max_reach_depth_m": cfg.product.max_reach_depth_m,
         "n_leads": len(LEADS),
-        "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1), "n": n},
+        "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
+                 "n": n, "source": bias_src},
         "stretches": stretches_out, "stations": stations, "wind": wind,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))

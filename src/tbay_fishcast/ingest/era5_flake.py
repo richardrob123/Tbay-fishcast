@@ -66,7 +66,9 @@ def parse_flake(path: str, lat: float, lon: float) -> FlakeCell | None:
         j = int(np.argmin(np.abs(lo - lon)))
 
         def at(name):
-            arr = np.array(d.variables[name][:]).squeeze()
+            # ma.filled: netCDF4 returns masked arrays; np.array() would pass raw
+            # fill values (~9.97e36) through as finite "temperatures".
+            arr = np.ma.filled(d.variables[name][:], np.nan).squeeze()
             return float(np.ravel(arr)[0]) if arr.ndim == 0 else float(arr[i, j])
 
         mt = _k_to_c(at("lmlt"))

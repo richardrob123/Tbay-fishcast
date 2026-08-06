@@ -22,7 +22,12 @@ class ForecastPoint:
     lead_h: int                   # hours from issue (0 = nowcast)
     isotherm_depth_m: float | None
     distance_m: float | None      # distance-from-shore of the target band
-    reachable: bool
+    reachable: bool               # under the CENTRAL bias estimate
+    # honest-band bookends (AUDIT_ROUND3: the band was computed then discarded).
+    # certain  = reachable even under the least-favorable end of the bias band;
+    # possible = reachable under the most-favorable end. certain => reachable => possible.
+    reachable_certain: bool = False
+    reachable_possible: bool = False
 
 
 @dataclass(frozen=True)

@@ -68,7 +68,10 @@ def member_favorable(times, speed_kn, dir_deg, *, threshold_kn: float = 13.0,
     while i < n:
         if fav[i]:
             j = i
-            while j + 1 < n and fav[j + 1]:
+            # a data gap (> 2x the nominal spacing) breaks the run: favorable hours on
+            # either side of missing data must not be counted as one sustained blow
+            while (j + 1 < n and fav[j + 1]
+                   and (t[j + 1] - t[j]).total_seconds() / 3600.0 <= 2.0 * spacing_h):
                 j += 1
             run_len_h = (j - i + 1) * spacing_h
             if run_len_h >= min_run_h:

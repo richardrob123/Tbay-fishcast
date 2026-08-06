@@ -35,7 +35,8 @@ wind forcing.
   average. It is smallest on calm days (Aug 3: raw LSOFS 6 m = 16.4 vs buoy 16.5 —
   essentially no bias, so the correction *over-cools*) and largest mid-event. This is
   exactly why the map draws the isotherm as a **band**, not a line.
-- **Spatial transfer.** The truth buoy is ~90 km away in the western basin. Thunder
+- **Spatial transfer.** The truth buoy is ~270 km away in the western basin
+  (AUDIT_ROUND3: the "~90 km" previously stated here understated it 3×). Thunder
   Bay's shore feels the same synoptic wind but responds on its own local timing.
 - **No binary flip at Silver.** Silver's outer-rock shoals hold cold water within
   cast range on both calm and event days, so the reachable *flag* stays true; what

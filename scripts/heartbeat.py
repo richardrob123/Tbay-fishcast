@@ -41,11 +41,17 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _issue() -> date:
+def _issue(cfg) -> date | None:
+    """Most recent day whose t12z cycle actually exists (walks back up to 3 days).
+
+    AUDIT_ROUND3: the 04:30/10:30 UTC crons run BEFORE that day's t12z posts; assuming
+    today meant every lead failed to open, `points == []`, and "no data" was pushed as
+    "window closed" — deterministic daily false alerts. None = nothing found, and the
+    caller must treat that as UNKNOWN (no transitions, no state advance), never closed."""
     env = os.environ.get("HEARTBEAT_ISSUE")
     if env:
         return date.fromisoformat(env)
-    return _now().date()  # cron runs after the t12z cycle posts; missing leads are skipped
+    return fw.resolve_issue(cfg, _now().date())
 
 
 def _load_state() -> dict:
@@ -81,8 +87,15 @@ def push_ntfy(title: str, body: str, tags: str, priority: str = "default") -> bo
 
 def main(argv) -> int:
     cfg = load_config()
-    issue = _issue()
-    central, lo, hi, _, n = bias_live.pooled_subsurface_bias(cfg, issue)
+    issue = _issue(cfg)
+    if issue is None:
+        # No LSOFS cycle found at all: UNKNOWN, not closed. No transitions, no state
+        # advance — a missing feed must never masquerade as a forecast (rule 5).
+        msg = "⚠ NO LSOFS DATA — no t12z cycle found in the last 3 days; no verdicts"
+        print(msg)
+        push_ntfy("Fishcast: data outage", msg, tags="warning")
+        return 0
+    central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
     bias = (central, lo, hi, n)
 
     prev = _load_state()
@@ -92,8 +105,18 @@ def main(argv) -> int:
         if points is None:
             lines.append(f"• {s.name}: no bathymetry ({meta['bathy']})")
             continue
-        now_reach = points[0].reachable if points else False
-        verdict = summarize(points, windows)
+        if not points:
+            # every lead failed to open for this station: UNKNOWN — keep the previous
+            # state (no transition) rather than inventing "closed" from missing data
+            lines.append(f"? {s.name}: no LSOFS leads readable — status unknown")
+            if s.id in prev:
+                state[s.id] = prev[s.id]
+            continue
+        now_reach = points[0].reachable
+        # band honesty in the brief: solid open only when the whole bias band agrees
+        qual = ("" if points[0].reachable_certain or not now_reach
+                else " (edge of band — uncertain)")
+        verdict = summarize(points, windows) + qual
         flag = "🎣" if now_reach else "—"
         lines.append(f"{flag} {s.name}: {verdict}")
         state[s.id] = now_reach
@@ -120,8 +143,10 @@ def main(argv) -> int:
     # data age / staleness (rule 5)
     age_h = (_now() - datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)).total_seconds() / 3600
     stale = age_h > STALE_H
-    header = (f"Thunder Bay laker forecast — issue {issue} t12z "
+    header = (f"Thunder Bay cold-water forecast — issue {issue} t12z "
               f"({age_h:.0f} h old{' ⚠️ STALE' if stale else ''})")
+    if bias_src != "live":
+        header += "\n⚠ live buoy bias unavailable — frozen prior in use (degraded)"
     brief = header + "\n" + "\n".join(lines)
     if upw_line:
         brief += "\n" + upw_line

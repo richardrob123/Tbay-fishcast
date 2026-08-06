@@ -20,6 +20,25 @@ from ..ingest.lsofs_paths import LsofsFile, candidate_urls
 BIAS_DAYS = 4     # pool the subsurface bias over this many recent days
 MATCH_H = 1.5     # buoy within +/- this of model 12Z (tight, no smearing)
 
+# Frozen prior: the pooled subsurface warm bias measured over 2026-08-01..04 at buoys
+# 45027/45023/45216 (AUDIT_ROUND3: fit window overlaps the validation windows, so this
+# is a *prior*, not a validated constant). Used ONLY as the degraded-mode fallback when
+# the live pooling returns n=0 — publishing raw LSOFS (bias 0.0) silently is worse than
+# an honest dated prior, but every consumer must flag which source it got.
+FROZEN_PRIOR = (3.31, 1.51, 5.55)
+
+
+def pooled_or_prior(cfg, day):
+    """Live pooled bias, falling back to FROZEN_PRIOR when no buoy matchups resolve.
+
+    Returns (central, lo, hi, rows, n, source) with source in {"live", "frozen-prior"}.
+    Callers MUST surface `source` (manifest field / brief line) — degraded is loud."""
+    central, lo, hi, rows, n = pooled_subsurface_bias(cfg, day)
+    if n == 0:
+        c, l, h = FROZEN_PRIOR
+        return c, l, h, rows, 0, "frozen-prior"
+    return central, lo, hi, rows, n, "live"
+
 
 def pooled_subsurface_bias(cfg, day):
     """LSOFS subsurface warm bias pooled over BIAS_DAYS x 3 buoys, tight-time-matched.

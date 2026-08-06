@@ -11,6 +11,7 @@ dist/
 data/*
 !data/gate_log.csv
 !data/nearshore_anchor.csv
+!data/field_sessions.csv
 *.parquet
 *.nc
 !tests/fixtures/*.nc

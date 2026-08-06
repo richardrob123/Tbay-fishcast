@@ -81,10 +81,21 @@ class TemporalSplit:
 
 
 @dataclass(frozen=True)
+class ProductConfig:
+    """The three product-defining constants — single source of truth (stations.yaml
+    `product:`; provenance documented there). Map, pins, and briefs must all read
+    these so the surfaces cannot silently diverge (AUDIT_ROUND3 finding)."""
+    target_c: float = 12.0
+    cast_m: float = 75.0
+    max_reach_depth_m: float = 22.0
+
+
+@dataclass(frozen=True)
 class Config:
     lsofs: LsofsConfig
     temporal_split: TemporalSplit
     stations: tuple[Station, ...] = field(default_factory=tuple)
+    product: ProductConfig = field(default_factory=ProductConfig)
 
     def station(self, station_id: str) -> Station:
         for s in self.stations:
@@ -136,7 +147,14 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
         )
         for s in raw["stations"]
     )
-    return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations)
+    p = raw.get("product", {})
+    product = ProductConfig(
+        target_c=float(p.get("target_c", 12.0)),
+        cast_m=float(p.get("cast_m", 75.0)),
+        max_reach_depth_m=float(p.get("max_reach_depth_m", 22.0)),
+    )
+    return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations,
+                  product=product)
 
 
 def knowledge_pack_version(knowledge_dir: Path | str = KNOWLEDGE_DIR) -> str:

@@ -51,9 +51,14 @@ def isotherm_depth(depths, temps, target_c: float, colder_is_target: bool = True
     z, t = z[order], t[order]
     for i in range(len(z) - 1):
         t0, t1 = t[i], t[i + 1]
-        # crossing of target between layer i and i+1
+        # crossing of target between layer i and i+1 (either endpoint exactly on
+        # target counts as the crossing — the sign-product test alone misses the
+        # t1 == target case and would fall through to the whole-column branches,
+        # reporting a bottom-only-cold column as cold-at-surface)
         if (t0 - target_c) == 0:
             return float(z[i])
+        if (t1 - target_c) == 0:
+            return float(z[i + 1])
         if (t0 - target_c) * (t1 - target_c) < 0:
             frac = (target_c - t0) / (t1 - t0)
             return float(z[i] + frac * (z[i + 1] - z[i]))

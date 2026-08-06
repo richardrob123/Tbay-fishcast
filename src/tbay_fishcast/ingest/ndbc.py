@@ -43,7 +43,7 @@ BUOYS = {
     "45027": Buoy("45027", 46.860, -91.930, "Western Superior (McQuade)"),
     "45028": Buoy("45028", 46.814, -91.829, "Western Superior"),
     "45023": Buoy("45023", 47.270, -88.610, "Central Superior"),
-    "45216": Buoy("45216", 46.910, -89.350, "South-central Superior (Ontonagon)"),
+    "45216": Buoy("45216", 46.907, -89.354, "South-central Superior (Ontonagon)"),  # NDBC station_table
 }
 
 
