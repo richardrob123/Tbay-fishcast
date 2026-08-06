@@ -1,15 +1,17 @@
 """Build the hosted whole-coast forecast site (GitHub Pages, MapLibre).
 
 Precomputes, for a set of overlapping stretches spanning the Thunder Bay shore:
-  * a land-aware shore-distance field over the CHS NONNA-10 bathymetry, and
+  * a land-aware shore-distance field over the CHS NONNA-10 bathymetry (with mid-water
+    survey gaps filled so they can't fake a coastline), and
   * for the nowcast + each forecast day, a reachable-cold-water overlay (green) with
-    the 12 C line (red), from the LSOFS isotherm field corrected the same way the
+    the 12 C front (red), from the LSOFS isotherm field corrected the same way the
     per-spot product is.
-Overlays are transparent PNGs georeferenced by corner lon/lat; the page stacks them
-on a live Esri World Imagery basemap (fetched by the browser, so no imagery is
-embedded). It also emits a manifest with per-station verdicts, the ensemble
-upwelling-wind probabilities, and the data age. The page (web/index.html) is static;
-this script only (re)writes web/data/. A daily Action runs it and deploys.
+Both overlays are VECTOR GeoJSON (green polygons + red polylines, tagged by lead), so
+they stay crisp at any zoom; the page renders them over a live Esri World Imagery
+basemap (fetched by the browser, so no imagery is embedded). It also emits a manifest
+with per-station verdicts, the ensemble upwelling-wind probabilities, and the data age.
+The page (web/index.html) is static; this script only (re)writes web/data/. A daily
+Action runs it and deploys.
 
     python scripts/build_coast_site.py [issue YYYY-MM-DD]
 
