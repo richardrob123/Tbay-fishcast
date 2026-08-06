@@ -9,7 +9,9 @@ name: coast-site
 # "deployment_queued" and timed out. A git push has no such queue.
 #
 # One-time setup: repo Settings -> Pages -> Source: "Deploy from a branch" ->
-# Branch: gh-pages, folder: / (root).
+# Branch: gh-pages, folder: / (root). NOTE: Pages only deploys gh-pages on a push
+# that lands AFTER that source is set, so the first live update needs one more run
+# once the branch is selected (an earlier push won't have been picked up).
 
 on:
   schedule:
