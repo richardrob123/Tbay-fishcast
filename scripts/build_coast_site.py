@@ -34,7 +34,7 @@ from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_reachable, isobath_line_features, land_shore_distance, merc, reachable_area_features)
+    cold_front_features, cold_reachable, land_shore_distance, merc, reachable_area_features)
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_time_from_dataset  # noqa: E402
@@ -129,7 +129,9 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         iso[nan] = griddata(iso_pts, iso_val, (gx[nan], gy[nan]), method="nearest")
     _cold, reachable = cold_reachable(depth, iso, dist, cast_m=CAST_M)
     area = reachable_area_features(reachable, bounds_3857, res)      # green (vector)
-    lines = isobath_line_features(depth, iso, dist, bounds_3857)     # 12 C front (vector)
+    # the front is green's warm-facing inshore edge, derived from the SAME mask so red
+    # and green stay coherent (no green without red; red continuous along the green).
+    lines = cold_front_features(depth, iso, reachable, bounds_3857)  # 12 C front (vector)
     return area, float(reachable.sum()), lines
 
 

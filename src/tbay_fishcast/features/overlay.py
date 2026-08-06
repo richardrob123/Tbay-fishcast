@@ -182,6 +182,59 @@ def isobath_line_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.nda
     return out
 
 
+def cold_front_features(depth: np.ndarray, iso_field: np.ndarray, reachable: np.ndarray,
+                        bounds_3857, *, min_len_m: float = 35.0):
+    """The 12 C front as VECTOR polylines — the interface between the reachable-cold
+    band (green) and the warm shallow water just inshore of it.
+
+    Deriving the line from the SAME mask that makes the green area is what keeps the two
+    coherent: red is exactly green's warm-facing inshore edge, so it runs continuously
+    along the green and is never present where there is no green (nor green without it),
+    unlike an independently-contoured/length-filtered isobath. We build a field that is
+    1 on green, 0 on warm water, NaN everywhere else (land, and the cold water offshore
+    of the cast/depth limit) and contour it at 0.5. matplotlib draws a segment only
+    across a quad whose corners are all non-NaN, i.e. only between green and warm cells:
+    the green/land edge (the shoreline) and the green/deep-water edge (the offshore cast
+    limit) are NOT thermal fronts and correctly produce no line. Dust shorter than
+    `min_len_m` is dropped. Returns a list of [[lon, lat], ...] paths.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ny, nx = depth.shape
+    water = np.isfinite(depth)
+    warm = water & (depth < iso_field)
+    field = np.full(depth.shape, np.nan)
+    field[warm] = 0.0
+    field[reachable] = 1.0                 # green wins where a cell is both (it isn't)
+    fig = plt.figure()
+    try:
+        cs = fig.add_subplot().contour(field, levels=[0.5])
+        segs = list(cs.allsegs[0]) if cs.allsegs else []
+    except Exception:  # noqa: BLE001
+        segs = []
+    finally:
+        plt.close(fig)
+
+    x0, y0, x1, y1 = bounds_3857
+    res_x = abs(x1 - x0) / (nx - 1)
+    out = []
+    for seg in segs:
+        if len(seg) < 2:
+            continue
+        xs = x0 + seg[:, 0] / (nx - 1) * (x1 - x0)
+        ys = y1 - seg[:, 1] / (ny - 1) * (y1 - y0)
+        length = float(np.hypot(np.diff(xs), np.diff(ys)).sum())
+        if length < min_len_m:
+            continue
+        pts = list(zip(xs.tolist(), ys.tolist()))
+        pts = _rdp(pts, eps=2.2 * res_x)   # collapse the ~1 px staircase into straight runs
+        pts = _chaikin(pts, iters=3)       # round the corners into a smooth curve
+        out.append([list(_merc_to_lonlat(x, y)) for x, y in pts])
+    return out
+
+
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,
                         min_land_px: int = 12, mainland_only: bool = True):
     """Distance-to-shore (ground metres) keeping only GENUINE, walk-to land as shore.

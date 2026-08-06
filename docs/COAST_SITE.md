@@ -22,9 +22,15 @@ wind probabilities, data age — plus one GeoJSON per stretch for the reachable-
 **area** (`data/areas/`) and one for the 12 °C **front** (`data/lines/`). BOTH overlays
 are vector (fill+outline polygons and polylines, tagged by forecast lead), so they
 stay crisp at any zoom instead of pixelating like a raster overlay. The area polygons
-are `rasterio`-polygonized then `shapely`-simplified and Chaikin-smoothed; the line is
-a matplotlib contour of `depth − isotherm`, likewise simplified/smoothed. No imagery is
-embedded (the browser fetches Esri basemap tiles live).
+are `rasterio`-polygonized then `shapely`-simplified and Chaikin-smoothed. The 12 °C
+**front is derived from the same reachable-cold mask that makes the green** — it is the
+interface between the green band and the warm shallow water just inshore of it (a
+matplotlib contour of a green=1 / warm=0 / else=NaN field at 0.5, likewise
+simplified/smoothed). Because red is defined as green's warm-facing inshore edge, the
+two are coherent by construction: red runs continuously along the green and never
+appears without it (nor green without it, except where the water is cold right to the
+waterline and there is genuinely no front to draw). No imagery is embedded (the browser
+fetches Esri basemap tiles live).
 
 `scripts/build_coast_site.py` regenerates `web/data/` for a given issue day
 (defaults to today UTC). No LLM in the build (ADR-001).
