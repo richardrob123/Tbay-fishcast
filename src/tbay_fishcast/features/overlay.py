@@ -31,6 +31,97 @@ def merc(lat: float, lon: float) -> tuple[float, float]:
             math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * _R)
 
 
+def _merc_to_lonlat(x: float, y: float) -> tuple[float, float]:
+    return (math.degrees(x / _R),
+            math.degrees(2.0 * math.atan(math.exp(y / _R)) - math.pi / 2.0))
+
+
+def _rdp(pts, eps):
+    """Ramer-Douglas-Peucker simplification (iterative) — collapses the pixel-grid
+    staircase of a raw contour into a few straight segments."""
+    n = len(pts)
+    if n < 3:
+        return pts
+    keep = [False] * n
+    keep[0] = keep[-1] = True
+    stack = [(0, n - 1)]
+    while stack:
+        i, j = stack.pop()
+        x0, y0 = pts[i]; xj, yj = pts[j]
+        dx, dy = xj - x0, yj - y0
+        seg = math.hypot(dx, dy) or 1.0
+        dmax, idx = 0.0, -1
+        for k in range(i + 1, j):
+            xk, yk = pts[k]
+            d = abs(dy * xk - dx * yk + xj * y0 - yj * x0) / seg
+            if d > dmax:
+                dmax, idx = d, k
+        if dmax > eps and idx != -1:
+            keep[idx] = True
+            stack.append((i, idx)); stack.append((idx, j))
+    return [p for p, k in zip(pts, keep) if k]
+
+
+def _chaikin(pts, iters=2):
+    """Chaikin corner-cutting — rounds the simplified polyline into a smooth curve."""
+    for _ in range(iters):
+        if len(pts) < 3:
+            break
+        out = [pts[0]]
+        for a, b in zip(pts[:-1], pts[1:]):
+            out.append((a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25))
+            out.append((a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75))
+        out.append(pts[-1])
+        pts = out
+    return pts
+
+
+def isobath_line_features(depth: np.ndarray, iso_field: np.ndarray, dist: np.ndarray,
+                          bounds_3857, *, line_band_m: float = 250.0,
+                          min_len_m: float = 90.0):
+    """The 12 C line as VECTOR polylines (lon/lat), for a MapLibre line layer.
+
+    A vector line stays a crisp constant-width stroke at any zoom — unlike a raster
+    overlay, which turns every pixel into a block when you zoom to the marina. We
+    contour `depth - iso_field` at 0 (where the target isotherm meets the bottom),
+    confined to `line_band_m` of shore, then DROP polylines shorter than `min_len_m`
+    (the little closed loops around isolated deep pockets and interpolation noise that
+    read as stray red specks). Returns a list of [[lon, lat], ...] paths.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    ny, nx = depth.shape
+    water = np.isfinite(depth)
+    field = np.where(water & (dist <= line_band_m), depth - iso_field, np.nan)
+    fig = plt.figure()
+    try:
+        cs = fig.add_subplot().contour(field, levels=[0.0])
+        segs = list(cs.allsegs[0]) if cs.allsegs else []
+    except Exception:  # noqa: BLE001
+        segs = []
+    finally:
+        plt.close(fig)
+
+    x0, y0, x1, y1 = bounds_3857          # row 0 = top = y1; col 0 = left = x0
+    res_x = abs(x1 - x0) / (nx - 1)        # mercator metres per pixel
+    out = []
+    for seg in segs:
+        if len(seg) < 2:
+            continue
+        xs = x0 + seg[:, 0] / (nx - 1) * (x1 - x0)
+        ys = y1 - seg[:, 1] / (ny - 1) * (y1 - y0)
+        length = float(np.hypot(np.diff(xs), np.diff(ys)).sum())
+        if length < min_len_m:
+            continue
+        pts = list(zip(xs.tolist(), ys.tolist()))
+        pts = _rdp(pts, eps=2.2 * res_x)   # collapse the ~1 px staircase into straight runs
+        pts = _chaikin(pts, iters=3)       # round the corners into a smooth curve
+        out.append([list(_merc_to_lonlat(x, y)) for x, y in pts])
+    return out
+
+
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,
                         min_land_px: int = 12, mainland_only: bool = True):
     """Distance-to-shore (ground metres) keeping only GENUINE, walk-to land as shore.

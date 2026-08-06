@@ -9,6 +9,7 @@ import numpy as np
 
 from tbay_fishcast.features.overlay import (
     cold_reachable,
+    isobath_line_features,
     isobath_line_rgba,
     land_shore_distance,
 )
@@ -83,6 +84,25 @@ def test_isobath_line_is_transparent_thin_and_placed():
     assert (buf[:, :, 3] == 0).sum() > depth.size * 0.5   # background transparent
     cols = np.where(drawn.any(axis=0))[0]
     assert 4 <= cols.min() and cols.max() <= 8       # at the 3 m crossing (col5->6)
+
+
+def test_isobath_line_features_are_vector_paths_length_filtered():
+    """The 12 C line comes back as lon/lat polylines (for a crisp vector layer), and
+    short segments are dropped so tiny loops don't render as stray red specks."""
+    depth = _sloping_shore(rows=40, cols=40)
+    dist = np.zeros((40, 40))
+    for c in range(40):
+        dist[:, c] = abs(c - 4) * RES
+    iso = np.full_like(depth, 3.0)
+    bounds = (-9930000.0, 6190000.0, -9920000.0, 6200000.0)   # mercator, near Thunder Bay
+    feats = isobath_line_features(depth, iso, dist, bounds, line_band_m=1000.0, min_len_m=50.0)
+    assert len(feats) >= 1
+    for path in feats:
+        assert len(path) >= 2
+        lon, lat = path[0]
+        assert -90.5 < lon < -88.0 and 48.0 < lat < 49.0     # plausible lon/lat
+    # an impossibly long minimum filters everything out
+    assert isobath_line_features(depth, iso, dist, bounds, min_len_m=1e9) == []
 
 
 def test_speck_removal_drops_isolated_reachable():
