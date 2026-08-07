@@ -54,6 +54,7 @@ species:
     range_c: [6, 12]          # adult lean 6-9.5 C summer; older-fish preferendum ~11.7 C ~ 12
     optimal_c: [6, 10]        # adults 6-9.5 C (occupancy) through 10.1 C age-0 preferendum — the core
     front_c: 12
+    min_depth_m: 4            # adults don't hold in <~4 m from shore in summer daylight even if cold
     temp_cue: strong
     default: true
     tier: T2                  # primary sources identified (values from abstracts/records, PDFs egress-blocked)
@@ -68,6 +69,8 @@ species:
     range_c: [8, 14]          # cold nearshore; retreats to deeper/cooler when nearshore > ~20 C
     optimal_c: [8, 12]        # REALIZED cold-nearshore band (see note), ~2-4 C below the physiological optimum
     front_c: 14
+    min_depth_m: 0.5          # coasters hold very shallow (<7 m, mean 3.4 m) — the shallow-cold case IS them
+    max_depth_m: 12           # a shallow-nearshore fish; not the deep laker habitat
     temp_cue: strong
     tier: T2                  # Nipigon Bay coaster telemetry (Lakehead thesis); values from abstract
     # Nipigon Bay radio-tag coasters held 92% of locations <7 m (mean 3.4 m), retreating deeper
@@ -80,6 +83,7 @@ species:
     range_c: [10, 14]         # chinook growth opt ~14.3 C; coho preferred 11.7-14.5 C
     optimal_c: [12, 14]       # concentration nearer the warm edge of the range
     front_c: 14
+    min_depth_m: 2            # cruise/stage nearshore but not the 1-2 m flats
     temp_cue: weak
     tier: T2                  # GLFC 87-3 / Hasnain et al. lineage; values from records
     note: "Mostly river-mouth/season driven (Kaministiquia, Current R.). Temperature is a minor cue."
@@ -88,6 +92,7 @@ species:
     range_c: [12, 16]         # GL lake-phase concentration 14-17 C (<~11 m)
     optimal_c: [14, 16]       # lake-phase concentration 14-17 C; lab final preferendum ~13 C (cooler)
     front_c: 16
+    min_depth_m: 0.5          # surface-oriented; feeds the top of the water column and plumes
     temp_cue: weak
     tier: T3                  # realized band is secondary (Michigan Sea Grant); lab preferendum ~13 C primary
     note: "Feeds at temperature breaks/plumes; largely decoupled from the cold-hypolimnion signal."

@@ -108,6 +108,11 @@ class Species:
     tier: str = "T3"
     note: str = ""
     optimal_c: tuple[float, float] | None = None
+    # Depth band the species actually HOLDS in from shore (m). Independent of temperature:
+    # adult lake trout don't sit in 2 m water in summer daylight even when it's cold, while
+    # coaster brook trout do (<7 m, mean 3.4 m). None = fall back to the product reach caps.
+    min_depth_m: float | None = None
+    max_depth_m: float | None = None
 
     @property
     def optimal(self) -> tuple[float, float]:
@@ -211,7 +216,9 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
                 default=bool(s.get("default", False)),
                 tier=s.get("tier", "T3"), note=s.get("note", ""),
                 optimal_c=((float(s["optimal_c"][0]), float(s["optimal_c"][1]))
-                           if s.get("optimal_c") else None))
+                           if s.get("optimal_c") else None),
+                min_depth_m=(float(s["min_depth_m"]) if s.get("min_depth_m") is not None else None),
+                max_depth_m=(float(s["max_depth_m"]) if s.get("max_depth_m") is not None else None))
         for s in sp_raw
     ) or _default_species()
     return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations,

@@ -108,6 +108,26 @@ OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
 
 
+NEARSHORE_ANCHOR = Path(__file__).resolve().parents[1] / "data" / "nearshore_anchor.csv"
+
+
+def _nearshore_delta():
+    """Measured shore-minus-GLSEA surface warm-delta (°C) and its n, from the Landsat
+    nearshore-anchor log. GLSEA's ~1 km pixel cannot resolve the nearshore warming; Landsat
+    30 m over the shore reads +1.7…2.8 °C warmer (n small). We add this to the surface anchor
+    so the shallow nearshore profile isn't dragged cold by the offshore satellite value — a
+    MEASURED correction (directionally certain), not a guess. Returns (delta_c, n) or (0.0, 0)."""
+    try:
+        import csv
+        rows = list(csv.DictReader(open(NEARSHORE_ANCHOR)))
+        deltas = [float(r["delta_c"]) for r in rows if r.get("delta_c") not in (None, "")]
+    except (OSError, ValueError, KeyError):
+        return 0.0, 0
+    if not deltas:
+        return 0.0, 0
+    return sum(deltas) / len(deltas), len(deltas)
+
+
 def _load_favor_calib():
     """Fitted upwelling-favorability params if a real calibration exists, else None (prior).
 
@@ -160,9 +180,11 @@ def _build_phase(lead_valid, ens):
     if not st_t:
         return None
 
-    thr = up.OBSERVED_THRESHOLD_KN
-    obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=thr) if o_t else []
-    all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=thr)
+    # Observed airport wind reads ~3 kn low vs over-lake, so day-0 uses the airport bar (10 kn);
+    # the forecast tail is the ensemble control (already over-lake) so it uses the true over-lake
+    # Wedderburn bar (~13 kn) — otherwise a modest 10-12 kn forecast wind over-detects a blow.
+    obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=up.OBSERVED_THRESHOLD_KN) if o_t else []
+    all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=13.0)
 
     by_lead = {}
     for lead, valid in sorted(lead_valid.items()):
@@ -178,7 +200,7 @@ def _build_phase(lead_valid, ens):
     return {"now": by_lead.get("0"), "by_lead": by_lead,
             "obs_station": metar.CYQT if obs else None,
             "obs_available": bool(obs),
-            "threshold_kn": thr, "sector_deg": list(up.FAVORABLE_SECTOR)}
+            "threshold_kn": up.OBSERVED_THRESHOLD_KN, "sector_deg": list(up.FAVORABLE_SECTOR)}
 
 
 def _merc_to_ll(x, y):
@@ -402,8 +424,13 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
 
     default_id = None
     for sp in species:
+        # per-species DEPTH gate: the species only holds within its depth band from shore
+        # (adult lakers not in <4 m; coasters shallow) — independent of temperature.
+        lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
+        hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
+        within_sp = within & (depth >= lo_d) & (depth <= hi_d)
         suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
-        suit = np.where(within, suit, 0.0)
+        suit = np.where(within_sp, suit, 0.0)
         fair = suit >= IN_RANGE_SUIT                         # in the preferred temperature range
         good = suit >= OPTIMAL_SUIT                          # in the optimal-temperature core
         prime = good & edge                                  # optimal temp AND a real edge — truly prime
@@ -448,6 +475,9 @@ def main(argv) -> int:
     stretches_out = []
     lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
     centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in STRETCHES]  # for the territory clip
+    ns_delta, ns_n = _nearshore_delta()   # measured shore-minus-GLSEA surface warm-delta
+    if ns_delta > 0:
+        print(f"nearshore surface delta +{ns_delta:.2f} C applied to anchor (Landsat n={ns_n})")
     for si, (sid, name, clat, clon, exposure) in enumerate(STRETCHES):
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
@@ -480,6 +510,11 @@ def main(argv) -> int:
         px = glsea.fetch_recent_sst(clat, clon, issue)
         g_sst = px.sst_c if px else None
         anchor_day = px.day if px else None
+        # add the MEASURED nearshore surface warm-delta: GLSEA's ~1 km pixel reads the
+        # nearshore too cold (Landsat 30 m over the shore is +1.7…2.8 °C warmer), which was
+        # dragging the shallow reachable band into the cold band. Data-backed, not a guess.
+        if g_sst is not None and ns_delta > 0:
+            g_sst = g_sst + ns_delta
         if px and px.day != issue.isoformat():
             print(f"    {sid}: GLSEA anchor {px.sst_c:.1f}C from {px.day} (issue not yet posted)")
 
@@ -633,8 +668,10 @@ def main(argv) -> int:
         "targets_c": list(cfg.band_temps),  # every isotherm shaded (union across species)
         "species": [{"id": sp.id, "name": sp.name, "range_c": list(sp.range_c),
                      "optimal_c": list(sp.optimal), "front_c": sp.front_c,
-                     "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note}
+                     "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note,
+                     "min_depth_m": sp.min_depth_m, "max_depth_m": sp.max_depth_m}
                     for sp in cfg.species],
+        "nearshore_delta_c": round(ns_delta, 2), "nearshore_delta_n": ns_n,
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
         "combine": "optimal-temperature ∩ measured bottom-structure (absolute bars, no fitted weights)",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)

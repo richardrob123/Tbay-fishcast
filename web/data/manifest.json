@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T17:40:55Z",
- "age_h": 5.7,
+ "built_utc": "2026-08-07T18:20:33Z",
+ "age_h": 6.3,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -30,7 +30,9 @@
    "front_c": 12.0,
    "temp_cue": "strong",
    "default": true,
-   "note": "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C. Adult occupancy from a subarctic-lake study \u2014 transfer caveat."
+   "note": "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C. Adult occupancy from a subarctic-lake study \u2014 transfer caveat.",
+   "min_depth_m": 4.0,
+   "max_depth_m": null
   },
   {
    "id": "brook_trout",
@@ -46,7 +48,9 @@
    "front_c": 14.0,
    "temp_cue": "strong",
    "default": false,
-   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 upwelling logic fits best here. Band is the realized cold niche, not the (warmer) growth optimum."
+   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 upwelling logic fits best here. Band is the realized cold niche, not the (warmer) growth optimum.",
+   "min_depth_m": 0.5,
+   "max_depth_m": 12.0
   },
   {
    "id": "salmon",
@@ -62,7 +66,9 @@
    "front_c": 14.0,
    "temp_cue": "weak",
    "default": false,
-   "note": "Mostly river-mouth/season driven (Kaministiquia, Current R.). Temperature is a minor cue."
+   "note": "Mostly river-mouth/season driven (Kaministiquia, Current R.). Temperature is a minor cue.",
+   "min_depth_m": 2.0,
+   "max_depth_m": null
   },
   {
    "id": "steelhead",
@@ -78,9 +84,13 @@
    "front_c": 16.0,
    "temp_cue": "weak",
    "default": false,
-   "note": "Feeds at temperature breaks/plumes; largely decoupled from the cold-hypolimnion signal."
+   "note": "Feeds at temperature breaks/plumes; largely decoupled from the cold-hypolimnion signal.",
+   "min_depth_m": 0.5,
+   "max_depth_m": null
   }
  ],
+ "nearshore_delta_c": 2.35,
+ "nearshore_delta_n": 3,
  "suit_levels": [
   {
    "tag": "s1",
@@ -141,37 +151,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 138.0
+     "reach_ha": 82.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 138.1
+     "reach_ha": 82.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 138.1
+     "reach_ha": 82.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 138.0
+     "reach_ha": 82.9
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 134.3
+     "reach_ha": 82.9
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 134.9
+     "reach_ha": 82.9
     }
    ],
    "area": "data/areas/little_trout_bay.geojson",
@@ -212,19 +222,19 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 15.6
+     "reach_ha": 13.1
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 9.4
+     "reach_ha": 8.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 7.4
+     "reach_ha": 6.9
     },
     {
      "label": "Mon Aug 10",
@@ -242,7 +252,7 @@
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 3.9
+     "reach_ha": 3.8
     }
    ],
    "area": "data/areas/chippewa.geojson",
@@ -283,37 +293,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 23.7
+     "reach_ha": 22.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 20.6
+     "reach_ha": 19.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 21.2
+     "reach_ha": 20.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 19.4
+     "reach_ha": 18.9
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.5
+     "reach_ha": 17.2
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 17.6
+     "reach_ha": 17.2
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -354,37 +364,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 62.2
+     "reach_ha": 42.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 60.6
+     "reach_ha": 42.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 49.7
+     "reach_ha": 42.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 54.7
+     "reach_ha": 38.1
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 54.6
+     "reach_ha": 38.1
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 49.5
+     "reach_ha": 38.1
     }
    ],
    "area": "data/areas/mckellar_harbour.geojson",
@@ -425,37 +435,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 37.6
+     "reach_ha": 13.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 14.2
+     "reach_ha": 10.2
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 3.5
+     "reach_ha": 4.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 10.4
+     "reach_ha": 2.9
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 10.7
+     "reach_ha": 4.6
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 5.4
+     "reach_ha": 3.3
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -496,37 +506,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 3.3
+     "reach_ha": 0.3
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 0.8
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 0.2
+     "reach_ha": 0.7
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 0.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 0.9
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 0.6
     }
    ],
    "area": "data/areas/boulevard_current.geojson",
@@ -567,7 +577,7 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 0.4
+     "reach_ha": 0.0
     },
     {
      "label": "Sat Aug 8",
@@ -638,13 +648,13 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 5.3
+     "reach_ha": 7.1
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 1.6
+     "reach_ha": 1.2
     },
     {
      "label": "Sun Aug 9",
@@ -656,19 +666,19 @@
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 5.7
+     "reach_ha": 2.1
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 3.7
+     "reach_ha": 3.4
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 8.9
+     "reach_ha": 3.5
     }
    ],
    "area": "data/areas/shipyard_mackenzie.geojson",
@@ -709,37 +719,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 6.8
+     "reach_ha": 9.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.8
+     "reach_ha": 7.8
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 9.1
+     "reach_ha": 8.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 8.1
+     "reach_ha": 7.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 9.7
+     "reach_ha": 8.6
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 9.5
+     "reach_ha": 8.1
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",
@@ -780,37 +790,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 53.9
+     "reach_ha": 28.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 52.8
+     "reach_ha": 28.2
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 53.4
+     "reach_ha": 28.2
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 55.2
+     "reach_ha": 28.2
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 40.3
+     "reach_ha": 26.3
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 49.8
+     "reach_ha": 28.2
     }
    ],
    "area": "data/areas/silver_islet.geojson",
