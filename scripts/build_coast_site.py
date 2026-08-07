@@ -193,9 +193,9 @@ def _build_phase(lead_valid, ens):
     if not st_t:
         return None
 
-    # Observed airport wind reads ~3 kn low vs over-lake, so day-0 uses the airport bar (10 kn);
-    # the forecast tail is the ensemble control (already over-lake) so it uses the true over-lake
-    # Wedderburn bar (~13 kn) — otherwise a modest 10-12 kn forecast wind over-detects a blow.
+    # Both segments use the same 13 kn Wedderburn bar: the buoy-vs-airport gate (wind_gate_log.csv)
+    # showed CYQT reads within ~1 kn of over-lake wind in the W quadrant, refuting the old "airport
+    # reads ~3 kn low" assumption that had justified a separate 10 kn day-0 bar (see upwelling_phase.py).
     obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=up.OBSERVED_THRESHOLD_KN) if o_t else []
     all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=FORECAST_THRESHOLD_KN)
 
@@ -224,6 +224,22 @@ def _merc_to_ll(x, y):
     lon = x / _R * 180.0 / math.pi
     lat = (2.0 * math.atan(math.exp(y / _R)) - math.pi / 2.0) * 180.0 / math.pi
     return lon, lat
+
+
+def _ring_area_m2(ring):
+    """Planar area (m²) of a lon/lat ring via the shoelace formula on a local equirectangular
+    projection (x = lon·cos(lat̄)·111320, y = lat·110540). Exact enough for a habitat RANKING over
+    ~km-scale polygons at 48°N — this drives ordering, not a survey measurement."""
+    if len(ring) < 3:
+        return 0.0
+    lat0 = math.radians(sum(p[1] for p in ring) / len(ring))
+    kx = 111320.0 * math.cos(lat0)
+    ky = 110540.0
+    xy = [(lon * kx, lat * ky) for lon, lat in ring]
+    s = 0.0
+    for (x1, y1), (x2, y2) in zip(xy, xy[1:] + xy[:1]):
+        s += x1 * y2 - x2 * y1
+    return abs(s) / 2.0
 
 
 def _resolve_issue(cfg, issue, max_back=3):
@@ -616,6 +632,7 @@ def main(argv) -> int:
         print("⚠ live buoy bias unavailable — frozen prior in use (degraded mode)")
 
     stretches_out = []
+    tier_area_by_stretch: dict[str, dict] = {}   # {sid: {species: {tier: area_m2}}} at lead 0 (top-spots)
     lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
     centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in stretches_in]  # for the territory clip
     from tbay_fishcast.features import season as _season
@@ -670,6 +687,7 @@ def main(argv) -> int:
 
         days = []
         area_feats = []                       # vector reachable-cold polygons, tagged by lead
+        tier_area = {}                        # {species_id: {tier: area_m2}} at lead 0 (for top-spots)
         for kind, fh, lead in LEADS:
             f = LsofsFile(issue, "t12z", kind, fh)
             try:
@@ -696,6 +714,13 @@ def main(argv) -> int:
                 area_feats.append({"type": "Feature",
                                    "properties": {"lead": lead, "temp": temp},
                                    "geometry": {"type": "Polygon", "coordinates": coords}})
+                # accumulate real per-tier habitat AREA at lead 0 for the top-spots ranking:
+                # outer ring positive, holes negative (temp = 'sp:<species>:<tier>')
+                if lead == 0 and temp.startswith("sp:"):
+                    _, _sp, _tier = temp.split(":")
+                    a = _ring_area_m2(rings[0]) - sum(_ring_area_m2(r) for r in rings[1:])
+                    tier_area.setdefault(_sp, {})
+                    tier_area[_sp][_tier] = tier_area[_sp].get(_tier, 0.0) + max(0.0, a)
         if not days:
             print(f"skip {sid}: no frames"); continue
         if not lead_valid:
@@ -703,6 +728,7 @@ def main(argv) -> int:
         (OUT / "areas").mkdir(exist_ok=True)
         (OUT / "areas" / f"{sid}.geojson").write_text(
             json.dumps({"type": "FeatureCollection", "features": area_feats}))
+        tier_area_by_stretch[sid] = tier_area
         # survey_cov = fraction of the box with real CHS soundings (informational). NOTE: a low
         # whole-box fraction does NOT by itself mean a bad map — the verified city stretches sit
         # at 0.16–0.19 yet map correctly, because the NEARSHORE (where casting happens) is
@@ -804,6 +830,78 @@ def main(argv) -> int:
     season_block = {"season": reg.season, "label": reg.label,
                     "upwelling": reg.upwelling, "note": reg.note}
 
+    # WHEN-within-the-day: deterministic dawn/dusk low-light windows (pure astronomy, ADR-001).
+    # Computed once at the basin centroid — the windows vary <2 min across the 5 stations, so a
+    # single point is honest. Stored as UTC ISO (rule 9: UTC in storage, local only at display).
+    from tbay_fishcast.features import daylight as _daylight
+    _BASIN_LAT, _BASIN_LON = 48.43, -89.15   # Thunder Bay nearshore centroid
+    _lw = _daylight.compute(issue, _BASIN_LAT, _BASIN_LON)
+
+    def _iso(x):
+        return x.strftime("%Y-%m-%dT%H:%M:%SZ") if x else None
+
+    def _win(pair):
+        return [_iso(pair[0]), _iso(pair[1])] if pair else None
+    light_block = {
+        "civil_dawn": _iso(_lw.civil_dawn), "sunrise": _iso(_lw.sunrise),
+        "sunset": _iso(_lw.sunset), "civil_dusk": _iso(_lw.civil_dusk),
+        "morning_prime": _win(_lw.morning_prime), "evening_prime": _win(_lw.evening_prime),
+        # The crepuscular edge is the strongest INTRADAY cue for shore catch and is DECISIVE for the
+        # weak-temperature-cue species (salmon/steelhead) the thermal map underserves. Effect size is
+        # a cited behavioral prior (species_rules.yaml window_multipliers), not locally calibrated —
+        # this supplies the deterministic clock, presented as timing, not a measured catch factor.
+        "basis": "civil twilight (−6°) → sunrise+45m AM / sunset−45m → civil dusk PM; NOAA solar geometry",
+    }
+
+    # WHEN-across-the-season: spawning-run phenology from the committed calendar (T3b). Each
+    # river-mouth marker carries its run-window status for the issue date, so a mouth reads bright
+    # only inside its species' typical run — June's Kam mouth honestly shows "no run" (ADR-001,
+    # deterministic date logic; the map never claims a specific fish is present).
+    from tbay_fishcast.features import run_calendar as _runcal
+    markers_out = []
+    for m in RIVER_MOUTHS:
+        if not _regs_ok(m["name"]):
+            continue
+        mm = dict(m)
+        mm["run"] = _runcal.marker_status(issue, m.get("species", []))
+        markers_out.append(mm)
+    _n_active = sum(1 for m in markers_out if m["run"]["active"])
+    print(f"run markers: {_n_active}/{len(markers_out)} mouths inside a run window on {issue}")
+
+    # Barometric directional prior + cloud (T2b/T2c) — a labelled TIMING prior beside the phase
+    # banner, NEVER multiplied into the spatial score (rule 7, no fitted weight). Graceful: a fetch
+    # failure yields no barometric line rather than a crash or a guess (rule 5, staleness is loud).
+    baro_block = None
+    try:
+        from tbay_fishcast.ingest import surface_meteo as _sm
+        from tbay_fishcast.features import barometric as _baro
+        _pc = _sm.fetch_pressure_cloud()
+        _issue_utc = datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)
+        _b = _baro.classify(_pc["time"], _pc["pressure_hpa"], _issue_utc)
+        # cloud cover nearest the issue instant — modulates the light window (overcast extends it)
+        _cloud = None
+        _cc = [(t, c) for t, c in zip(_pc["time"], _pc["cloud_pct"]) if c is not None]
+        if _cc:
+            from tbay_fishcast.features.barometric import _parse as _pt
+            _cloud = min(_cc, key=lambda tc: abs((_pt(tc[0]) - _issue_utc).total_seconds()))[1]
+        baro_block = {**_b.as_dict(), "cloud_pct": _cloud}
+        print(f"barometric: {_b.state} ({_b.trend_hpa_3h}/3h), cloud {_cloud}%")
+    except Exception as e:  # noqa: BLE001
+        print(f"barometric prior unavailable: {str(e)[:60]}")
+
+    # 'Best spots today' (T4a) — rank stretches per species from the model's OWN lead-0 habitat
+    # areas (weighted by tier). Data-driven ordering, not a new judgment; weak-cue species carry the
+    # run-timing caveat. Hands the angler the shortlist instead of a ten-stretch explore task.
+    from tbay_fishcast.features import top_spots as _top
+    _names = {sid: nm for (sid, nm, *_rest) in stretches_in}
+    _active = [{"id": r.id, "species": r.species, "note": r.note}
+               for r in _runcal.active_runs(issue)]
+    top_block = _top.build(cfg.species, tier_area_by_stretch, _names, active_runs=_active)
+    for _sp in cfg.species:
+        _rk = top_block.get(_sp.id, {}).get("ranked", [])
+        if _rk:
+            print(f"top {_sp.id}: " + ", ".join(f"{r['name'].split('—')[0].strip()}={r['score']}" for r in _rk[:3]))
+
     now = datetime.now(timezone.utc)
     age_h = (now - datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)).total_seconds() / 3600
     manifest = {
@@ -814,7 +912,11 @@ def main(argv) -> int:
         "age_h": round(age_h, 1), "stale": age_h > 18,
         "target_c": cfg.product.target_c, "cast_m": cfg.product.cast_m,
         "max_reach_depth_m": cfg.product.max_reach_depth_m,
-        "targets_c": list(cfg.band_temps),  # every isotherm shaded (union across species)
+        # ACTUAL isotherm targets driving the shading = species band endpoints +
+        # CLAMP_EXTEND (4/18 °C taper rails), same tuple _overlay() interpolates on.
+        # Report the real set so cold/warm tapering is auditable (was under-reporting
+        # band_temps only, hiding the 18 °C warm rail — validation T1a).
+        "targets_c": list(_clamp_targets(cfg.band_temps)),
         "species": [{"id": sp.id, "name": sp.name, "range_c": list(sp.range_c),
                      "optimal_c": list(sp.optimal), "front_c": sp.front_c,
                      "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note,
@@ -829,8 +931,9 @@ def main(argv) -> int:
                  "n": n, "source": bias_src},
         "forecast_error": fc_err,   # MEASURED isotherm-depth MAE + lead-trend verdict (or None)
         "stretches": stretches_out, "stations": stations, "wind": wind,
-        "phase": phase, "markers": [m for m in RIVER_MOUTHS if _regs_ok(m["name"])],
-        "season": season_block,
+        "phase": phase, "markers": markers_out,
+        "season": season_block, "light": light_block, "barometric": baro_block,
+        "top_spots": top_block,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
     print(f"wrote {OUT/'manifest.json'} — {len(stretches_out)} stretches, {len(stations)} stations, "

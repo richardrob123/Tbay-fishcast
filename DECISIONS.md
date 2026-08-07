@@ -101,6 +101,29 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-035 — The temporal layer: WHEN, added as honestly-labelled priors beside the spatial map (audit T2/T3/T4).**
+  The comprehensive live-UI+data+behavior audit found the map answered WHERE but nothing answered
+  WHEN-within-a-day, WHEN-in-the-season, or "so where do I actually go" — the drivers that decide
+  shore catch on a given morning, and the ones the weak-cue migratory species (salmon/steelhead)
+  depend on most. Added four deterministic, no-fitted-weight signals, each presented as TIMING
+  CONTEXT beside the map (never multiplied into the spatial score — rule 7, no catch data to fit):
+  (1) **Dawn/dusk low-light windows** (`features/daylight.py`) — NOAA/Meeus solar geometry, ZERO
+  fetch, exact times; the ±45 min prime-window widths are bounded behavioral picks. The strongest
+  intraday cue, decisive for the crepuscular species. (2) **Barometric level+trend + cloud**
+  (`ingest/surface_meteo.py` + `features/barometric.py`, Open-Meteo `pressure_msl`/`cloud_cover`) —
+  a DIRECTIONAL prior only (falling→improving, rising→post-frontal-bluebird→slowing), WMO-style
+  tendency band, labelled T3 folklore-plus-literature, gracefully absent on fetch failure (rule 5).
+  (3) **Spawning-run phenology** (`features/run_calendar.py`, reads the committed
+  `events_calendar.yaml` that nothing had parsed) — river-mouth markers gold-highlight only inside a
+  species' typical run window and read "no run" honestly off-window; `freeze_up` end pinned to
+  12-01 (bounded pick). (4) **"Best spots today"** (`features/top_spots.py`) — ranks stretches per
+  species by the map's OWN lead-0 weighted habitat area (0–100 relative index, weights an ORDERING
+  of the disjoint tiers, not a fit), with a data-derived reason; weak-cue species carry the
+  run-timing caveat and their active runs are surfaced. Hands the angler the shortlist instead of a
+  ten-stretch × four-species explore task. 26 new unit tests; all signals deterministic (ADR-001).
+  Provenance in `PROVENANCE_LEDGER.md` ("temporal layer"). What stays a prior: the magnitude of each
+  effect on catch — that is the field-log job (rule 7), by design not yet done.
+
 - **ADR-034 — Consolidate the already-fetched data into live independent cross-checks (+ two honest non-actions).**
   The validation inventory found several sources fetched but under-used. Two are now wired as
   accumulating cross-checks (offline of the 4x heartbeat, like the isotherm gate): (1) the **GLERL

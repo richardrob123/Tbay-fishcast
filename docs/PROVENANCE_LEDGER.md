@@ -60,6 +60,24 @@ peak/relax edges are the only **PICKED** numbers left in the whole system; they 
 basin's physical timescales and cannot be data-driven until upwelling-event *outcome* logs exist
 (the offshore buoys couldn't discriminate cooling — `calibrate_upwelling.py`'s null result).
 
+## WHEN-within-the-day + season — the temporal layer (added audit T2/T3)
+
+The map is spatial; these answer *when* to be there. They are shown as **timing context beside** the
+map, never multiplied into the spatial score (rule 7 — no fitted weights, no catch data to fit).
+
+| Judgment | Value | Class | Source / basis |
+|---|---|---|---|
+| Dawn/dusk low-light window | civil twilight (−6°) → sunrise+45m / sunset−45m → dusk | **PHYSICS (astronomy) + PICKED edges** | NOAA/Meeus solar geometry (`features/daylight.py`, deterministic, ZERO fetch) — the *times* are exact; the ±45 min prime-window widths are bounded behavioral picks |
+| Low-light matters most for weak-cue species | direction only | **LITERATURE (prior)** | crepuscular feeding; `species_rules.yaml` window_multipliers (dawn 1.6 / dusk 2.0 / day 0.7). Effect size NOT locally calibrated — presented as timing, not a catch factor |
+| Barometric level + trend | ±1 hPa/3h steady band; falling→improving, rising→slowing | **LITERATURE/FOLKLORE (prior, T3)** | pre-frontal feed / post-frontal bluebird (`features/barometric.py`, Open-Meteo `pressure_msl`). A DIRECTION only; the ±1 hPa/3h band is a WMO-style tendency cut, not a fitted threshold |
+| Cloud cover | raw % | **DATA (context)** | Open-Meteo `cloud_cover`; shown as a modifier note (overcast extends the light window), not scored |
+| Spawning-run windows | per calendar entry | **LITERATURE (phenology, T1–T3 per entry)** | `events_calendar.yaml` typical dates (chinook 08-25→09-15, etc.); a mouth lights up only in-window. `freeze_up` end pinned to 12-01 (**PICKED, bounded**) |
+| "Best spots today" ranking | index = Σ tier_weight × area | **METHOD (derived, no new judgment)** | ranks stretches by the map's OWN lead-0 tier areas (`features/top_spots.py`); weights escalate s1→s5 (an ORDERING of the disjoint literature/measured tiers, not a fitted weight). Reported as a 0–100 RELATIVE index, never a catch rate |
+
+**These are all PRIORS or deterministic clocks, explicitly labelled as timing** — the honest stance is
+identical to the upwelling-phase banner: real drivers, correct direction, but the *magnitude* of the
+effect on catch is a behavioral prior awaiting field logs (rule 7), never a locally-fitted weight.
+
 ## The honest ceiling (what the map is, and is NOT)
 
 The map says **"conditions here match this species' known thermal + structural preferences."** It

@@ -64,6 +64,30 @@
   #phase .lab{font-size:13px;font-weight:650;line-height:1.2}
   #phase .det{font-size:11px;color:var(--muted);margin-top:1.5px;line-height:1.3}
   #phase .src{font-size:10px;color:var(--muted);opacity:.85;white-space:nowrap;text-align:right;flex:none}
+  /* timing strip: dawn/dusk light windows + barometric prior (the WHEN, beside the phase WHEN-over-days) */
+  #timing{display:none;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:-4px 0 11px;
+    padding:7px 11px;border-radius:10px;background:#0d141dcc;border:1px solid var(--line);font-size:11.5px}
+  #timing .grp{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  #timing .lb{color:var(--muted)}
+  #timing .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  #timing .sep{width:1px;height:13px;background:var(--line)}
+  #timing .baro.up{color:var(--go)} #timing .baro.dn{color:var(--warn)} #timing .baro.fl{color:var(--muted)}
+  /* best-spots answer block: label, a horizontally-scrollable chip row (one line on phones so it
+     doesn't squeeze the map — T4b), then an optional caveat for the weak-cue species */
+  #topspots{width:100%;display:none;flex-direction:column;gap:5px;font-size:12px;
+    margin-top:3px;padding-top:7px;border-top:1px solid var(--line)}
+  #topspots .lb{color:var(--muted);font-size:11.5px}
+  #topspots .row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:1px}
+  #topspots .row::-webkit-scrollbar{height:0}
+  #topspots .spot{flex:none;font:inherit;font-size:11.5px;padding:3px 10px;border-radius:999px;cursor:pointer;
+    background:#17324a;color:#dcebfa;border:1px solid #ffffff1f;line-height:1.15;display:inline-flex;
+    align-items:center;gap:6px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+  #topspots .spot:active{background:#1f4364}
+  #topspots .spot .sc{font-weight:700;font-variant-numeric:tabular-nums;color:#8fd0ff}
+  #topspots .spot.g5 .sc{color:#ffcf3f}
+  #topspots .cav{color:var(--muted);font-size:11px;line-height:1.35}
+  #topspots .cav b{color:#dcebfa}
+  #topspots .none{color:var(--muted);font-size:11.5px}
   .rvpop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0b0f14}
   .rvpop b{font-size:13.5px}
   .rvpop .sp{margin-top:5px;font-size:11px;color:#2f6b46;font-weight:650}
@@ -113,6 +137,7 @@
   <span class="spacer"></span>
   <div id="species" class="species"></div>
   <div id="legend"></div>
+  <div id="topspots"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
     <div class="more"><b>Two things, kept separate.</b> <b>Temperature</b> sets the base: faint teal
@@ -138,6 +163,7 @@
 
 <div class="card" id="ctl" style="display:none">
   <div id="phase"></div>
+  <div id="timing"></div>
   <div class="daylab">
     <span class="d" id="dlab">—</span>
     <span class="ha" id="halab"></span>
@@ -197,6 +223,7 @@ function applyLayers(){
   paintFills();
   renderLegend();
   updateMarkers();
+  renderTopSpots();
 }
 // Fill opacity, honesty-aware. For a WEAK-cue species (salmon/steelhead) the model itself says
 // temperature barely predicts location, so we do NOT draw a confident "prime" for them — the
@@ -292,13 +319,92 @@ function renderPhase(lead){
     `<span class="src">${obs?'🛰 ':''}${srcName}${conf?'<br>'+conf+' conf.':''}</span>`;
 }
 
+// local clock time (Thunder Bay) for a UTC iso — the WHEN dimension is shown in local time (rule 9)
+function clockLocal(iso){
+  if(!iso) return '—';
+  const t = new Date(iso); if(isNaN(+t)) return '—';
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay',
+    hour:'numeric',minute:'2-digit'}).format(t);
+}
+function win(pair){ return pair ? `${clockLocal(pair[0])}–${clockLocal(pair[1])}` : '—'; }
+
+// timing strip: deterministic dawn/dusk low-light windows (the strongest intraday cue, decisive for
+// the weak-cue species) + the barometric directional prior. Both are TIMING context beside the
+// spatial map — never fused into the score (rule 7). Same for all forecast days, so rendered once.
+function renderTiming(){
+  const box = document.getElementById('timing'); if(!box) return;
+  const L = MAN && MAN.light, B = MAN && MAN.barometric;
+  const parts = [];
+  if(L && (L.morning_prime || L.evening_prime)){
+    parts.push(`<span class="grp"><span class="lb">🌅 dawn</span><span class="v">${win(L.morning_prime)}</span></span>`+
+               `<span class="grp"><span class="lb">🌇 dusk</span><span class="v">${win(L.evening_prime)}</span></span>`);
+  }
+  if(B && B.state && B.state!=='unknown'){
+    const arrow = B.state==='falling'?'↘':(B.state==='rising'?'↗':'→');
+    const cls = B.prior==='improving'?'up':(B.prior==='slowing'?'dn':'fl');
+    const lvl = B.level_hpa!=null ? Math.round(B.level_hpa)+' hPa' : '';
+    const tail = B.prior==='improving'?'bite may improve':(B.prior==='slowing'?'bite may slow':'no push');
+    const cloud = (B.cloud_pct!=null) ? ` · ☁ ${B.cloud_pct}%` : '';
+    parts.push(`<span class="sep"></span>`+
+      `<span class="grp baro ${cls}" title="Directional prior (pre-frontal feed / post-frontal bluebird) — timing context, not a fitted weight.">`+
+      `<span class="lb">barometer</span><span class="v">${lvl} ${arrow}</span> ${tail}${cloud}</span>`);
+  }
+  if(!parts.length){ box.style.display='none'; return; }
+  box.style.display = 'flex';
+  box.innerHTML = parts.join('') +
+    `<span class="grp lb" style="flex-basis:100%;opacity:.8;font-size:10.5px">low-light windows &amp; barometer are timing priors (behavioral), shown separately from the map</span>`;
+}
+
+// 'Best spots today' — the model's own lead-0 ranking for the selected species (manifest.top_spots).
+// Strong-cue species: ranked by weighted habitat area. Weak-cue: the ranking carries the run-timing
+// caveat and active run windows are surfaced. Clicking a spot flies the map there.
+function renderTopSpots(){
+  const box = document.getElementById('topspots'); if(!box || !curSp || !MAN) return;
+  const ts = MAN.top_spots && MAN.top_spots[curSp.id];
+  if(!ts){ box.style.display='none'; return; }
+  box.style.display = 'flex';
+  const ranked = ts.ranked || [];
+  let html = `<span class="lb">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today:</span>`;
+  if(ranked.length){
+    html += `<div class="row">` + ranked.map(r => {
+      const g5 = r.glow_ha >= 1 ? ' g5' : '';
+      return `<button class="spot${g5}" data-id="${r.id}" title="${r.reason.replace(/"/g,'&quot;')}">`+
+             `${r.name.split('—')[0].trim()} <span class="sc">${r.score}</span></button>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<span class="none">no stretch has meaningful reachable habitat for this species today</span>`;
+  }
+  // active run windows (surfaced prominently for the weak-cue migratory species)
+  const runs = (MAN.top_spots._active_runs)||[];
+  if(ts.weak_cue){
+    if(runs.length){
+      const names = runs.map(r=>r.id.replace(/_/g,' ')).join(', ');
+      html += `<span class="cav">🐟 Run window active: <b>${names}</b>. ${ts.caveat||''}</span>`;
+    } else {
+      html += `<span class="cav">No spawning-run window is open yet (pre-season). ${ts.caveat||''}</span>`;
+    }
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.spot').forEach(b => b.onclick = () => {
+    const s = (MAN.stretches||[]).find(x => x.id === b.dataset.id);
+    if(s && s.center) map.flyTo({ center:[s.center[1], s.center[0]], zoom:12.6, duration:700 });
+  });
+}
+
 let MARKERS = [];
 function updateMarkers(){
   if(!curSp) return;
   MARKERS.forEach(o => {
     const rel = (o.m.species||[]).includes(curSp.id);
+    // a run window is "on for this species" if the mouth is active AND the selected species is in
+    // its active set — gold-highlight those (the migratory species' real signal), dim off-window.
+    const run = o.m.run || {};
+    const runOn = rel && run.active && (run.species_active||[]).includes(curSp.id);
     o.el.style.opacity = rel ? '1' : '0.42';
-    o.el.style.zIndex = rel ? '2' : '1';
+    o.el.style.zIndex = runOn ? '3' : (rel ? '2' : '1');
+    o.el.style.background = runOn ? '#ffcf3f' : '#2f80ed';
+    o.el.style.borderColor = runOn ? '#3a2c00' : '#eaf3ff';
+    o.el.style.boxShadow = runOn ? '0 0 0 1.5px #0009, 0 0 9px 2px #ffcf3f88' : '0 0 0 1.5px #0009';
   });
 }
 
@@ -438,6 +544,8 @@ map.on('load', async () => {
   document.getElementById('op').addEventListener('input', paintFills);
   document.getElementById('play').addEventListener('click', togglePlay);
   setDay(0);
+  renderTiming();      // dawn/dusk + barometer (same all days)
+  renderTopSpots();    // best spots for the default species
 });
 
 function stationHTML(st){
@@ -457,8 +565,17 @@ function markerHTML(m){
   const names = (m.species||[]).map(id => {
     const s = SPECIES.find(x=>x.id===id); return s ? s.name : id;
   });
+  const run = m.run || {};
+  let runLine = '';
+  if(run.active && (run.runs||[]).length){
+    const rn = run.runs.map(r => r.id.replace(/_/g,' ')).join(' · ');
+    runLine = `<div class="sp" style="color:#8a6d00">🐟 run window active (typical): ${rn}</div>`;
+  } else {
+    runLine = `<div class="nt" style="color:#999">no spawning-run window open now (typical dates)</div>`;
+  }
   return `<div class="rvpop"><b>${m.name}</b>`+
     `<div class="nt">${m.note||''}</div>`+
+    runLine+
     (names.length?`<div class="sp">stages: ${names.join(' · ')}</div>`:'')+
     `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · position approximate (field-verify)</div></div>`;
 }

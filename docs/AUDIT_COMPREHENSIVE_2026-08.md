@@ -46,32 +46,35 @@ The spatial/thermal engine is **disciplined and mostly honest**, but three thing
   city-arc only, applied region-wide + year-round); soften "two independent axes" (bottom_c is
   largely a depth remap); reclassify per-species depths as T3/T4 judgments.
 
-## TIER 2 — the temporal dimension (biggest value; cheap, honest priors)
+## TIER 2 — the temporal dimension (biggest value; cheap, honest priors) — ✅ DONE
 
-- **T2a Dawn/dusk low-light window** — deterministic sun/civil-twilight from lat/lon/date, ZERO
-  fetch. A temporal banner + optional map dimming. The strongest cue for the crepuscular species the
-  model underserves (salmon/steelhead/coaster). `species_rules.yaml` already encodes the multipliers.
-- **T2b Barometric pressure level + TREND** — pre-frontal feed / post-frontal bluebird lockjaw.
-  METAR `altim` (at the bay) + Open-Meteo `pressure_msl` (one-line add to the call we already make) +
-  NDBC `PTDY`. Ship as a labelled directional prior next to the phase banner (no fitted weight).
-- **T2c Cloud cover** — one-line `cloud_cover` on the same Open-Meteo add; modulates the light window
-  (overcast extends it).
+- **T2a Dawn/dusk low-light window** — ✅ `features/daylight.py` (NOAA/Meeus solar geometry, ZERO
+  fetch, deterministic; 7 unit tests). Manifest `light` block → timing strip in the UI. The strongest
+  intraday cue for the crepuscular species the thermal model underserves.
+- **T2b Barometric pressure level + TREND** — ✅ `ingest/surface_meteo.py` + `features/barometric.py`
+  (Open-Meteo `pressure_msl`; 6 unit tests). Labelled directional prior (falling→improving,
+  rising→slowing) in the timing strip; NEVER fused into the spatial score (rule 7).
+- **T2c Cloud cover** — ✅ `cloud_cover` on the same Open-Meteo call; shown as a `☁ %` context note
+  on the barometer line (overcast extends the light window).
 
 ## TIER 3 — dynamic plume + run timing (decisive for salmon/steelhead)
 
 - **T3a River discharge → live plume strength.** ECCC GeoMet (`api.weather.gc.ca`) is REACHABLE now
   (the `hydat.py` "403-blocked" note is STALE — verified live: Kaministiquia 20.0, N Current 0.084,
   Neebing 0.228 m³/s). Modulate the river-mouth markers by flow/freshet instead of static dots.
-- **T3b Wire the spawning-run calendar** (`events_calendar.yaml`, already committed): light up a
-  river mouth when its run window is active (chinook/coho/steelhead), off-window when not.
+- **T3b Wire the spawning-run calendar** — ✅ `features/run_calendar.py` (reads the committed
+  `events_calendar.yaml`; 7 unit tests). River-mouth markers gold-highlight in-window for the
+  selected species, dim off-window; the popup states the active run. "Best spots" surfaces active
+  runs for the weak-cue species.
 - **T3c Precipitation/freshet trigger** — Open-Meteo `precipitation`; the "first cool rain = starting
   gun" that the calendar already encodes as `rain_trigger`.
 
 ## TIER 4 — UI as a real tool (turn the map into an answer)
 
-- **T4a "Top spots today" synthesized list** — per species, ranked, with the reason. The tool
-  currently shows a map to EXPLORE (zoom 10 stretches × 4 species by hand); it should hand the
-  angler the answer. Highest product-value lever.
+- **T4a "Top spots today" synthesized list** — ✅ `features/top_spots.py` (6 unit tests). Ranks
+  stretches per species by the map's OWN lead-0 weighted habitat area (0–100 relative index), with a
+  data-derived reason; weak-cue species carry the run-timing caveat + active runs. Renders as the
+  "Best for … today" chip row in the header; clicking a spot flies the map there.
 - **T4b Mobile layout** — the two cards squeeze the map into a thin strip; the forecast is the
   smallest thing on a phone (the primary use case). Reclaim map space (collapsible header, etc.).
 - **T4c Species-aware station pins** — green/blue = cold-water reachability (a laker signal) shown
