@@ -234,27 +234,41 @@ def fetch_patch(lat: float, lon: float, *, half_m: float = 1500.0,
     """
     import io
     import subprocess
+    import time
 
     import rasterio
 
     url = _wcs_geotiff_url(lat, lon, half_m, scale_px)
-    raw = subprocess.run(["curl", "-s", "-m", str(int(timeout)), url],
-                         capture_output=True).stdout
-    if not raw or raw[:2] not in (b"II", b"MM"):
-        head = raw[:200].decode("latin-1", "replace")
-        raise RuntimeError(f"NONNA WCS did not return a GeoTIFF for {lat},{lon}: {head!r}")
-    with rasterio.open(io.BytesIO(raw)) as ds:
-        band = ds.read(1)
-        res_merc = abs(ds.transform.a)
-        x, y = to_mercator(lat, lon)
-        c0, r0 = (~ds.transform) * (x, y)
-        b = ds.bounds
-        bounds = (float(b.left), float(b.bottom), float(b.right), float(b.top))
-    depth = depths_from_raw(band)
-    cov = float(np.isfinite(depth).mean())
-    return Patch(depth=depth, r0=int(round(r0)), c0=int(round(c0)),
-                 res_mercator_m=res_merc, lat=lat, lon=lon, coverage_frac=cov,
-                 bounds_3857=bounds)
+    # Retry: the CHS WCS server intermittently drops the connection mid-stream (curl returns a
+    # truncated body -> rasterio "Read failed", or an error page instead of a GeoTIFF). Without
+    # a retry a single blip skips the stretch, and a wider blip skips ALL of them and deploys an
+    # empty map. A few backed-off attempts ride out the transient. Deterministic result once a
+    # good GeoTIFF arrives (the file for a fixed bbox is stable).
+    last = None
+    for attempt in range(4):
+        try:
+            raw = subprocess.run(["curl", "-s", "-m", str(int(timeout)), url],
+                                 capture_output=True).stdout
+            if not raw or raw[:2] not in (b"II", b"MM"):
+                head = raw[:200].decode("latin-1", "replace")
+                raise RuntimeError(f"NONNA WCS did not return a GeoTIFF for {lat},{lon}: {head!r}")
+            with rasterio.open(io.BytesIO(raw)) as ds:
+                band = ds.read(1)
+                res_merc = abs(ds.transform.a)
+                x, y = to_mercator(lat, lon)
+                c0, r0 = (~ds.transform) * (x, y)
+                b = ds.bounds
+                bounds = (float(b.left), float(b.bottom), float(b.right), float(b.top))
+            depth = depths_from_raw(band)
+            cov = float(np.isfinite(depth).mean())
+            return Patch(depth=depth, r0=int(round(r0)), c0=int(round(c0)),
+                         res_mercator_m=res_merc, lat=lat, lon=lon, coverage_frac=cov,
+                         bounds_3857=bounds)
+        except Exception as e:  # noqa: BLE001 - curl/rasterio raise varied transient errors
+            last = e
+            if attempt < 3:
+                time.sleep(2.0 * (attempt + 1))   # 2,4,6s
+    raise RuntimeError(f"NONNA WCS fetch failed for {lat},{lon} after retries: {last}")
 
 
 def build_profile(lat: float, lon: float, *, bearing_deg: float | None = None,
