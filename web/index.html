@@ -208,35 +208,29 @@ function paintFills(){
     if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', weak ? 0 : o*0.7);
   });
 }
-// MEASURED thermal-field position uncertainty, as a compact honest chip. From the accumulated
-// gate (manifest.forecast_error) — a real ±metres, with its small-sample caveat on hover. Not a
-// fabricated band. Empty string if the analysis hasn't been run.
-function fieldBandChip(){
-  const fe = MAN && MAN.forecast_error;
-  if(!fe || !fe.pooled_mae_m) return '';
-  const trend = fe.lead_trend_detected ? 'grows with lead' : 'flat across leads';
-  const cav = (fe.note||'') + `\n(n=${fe.n}, ${fe.n_effective_chains} moving-obs chain(s) — provisional)`;
-  return `<span class="lmut" title="${cav.replace(/"/g,'&quot;')}">· thermal field ±${fe.pooled_mae_m} m depth (measured, ${trend})</span>`;
-}
 function renderLegend(){
   const el = document.getElementById('legend'); if(!el || !curSp) return;
   const weak = curSp.temp_cue === 'weak';
   const opt = curSp.optimal_c || curSp.range_c;
-  // compact one-line key. For weak-cue species we do NOT show a "prime" swatch: the model
-  // hides prime for them (paintFills), because temperature alone doesn't locate these fish —
-  // so the legend must not imply a confidence the data can't back.
+  const fe = MAN && MAN.forecast_error;
+  // Lean legend: swatches + core °C, nothing more. Weak-cue drops the "prime" swatch (the model
+  // hides prime for plume-driven species) and flags the weak cue in two words — the marker popups
+  // carry the plume detail, so the legend doesn't repeat it.
   if(weak){
     el.innerHTML =
       `<span class="key"><i class="sw s2"></i>good<i class="sw s1"></i>fair</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C water · but temp weakly predicts these fish</span>`+
-      `<span class="lwarn">⚠ weak temp cue — work river mouths &amp; warm plumes, not the shading</span>`+
-      fieldBandChip();
+      `<span class="lmut">${opt[0]}–${opt[1]}°C · weak temp cue</span>`;
   } else {
     el.innerHTML =
       `<span class="key"><i class="sw s3"></i>prime<i class="sw s2"></i>good<i class="sw s1"></i>fair</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C core · cast the edge</span>`+
-      fieldBandChip();
+      `<span class="lmut">${opt[0]}–${opt[1]}°C core</span>`;
   }
+  // Measured thermal-field uncertainty stays DISCOVERABLE on hover, not crowding the bar.
+  el.title = (fe && fe.pooled_mae_m)
+    ? `Thermal-field position error ±${fe.pooled_mae_m} m depth — measured from the forecast gate `
+      + `(${fe.lead_trend_detected ? 'grows with lead' : 'no lead trend over 24–120 h'}; `
+      + `n=${fe.n}, provisional).`
+    : '';
 }
 
 // upwelling-phase presentation — the fish-review headline: reward the RELAXATION, not the
