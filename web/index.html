@@ -362,31 +362,20 @@ function clockLocal(iso){
 }
 function win(pair){ return pair ? `${clockLocal(pair[0])}–${clockLocal(pair[1])}` : '—'; }
 
-// timing strip: deterministic dawn/dusk low-light windows (the strongest intraday cue, decisive for
-// the weak-cue species) + the barometric directional prior. Both are TIMING context beside the
-// spatial map — never fused into the score (rule 7). Same for all forecast days, so rendered once.
+// timing strip: deterministic dawn/dusk low-light windows — the WHEN dimension. This is the one
+// intraday cue that is genuinely well-supported (crepuscular feeding) and free (pure astronomy).
+// The barometric "prior" was DEMOTED (2026-08): the direct pressure→feeding effect is debated in
+// the literature and mostly an indirect proxy for the frontal weather we already read from wind, so
+// it failed the "proven, measurable effect" bar and was cut rather than dressed up as a signal.
 function renderTiming(){
   const box = document.getElementById('timing'); if(!box) return;
-  const L = MAN && MAN.light, B = MAN && MAN.barometric;
-  const parts = [];
-  if(L && (L.morning_prime || L.evening_prime)){
-    parts.push(`<span class="grp"><span class="lb">🌅 dawn</span><span class="v">${win(L.morning_prime)}</span></span>`+
-               `<span class="grp"><span class="lb">🌇 dusk</span><span class="v">${win(L.evening_prime)}</span></span>`);
-  }
-  if(B && B.state && B.state!=='unknown'){
-    const arrow = B.state==='falling'?'↘':(B.state==='rising'?'↗':'→');
-    const cls = B.prior==='improving'?'up':(B.prior==='slowing'?'dn':'fl');
-    const lvl = B.level_hpa!=null ? Math.round(B.level_hpa)+' hPa' : '';
-    const tail = B.prior==='improving'?'bite may improve':(B.prior==='slowing'?'bite may slow':'no push');
-    const cloud = (B.cloud_pct!=null) ? ` · ☁ ${B.cloud_pct}%` : '';
-    parts.push(`<span class="sep"></span>`+
-      `<span class="grp baro ${cls}" title="Directional prior (pre-frontal feed / post-frontal bluebird) — timing context, not a fitted weight.">`+
-      `<span class="lb">barometer</span><span class="v">${lvl} ${arrow}</span> ${tail}${cloud}</span>`);
-  }
-  if(!parts.length){ box.style.display='none'; return; }
+  const L = MAN && MAN.light;
+  if(!L || !(L.morning_prime || L.evening_prime)){ box.style.display='none'; return; }
   box.style.display = 'flex';
-  box.innerHTML = parts.join('') +
-    `<span class="grp lb cap" style="flex-basis:100%;opacity:.8;font-size:10.5px">low-light windows &amp; barometer are timing priors (behavioral), shown separately from the map</span>`;
+  box.innerHTML =
+    `<span class="grp"><span class="lb">🌅 dawn</span><span class="v">${win(L.morning_prime)}</span></span>`+
+    `<span class="grp"><span class="lb">🌇 dusk</span><span class="v">${win(L.evening_prime)}</span></span>`+
+    `<span class="grp lb cap" style="flex-basis:100%;opacity:.8;font-size:10.5px">best low-light windows (dawn/dusk) — the strongest intraday cue, esp. for salmon/steelhead</span>`;
 }
 
 // 'Best spots today' — the model's own lead-0 ranking for the selected species (manifest.top_spots).

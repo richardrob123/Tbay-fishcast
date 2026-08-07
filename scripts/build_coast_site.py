@@ -883,26 +883,12 @@ def main(argv) -> int:
     _n_fresh = sum(1 for m in markers_out if (m.get("flow") or {}).get("freshet"))
     print(f"run markers: {_n_active}/{len(markers_out)} in a run window; {_n_fresh} freshet on {issue}")
 
-    # Barometric directional prior + cloud (T2b/T2c) — a labelled TIMING prior beside the phase
-    # banner, NEVER multiplied into the spatial score (rule 7, no fitted weight). Graceful: a fetch
-    # failure yields no barometric line rather than a crash or a guess (rule 5, staleness is loud).
+    # Barometric prior DEMOTED (2026-08): the direct pressure→feeding effect on salmonids is
+    # debated in the literature and mostly an indirect proxy for the frontal weather already read
+    # from wind; with no local catch logs it can never be measured here, so it failed the
+    # "proven, measurable effect" bar and is no longer emitted. Modules (surface_meteo/barometric)
+    # are retained but unused. See docs/PROVENANCE_LEDGER.md + ADR-035.
     baro_block = None
-    try:
-        from tbay_fishcast.ingest import surface_meteo as _sm
-        from tbay_fishcast.features import barometric as _baro
-        _pc = _sm.fetch_pressure_cloud()
-        _issue_utc = datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)
-        _b = _baro.classify(_pc["time"], _pc["pressure_hpa"], _issue_utc)
-        # cloud cover nearest the issue instant — modulates the light window (overcast extends it)
-        _cloud = None
-        _cc = [(t, c) for t, c in zip(_pc["time"], _pc["cloud_pct"]) if c is not None]
-        if _cc:
-            from tbay_fishcast.features.barometric import _parse as _pt
-            _cloud = min(_cc, key=lambda tc: abs((_pt(tc[0]) - _issue_utc).total_seconds()))[1]
-        baro_block = {**_b.as_dict(), "cloud_pct": _cloud}
-        print(f"barometric: {_b.state} ({_b.trend_hpa_3h}/3h), cloud {_cloud}%")
-    except Exception as e:  # noqa: BLE001
-        print(f"barometric prior unavailable: {str(e)[:60]}")
 
     # 'Best spots today' (T4a) — rank stretches per species from the model's OWN lead-0 habitat
     # areas (weighted by tier). Data-driven ordering, not a new judgment; weak-cue species carry the
