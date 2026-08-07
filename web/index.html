@@ -88,6 +88,13 @@
   #topspots .cav{color:var(--muted);font-size:11px;line-height:1.35}
   #topspots .cav b{color:#dcebfa}
   #topspots .none{color:var(--muted);font-size:11.5px}
+  /* what the map pins mean (answers "what are the blue flags?") */
+  #mapkey{width:100%;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted);
+    margin-top:2px;padding-top:6px;border-top:1px solid var(--line)}
+  #mapkey .k{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  #mapkey .dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;flex:none}
+  #mapkey .tear{width:11px;height:11px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    border:1.5px solid #eaf3ff;flex:none}
   .rvpop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0b0f14}
   .rvpop b{font-size:13.5px}
   .rvpop .sp{margin-top:5px;font-size:11px;color:#2f6b46;font-weight:650}
@@ -119,8 +126,28 @@
   .loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);
     font-size:13px}
   @media (max-width:560px){
-    #top h1{font-size:13.5px;width:100%}
-    #legend{font-size:11px;gap:10px}
+    /* MOBILE: the map is the product — compact both cards hard so it isn't squeezed to a sliver.
+       Secondary detail (full legend, timing caption, snapshot parentheticals) folds away; the
+       essentials stay: species, best spots, phase, dawn/dusk, the slider. */
+    #top{top:8px;left:8px;right:8px;padding:8px 11px;gap:6px}
+    #top h1{font-size:13px;width:100%;line-height:1.2}
+    #legend{display:none}                       /* colours are explained in "how to read" */
+    #topspots{margin-top:2px;padding-top:6px;gap:4px}
+    #topspots .lb{font-size:11px}
+    #legnote{margin-top:3px}
+    #ctl{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));padding:9px 11px 10px}
+    #phase{margin-bottom:8px;padding:7px 9px;gap:8px}
+    #phase .lab{font-size:12px}
+    #phase .det{font-size:10.5px}
+    #timing{margin:-2px 0 8px;padding:6px 9px;font-size:11px;gap:4px 10px}
+    #timing .cap{display:none}                  /* drop the wordy "timing priors" caption on phones */
+    .daylab{gap:6px;margin-bottom:7px;flex-wrap:wrap}
+    .daylab .d{font-size:12.5px}
+    .daylab .ha,.daylab .wind{font-size:10.5px}
+    .daylab .wind{margin-left:0}
+    .row2{margin-top:7px;gap:9px}
+    .row2 label{font-size:11px}
+    button{padding:5px 9px;font-size:12px}
   }
 </style>
 </head>
@@ -138,6 +165,7 @@
   <div id="species" class="species"></div>
   <div id="legend"></div>
   <div id="topspots"></div>
+  <div id="mapkey"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
     <div class="more"><b>Two things, kept separate.</b> <b>Temperature</b> sets the base: faint teal
@@ -156,7 +184,10 @@
       relaxation is the prime window. Day&nbsp;0 uses <b>observed</b> wind (Thunder Bay airport);
       later days use the forecast. Edges are uncertain ~100–300&nbsp;m — treat them as fuzzy. Blue
       teardrops are <b>river mouths</b> (plume + forage) — they rival temperature for shore catch,
-      and for salmon/steelhead the plume/season drives more than temperature. Forecasts
+      and for salmon/steelhead the plume/season drives more than temperature.
+      <b>The "Best today" numbers are a relative score, 0–100</b> — 100 is the strongest stretch
+      <i>today for that species</i> (the most reachable water at the right temperature and structure);
+      the rest are scored against it. It is NOT a catch percentage. Forecasts
       <b>water, not fish</b> — check Ontario regs before fishing.</div>
   </details>
 </div>
@@ -182,6 +213,7 @@ const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery
 const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC · Wind CYQT METAR/GEFS";
 
 let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
+const MOB = window.matchMedia('(max-width:560px)').matches;   // phone layout: smaller pins, terse labels
 // graded suitability zones: features carry temp='sp:<id>:s1|s2|s3'. The build emits them
 // DISJOINT (outer fair ring / good ring / prime core, no overlap), so these translucent fills
 // read as a light graded wash you can see the water through — not a compounded opaque slab.
@@ -225,6 +257,7 @@ function applyLayers(){
   updateMarkers();
   updateStations();
   renderTopSpots();
+  renderMapKey();
 }
 // Fill opacity, honesty-aware. For a WEAK-cue species (salmon/steelhead) the model itself says
 // temperature barely predicts location, so we do NOT draw a confident "prime" for them — the
@@ -353,7 +386,7 @@ function renderTiming(){
   if(!parts.length){ box.style.display='none'; return; }
   box.style.display = 'flex';
   box.innerHTML = parts.join('') +
-    `<span class="grp lb" style="flex-basis:100%;opacity:.8;font-size:10.5px">low-light windows &amp; barometer are timing priors (behavioral), shown separately from the map</span>`;
+    `<span class="grp lb cap" style="flex-basis:100%;opacity:.8;font-size:10.5px">low-light windows &amp; barometer are timing priors (behavioral), shown separately from the map</span>`;
 }
 
 // 'Best spots today' — the model's own lead-0 ranking for the selected species (manifest.top_spots).
@@ -365,7 +398,7 @@ function renderTopSpots(){
   if(!ts){ box.style.display='none'; return; }
   box.style.display = 'flex';
   const ranked = ts.ranked || [];
-  let html = `<span class="lb">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today:</span>`;
+  let html = `<span class="lb">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today <span style="opacity:.7">· 100 = strongest</span>:</span>`;
   if(ranked.length){
     html += `<div class="row">` + ranked.map(r => {
       const g5 = r.glow_ha >= 1 ? ' g5' : '';
@@ -390,6 +423,18 @@ function renderTopSpots(){
     const s = (MAN.stretches||[]).find(x => x.id === b.dataset.id);
     if(s && s.center) map.flyTo({ center:[s.center[1], s.center[0]], zoom:12.6, duration:700 });
   });
+}
+
+// map-pin key — answers "what are the blue flags?" The station dot tracks the current species'
+// colour (cold-reachability is a lake-trout signal, muted for the warm-cued species).
+function renderMapKey(){
+  const el = document.getElementById('mapkey'); if(!el || !curSp) return;
+  const cold = curSp.temp_cue !== 'weak';
+  const stDot = cold ? '#39d353' : '#6b7682';
+  const stTxt = cold ? 'station — cold water reachable' : 'station — cold-reach (minor here)';
+  el.innerHTML =
+    `<span class="k"><span class="tear" style="background:#2f80ed"></span>river mouth — tap for run + flow</span>`+
+    `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`;
 }
 
 let STATIONS = [];
@@ -485,14 +530,18 @@ map.on('load', async () => {
     s.corners.forEach(c => bounds.extend(c));
   });
   buildSpeciesChips();
-  if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: {top:70,bottom:150,left:30,right:30}, duration:0 });
+  // frame the coast inside the map window BETWEEN the two cards (bigger insets on a phone, where
+  // the header + control cards eat more of the viewport)
+  const pad = MOB ? {top:185,bottom:240,left:16,right:16} : {top:70,bottom:150,left:30,right:30};
+  if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: pad, duration:0 });
 
   // station markers. The green/gray verdict is COLD-WATER REACHABILITY — a lake-trout signal
   // (cold hypolimnion within a cast). For the warm-preferring weak-cue species it doesn't mean
   // "good here", so the pins de-emphasize + the popup says so when such a species is selected (T4c).
   (man.stations||[]).forEach(st => {
     const el = document.createElement('div');
-    el.style.cssText = 'width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;'+
+    const d = MOB ? 12 : 16;
+    el.style.cssText = `width:${d}px;height:${d}px;border-radius:50%;border:2.5px solid #fff;`+
       'box-shadow:0 0 0 2px #0009;cursor:pointer;transition:opacity .15s,background .15s';
     const pop = new maplibregl.Popup({offset:14, closeButton:false});
     new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
@@ -505,7 +554,8 @@ map.on('load', async () => {
   // when the selected species doesn't stage there.
   (man.markers||[]).forEach(m => {
     const el = document.createElement('div');
-    el.style.cssText = 'width:15px;height:15px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);'+
+    const d = MOB ? 12 : 15;
+    el.style.cssText = `width:${d}px;height:${d}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);`+
       'background:#2f80ed;border:2px solid #eaf3ff;box-shadow:0 0 0 1.5px #0009;cursor:pointer;'+
       'transition:opacity .15s';
     const pop = new maplibregl.Popup({offset:16, closeButton:false}).setHTML(markerHTML(m));
@@ -566,6 +616,7 @@ map.on('load', async () => {
   setDay(0);
   renderTiming();      // dawn/dusk + barometer (same all days)
   renderTopSpots();    // best spots for the default species
+  renderMapKey();      // what the map pins mean
 });
 
 function stationHTML(st, coldCued=true){
@@ -640,7 +691,7 @@ function setDay(i){
   const totHa = man.stretches.filter(s=>!s.low_confidence).reduce((a,s)=>a+haOf(s),0);
   const nLow = man.stretches.filter(s=>s.low_confidence).length;
   document.getElementById('halab').textContent =
-    totHa.toFixed(0)+' ha reachable' + (nLow?` (+${nLow} sparse-survey area${nLow>1?'s':''}, indicative)`:'');
+    totHa.toFixed(0)+' ha reachable' + (nLow&&!MOB?` (+${nLow} sparse-survey area${nLow>1?'s':''}, indicative)`:'');
   // continuous upwelling-favorability (graded response to wind strength), with context so a
   // low reading is never a bare, alarming "0%" — light wind simply can't upwell.
   const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
@@ -648,7 +699,7 @@ function setDay(i){
   if(w){
     const fav = Math.round((w.favor!=null?w.favor:w.p||0)*100);
     if(fav >= 8) wl = `upwelling-favorable wind: <b>${fav}%</b>`;
-    else wl = `<span style="opacity:.85">light wind — no upwelling blow${w.peak_kn?` (W&nbsp;≤${w.peak_kn}&nbsp;kt)`:''}</span>`;
+    else wl = `<span style="opacity:.85">light wind${MOB?'':' — no upwelling blow'}${w.peak_kn&&!MOB?` (W&nbsp;≤${w.peak_kn}&nbsp;kt)`:''}</span>`;
   }
   document.getElementById('wlab').innerHTML = wl;
   document.querySelectorAll('#ticks span').forEach(sp =>
