@@ -89,6 +89,10 @@ jobs:
         id: offshore
         continue-on-error: true
         run: python scripts/check_offshore_climatology.py
+      - name: Accumulate the over-lake wind gate (buoy obs vs GFS forecast)
+        id: windgate
+        continue-on-error: true
+        run: python scripts/accumulate_wind_gate.py
       - name: Commit the observation logs back to the branch
         id: datacommit
         continue-on-error: true
@@ -104,8 +108,8 @@ jobs:
           # add only files that exist — forecast_gate_log.csv is absent until the forecast gate
           # first produces rows (e.g. GLOS down), and a bare `git add` on it would fail under set -e.
           for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv \
-                   data/offshore_check_log.csv data/calib/forecast_lead_error.json \
-                   docs/ACCURACY_SCORECARD.md; do
+                   data/offshore_check_log.csv data/wind_gate_log.csv \
+                   data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md; do
             [ -f "$f" ] && git add "$f"
           done
           if git diff --staged --quiet; then

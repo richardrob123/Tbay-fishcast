@@ -1,7 +1,30 @@
-"""NDBC .ocean parser tests (hermetic — parse a sample payload, no network)."""
+"""NDBC .ocean + stdmet-wind parser tests (hermetic — parse a sample payload, no network)."""
 from datetime import timezone
 
-from tbay_fishcast.ingest.ndbc import BUOYS, parse_ocean
+from tbay_fishcast.ingest.ndbc import BUOYS, parse_ocean, parse_stdmet_wind
+
+STDMET = """#YY  MM DD hh mm WDIR WSPD GST  WVHT   DPD   APD MWD   PRES  ATMP
+#yr  mo dy hr mn degT m/s  m/s     m   sec   sec degT   hPa  degC
+2026 08 07 20 40 270  5.0  6.0   0.3     3    MM 144 1012.1  14.4
+2026 08 07 20 30  90  3.0  4.0   0.2     3    MM 100 1012.0  14.3
+2026 08 07 20 20  MM   MM   MM   0.2    MM    MM  MM 1011.9  14.2
+2026 08 07 20 10 260 999   MM   0.1    MM    MM  MM 1011.8  14.1
+"""
+
+
+def test_parse_stdmet_wind():
+    recs = parse_stdmet_wind(STDMET)
+    # two valid rows (the MM-speed and 999 rows are dropped)
+    assert len(recs) == 2
+    assert recs[0].dir_deg == 270.0
+    assert recs[0].speed_kn == round(5.0 * 1.943844, 2)   # m/s -> kn
+    assert recs[0].time.tzinfo == timezone.utc
+    assert recs[1].dir_deg == 90.0
+
+
+def test_parse_stdmet_wind_empty_and_header():
+    assert parse_stdmet_wind("") == []
+    assert parse_stdmet_wind("#h\n#u\n") == []
 
 SAMPLE = """#YY  MM DD hh mm   DEPTH  OTMP   COND   SAL
 #yr  mo dy hr mn       m  degC  mS/cm   psu

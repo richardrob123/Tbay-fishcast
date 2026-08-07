@@ -13,6 +13,7 @@ data/*
 !data/forecast_gate_log.csv
 !data/nearshore_anchor.csv
 !data/offshore_check_log.csv
+!data/wind_gate_log.csv
 !data/field_sessions.csv
 # the upwelling-favorability calibration record IS committed — small, auditable provenance
 # (fitted params, or a logged null result) that the build reads to decide prior-vs-fitted.
