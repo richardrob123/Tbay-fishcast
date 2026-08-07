@@ -1,1 +1,5 @@
 date,chain,obs_iso_m,raw_iso_m,corr_iso_frozen_m,abs_err_frozen_m,corr_iso_live_m,abs_err_live_m,bias_source,glsea_anchor,retrieved_utc
+2026-08-04,45216,8.25,15.62,12.17,3.93,12.18,3.93,live,ok,2026-08-07T03:45:44Z
+2026-08-04,llo1,3.0,6.58,4.97,1.97,4.97,1.97,live,ok,2026-08-07T03:46:12Z
+2026-08-05,llo1,3.0,1.93,2.62,0.38,2.54,0.46,live,ok,2026-08-07T03:46:14Z
+2026-08-06,llo1,3.0,1.33,,,,,live,absent,2026-08-07T03:46:19Z
