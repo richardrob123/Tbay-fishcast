@@ -186,8 +186,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/little_trout_bay.geojson",
-   "lines": "data/lines/little_trout_bay.geojson"
+   "area": "data/areas/little_trout_bay.geojson"
   },
   {
    "id": "chippewa",
@@ -259,8 +258,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/chippewa.geojson",
-   "lines": "data/lines/chippewa.geojson"
+   "area": "data/areas/chippewa.geojson"
   },
   {
    "id": "kam_mission",
@@ -332,8 +330,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/kam_mission.geojson",
-   "lines": "data/lines/kam_mission.geojson"
+   "area": "data/areas/kam_mission.geojson"
   },
   {
    "id": "mckellar_harbour",
@@ -405,8 +402,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/mckellar_harbour.geojson",
-   "lines": "data/lines/mckellar_harbour.geojson"
+   "area": "data/areas/mckellar_harbour.geojson"
   },
   {
    "id": "marina_mcvicar",
@@ -478,8 +474,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/marina_mcvicar.geojson",
-   "lines": "data/lines/marina_mcvicar.geojson"
+   "area": "data/areas/marina_mcvicar.geojson"
   },
   {
    "id": "boulevard_current",
@@ -551,8 +546,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/boulevard_current.geojson",
-   "lines": "data/lines/boulevard_current.geojson"
+   "area": "data/areas/boulevard_current.geojson"
   },
   {
    "id": "current_barepoint",
@@ -624,8 +618,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/current_barepoint.geojson",
-   "lines": "data/lines/current_barepoint.geojson"
+   "area": "data/areas/current_barepoint.geojson"
   },
   {
    "id": "shipyard_mackenzie",
@@ -697,8 +690,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/shipyard_mackenzie.geojson",
-   "lines": "data/lines/shipyard_mackenzie.geojson"
+   "area": "data/areas/shipyard_mackenzie.geojson"
   },
   {
    "id": "mackenzie_silver",
@@ -770,8 +762,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/mackenzie_silver.geojson",
-   "lines": "data/lines/mackenzie_silver.geojson"
+   "area": "data/areas/mackenzie_silver.geojson"
   },
   {
    "id": "silver_islet",
@@ -843,8 +834,7 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/silver_islet.geojson",
-   "lines": "data/lines/silver_islet.geojson"
+   "area": "data/areas/silver_islet.geojson"
   }
  ],
  "stations": [

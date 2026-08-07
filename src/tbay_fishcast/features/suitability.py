@@ -13,23 +13,26 @@ cliffs) and each traceable to a source:
     through a species' published thermal-preference curve. Data-backed by the fish-thermal
     literature (docs/FISH_BEHAVIOR_REVIEW.md, tier T3): 1.0 across the optimal core, tapering
     to 0 at the edges of the preferred range.
-  * thermal_front_gradient — the thermal edge, computed as the spatial gradient of the SAME
-    modeled bottom-temperature field. Data-derived; fish select thermal fronts (telemetry).
-  * bathymetric_structure — the physical break / drop-off / shoal edge, the slope of the CHS
-    NONNA soundings. DIRECTLY MEASURED bathymetry, so higher-confidence than the modelled
-    front. Together with the thermal front these are the "where they feed / hold on structure"
-    edges — either kind counts.
+  * bathymetric_structure / bathymetric_relief — the physical break / drop-off / shoal edge,
+    the slope and local relief of the CHS NONNA soundings. DIRECTLY MEASURED bathymetry — the
+    highest-confidence location signal, and (per ADR-029) the ONLY edge the current build uses.
+  * thermal_front_gradient — the thermal edge, |∇T| of the modeled bottom-temperature field.
+    A tested primitive, but NOT wired into the current build: ADR-028/029 found the LSOFS field
+    too coarse to resolve real fronts (Landsat couldn't validate it) and largely redundant with
+    depth structure, so it over-called prime and was dropped in favour of the measured edge.
+    Retained here as an available primitive for when a finer SST source makes it validatable.
   * upwelling_favorability — a CONTINUOUS response of upwelling strength to wind speed,
     replacing the arbitrary binary ≥13 kt cutoff. Physics-backed (Wedderburn control; Li et
-    al. 2021 wind-vs-cooling r=-0.87). Its centre/width are CALIBRATED to observed
-    wind↔nearshore-cooling where available (scripts/calibrate_upwelling.py), not picked.
+    al. 2021 wind-vs-cooling r=-0.87). Its centre/width are the physics PRIOR;
+    scripts/calibrate_upwelling.py refused the observed fit (non-discriminating), so the prior
+    stands and is labelled as such — not a validated calibration.
 
-WHERE-THE-FISH-ARE combination (the build): thermal_suitability (where they hold) and the two
-EDGE signals — thermal_front_gradient and bathymetric_structure (where they feed / hold on
-structure) — ARE combined, but by CONJUNCTION, which needs no invented weights: the prime zone
-is where a species is both in its optimal temperature AND on a strong edge (thermal front OR
-bathymetric break; each edge threshold self-calibrates to its scene). A weighted sum with
-fitted coefficients is a different thing and is NOT done here — that needs catch outcomes.
+WHERE-THE-FISH-ARE combination (the build): thermal_suitability (where they hold) ∩ a MEASURED
+bathymetric edge (bathymetric_structure OR bathymetric_relief, against ABSOLUTE data-derived bars
+— NOT a self-calibrating per-scene threshold; ADR-029). Combined by CONJUNCTION, which needs no
+invented weights: the prime zone is where a species is both in its optimal temperature AND on a
+real measured break. A weighted sum with fitted coefficients is a different thing and is NOT done
+here — that needs catch outcomes.
 
 The upwelling PHASE (features/upwelling_phase.py) stays a SEPARATE, physically-grounded
 TIMING signal — not multiplied into the spatial where-they-are field, because how strongly a

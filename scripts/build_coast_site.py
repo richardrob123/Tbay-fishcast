@@ -3,12 +3,12 @@
 Precomputes, for a set of overlapping stretches spanning the Thunder Bay shore:
   * a land-aware shore-distance field over the CHS NONNA-10 bathymetry (with mid-water
     survey gaps filled so they can't fake a coastline), and
-  * for the nowcast + each forecast day, a reachable-cold-water overlay (green) with
-    the 12 C front (red), from the LSOFS isotherm field corrected the same way the
-    per-spot product is.
-Both overlays are VECTOR GeoJSON (green polygons + red polylines, tagged by lead), so
-they stay crisp at any zoom; the page renders them over a live Esri World Imagery
-basemap (fetched by the browser, so no imagery is embedded). It also emits a manifest
+  * for the nowcast + each forecast day, graded per-species suitability AREA fills
+    (fair/good/prime) from the LSOFS isotherm field corrected the same way the per-spot
+    product is.
+These overlays are VECTOR GeoJSON polygons, tagged by lead and species tier, so they stay
+crisp at any zoom; the page renders them over a live Esri World Imagery basemap (fetched by
+the browser, so no imagery is embedded). It also emits a manifest
 with per-station verdicts, the ensemble upwelling-wind probabilities, and the data age.
 The page (web/index.html) is static; this script only (re)writes web/data/. A daily
 Action runs it and deploys.
@@ -35,8 +35,7 @@ import forecast_window as fw  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
-from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_reachable, merc, reachable_area_features)
+from tbay_fishcast.features.overlay import merc, reachable_area_features  # noqa: E402
 from tbay_fishcast.features.reachability import corrected_fields  # noqa: E402
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
@@ -317,12 +316,12 @@ def _bottom_temp_field(iso_fields, targets, depth):
     return b
 
 
-# Thermal-habitat targets (°C). Optimal-thermal-habitat mapping for lake trout: the
-# preferendum is ~10 °C (USGS), peak growth ~12.5 °C, comfortable band ~4–12 °C, chronic
-# ceiling ~16 °C. So 12 = outer edge of comfort (the ceiling), 10 = the optimum/sweet
-# spot, 8 = deep cold (marks the strongest upwelling). NOT "colder is better" — colder
-# than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
-TARGETS = (12.0, 10.0, 8.0)
+# NOTE: the isotherm targets are NOT a constant here. The build always passes
+# `targets=cfg.band_temps` — the union of every species' range/optimal/front endpoints, i.e.
+# (16, 14, 12, 10, 8, 6) °C (config.band_temps). The bottom-temperature field therefore spans
+# the full 6–16 °C across all species' niches, not a laker-only 8–12 °C stack. (A former
+# module-level TARGETS=(12,10,8) constant was dead — never used, and it misdescribed the field's
+# range — so it was removed in the 2026-08 consolidation.)
 
 # Where-the-fish-ARE tiers. TEMPERATURE (published thermal-preference curves) is the primary
 # driver — a spot must be in the right band to shade at all — refined by a real physical EDGE:
@@ -351,20 +350,19 @@ STRUCT_RELIEF_ABS = 1.66  # m: a real shoal/point rising above its surroundings 
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
-             targets=TARGETS, species=(), own_m=None, others_m=()):
-    """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
+             targets=(), species=(), own_m=None, others_m=()):
+    """Return (area_features, reach_px) for one lead, or (None, 0.0).
 
     Signal: graded per-species suitability AREA fills — for each species, the reachable water
     graded through its thermal-preference curve (fair/good) intersected with a measured bottom
     edge (prime), emitted as nested disjoint contours of the SAME bias-corrected LSOFS field.
     No new data (standard optimal-thermal-habitat mapping).
 
-    Position UNCERTAINTY is NOT drawn as a per-lead front ribbon here. That earlier design
-    computed shallow/central/deep isotherm bookends and never emitted them (dead false precision).
-    The honest uncertainty is now a single MEASURED figure — the isotherm-depth MAE from the
-    accumulated gate (manifest.forecast_error, ADR-031), shown in the legend — not a drawn band
-    whose width we can't defend. `line_features` is kept as an (empty) return slot for the stable
-    manifest reference.
+    Position UNCERTAINTY is NOT drawn as a per-lead front ribbon. An earlier design computed
+    shallow/central/deep isotherm bookends and never emitted them (dead false precision); the
+    honest uncertainty is now a single MEASURED figure — the isotherm-depth MAE from the
+    accumulated gate (manifest.forecast_error, ADR-031), shown in the legend. The whole empty
+    line-feature pipeline was removed in the 2026-08 consolidation.
     """
     central, lo, hi, n = bias
     iso_pts = []
@@ -385,7 +383,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             zc = thermocline.isotherm_band(depths, raw, bm, t)["central"]
             tvals[t].append(zc if zc is not None else 999.0)
     if len(iso_pts) < 3:
-        return None, 0.0, []
+        return None, 0.0
     iso_pts = np.array(iso_pts)
     # min_reach_px small + min_area small: the old speckle those filters guarded against
     # came from the no-data-apron heuristic, which the authoritative water mask removed —
@@ -422,7 +420,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             return [geom]
         return [g for g in geom.geoms if g.geom_type == "Polygon" and not g.is_empty]
 
-    area_feats, lines = [], []
+    area_feats = []
     reach_px_primary = 0.0
 
     def _emit(geom, tag):
@@ -492,8 +490,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         if sp.default or (default_id is None and sp is species[0]):
             reach_px_primary = float(fair.sum())             # total-zone (in-range) area
             default_id = sp.id
-    # keep a (possibly empty) lines file so the manifest reference stays valid
-    return area_feats, reach_px_primary, lines
+    return area_feats, reach_px_primary
 
 
 def main(argv) -> int:
@@ -589,7 +586,6 @@ def main(argv) -> int:
         corners = [list(tl), list(tr), list(br), list(bl)]
 
         days = []
-        line_feats = []                       # vector 12 C front, tagged by lead
         area_feats = []                       # vector reachable-cold polygons, tagged by lead
         for kind, fh, lead in LEADS:
             f = LsofsFile(issue, "t12z", kind, fh)
@@ -600,12 +596,12 @@ def main(argv) -> int:
             vt = valid_time_from_dataset(ds)
             cols = extract_native_columns(ds, {str(int(nd)): int(nd) for nd in inbox})
             ds.close()
-            area, reach_px, lines = _overlay(depth, dist, gx, gy, inbox, node_xy,
-                                             cols, g_sst, bias, patch.bounds_3857, res,
-                                             cfg.product, targets=cfg.band_temps,
-                                             species=cfg.species,
-                                             own_m=centers_m[si],
-                                             others_m=[c for j, c in enumerate(centers_m) if j != si])
+            area, reach_px = _overlay(depth, dist, gx, gy, inbox, node_xy,
+                                      cols, g_sst, bias, patch.bounds_3857, res,
+                                      cfg.product, targets=cfg.band_temps,
+                                      species=cfg.species,
+                                      own_m=centers_m[si],
+                                      others_m=[c for j, c in enumerate(centers_m) if j != si])
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
@@ -616,19 +612,11 @@ def main(argv) -> int:
                 area_feats.append({"type": "Feature",
                                    "properties": {"lead": lead, "temp": temp},
                                    "geometry": {"type": "Polygon", "coordinates": coords}})
-            for band, path in lines:
-                coords = [[round(lon, 6), round(lat, 6)] for lon, lat in path]
-                line_feats.append({"type": "Feature",
-                                   "properties": {"lead": lead, "band": band},
-                                   "geometry": {"type": "LineString", "coordinates": coords}})
         if not days:
             print(f"skip {sid}: no frames"); continue
         if not lead_valid:
             lead_valid = {int(d["lead"]): d["valid_utc"] for d in days}
-        (OUT / "lines").mkdir(exist_ok=True)
         (OUT / "areas").mkdir(exist_ok=True)
-        (OUT / "lines" / f"{sid}.geojson").write_text(
-            json.dumps({"type": "FeatureCollection", "features": line_feats}))
         (OUT / "areas" / f"{sid}.geojson").write_text(
             json.dumps({"type": "FeatureCollection", "features": area_feats}))
         # survey_cov = fraction of the box with real CHS soundings (informational). NOTE: a low
@@ -650,8 +638,7 @@ def main(argv) -> int:
                               "survey_cov": round(float(patch.coverage_frac), 2),
                               "low_confidence": sid in LOW_CONFIDENCE, "days": days,
                               "degraded": bool(degraded), "anchor_stale": bool(anchor_stale),
-                              "area": f"data/areas/{sid}.geojson",
-                              "lines": f"data/lines/{sid}.geojson"})
+                              "area": f"data/areas/{sid}.geojson"})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
               f"ha {days[0]['reach_ha']}..{max(d['reach_ha'] for d in days)}")
 
