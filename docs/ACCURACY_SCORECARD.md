@@ -11,7 +11,7 @@ these proxies.
 
 Scored day×chain rows: **3** · **n_effective (moving-obs, skill-bearing): 1**
 
-> Skill is pooled over the **1 diagnostic chain(s)** with a varying observed isotherm; sensor-floor-pinned chains are shown but excluded from the skill number (their 'error' against a constant is not skill). With n_effective this small, read the sign and rough magnitude, not the exact percent.
+> Skill is pooled over the **1 diagnostic chain(s)** with a varying observed isotherm; sensor-floor-pinned chains are shown but excluded from the skill number (their 'error' against a constant is not skill). With n_effective this small, read the sign and rough magnitude, not the exact percent. ⚠ NOT INDEPENDENT: diagnostic chain(s) 45216 also feed the bias correction, so this is train-on-test — the correction is scored on data it was partly fit to. Treat the skill % as an UPPER BOUND until an independent local truth (Bare Point) exists.
 
 | chain | n | raw MAE | corrected MAE | skill vs raw | persistence MAE | note |
 |---|---|---|---|---|---|---|

@@ -514,8 +514,13 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         # out as a bright core rather than a uniform "prime" slab.
         tiers = {"s1": fair & ~good, "s2": good & ~g_break,
                  "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
+        # WEAK-CUE species (salmon/steelhead) are plume/season driven — temperature AND structure
+        # barely locate them — so the DATA does not emit the confident structure glow for them
+        # (honesty in the artifact, not just the UI hiding it; a non-web consumer sees the truth).
+        weak = getattr(sp, "temp_cue", "strong") == "weak"
+        emit_tags = ["s1", "s2"] if weak else [t for t, _ in SUIT_LEVELS]
         emitted_any = False
-        for tag, _label in SUIT_LEVELS:
+        for tag in emit_tags:
             mask = tiers[tag]
             if mask.any():
                 _emit(_shape(mask), f"sp:{sp.id}:{tag}")

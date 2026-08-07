@@ -155,13 +155,21 @@ def render(stats, anchor, lead_stats=None) -> str:
     p_skill = (1 - p_corr / p_raw) if (p_raw and p_corr is not None and p_raw > 0) else None
     n_tot = sum(s["n"] for s in stats.values())
     n_eff = sum(s["n"] for s in diag.values())
+    # TRAIN-ON-TEST honesty (validation finding #4): a chain that also feeds the bias correction
+    # cannot independently score it. Flag any diagnostic chain that is a bias-pool buoy.
+    _bias_buoys = {"45027", "45023", "45216"}
+    leaked = [c for c in diag if c in _bias_buoys]
+    leak_note = (f" ⚠ NOT INDEPENDENT: diagnostic chain(s) {', '.join(leaked)} also feed the bias "
+                 "correction, so this is train-on-test — the correction is scored on data it was "
+                 "partly fit to. Treat the skill % as an UPPER BOUND until an independent local truth "
+                 "(Bare Point) exists." if leaked else "")
     L += ["## Isotherm-depth (12 °C) gate", "",
           f"Scored day×chain rows: **{n_tot}** · **n_effective (moving-obs, skill-bearing): {n_eff}**",
           "",
           f"> Skill is pooled over the **{len(diag)} diagnostic chain(s)** with a varying observed "
           "isotherm; sensor-floor-pinned chains are shown but excluded from the skill number (their "
           "'error' against a constant is not skill). With n_effective this small, read the sign and "
-          "rough magnitude, not the exact percent.", "",
+          "rough magnitude, not the exact percent." + leak_note, "",
           "| chain | n | raw MAE | corrected MAE | skill vs raw | persistence MAE | note |",
           "|---|---|---|---|---|---|---|"]
     for chain, s in sorted(stats.items()):

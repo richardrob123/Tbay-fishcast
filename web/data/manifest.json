@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T20:09:46Z",
- "age_h": 8.2,
+ "built_utc": "2026-08-07T21:05:42Z",
+ "age_h": 9.1,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -409,7 +409,7 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.54,
    "low_confidence": false,
    "days": [
@@ -429,7 +429,7 @@
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 42.7
+     "reach_ha": 42.9
     },
     {
      "label": "Mon Aug 10",
@@ -956,7 +956,7 @@
    "now": true,
    "now_certain": false,
    "verdict": "open now and still open at +120 h (edge of band \u2014 uncertain)",
-   "surf_sst": 20.1,
+   "surf_sst": 19.8,
    "traj": [
     {
      "label": "Fri",
@@ -993,7 +993,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 4.5,
+     "iso": 4.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1001,7 +1001,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 4.1,
+     "iso": 4.0,
      "reach": true,
      "certain": true,
      "possible": true
