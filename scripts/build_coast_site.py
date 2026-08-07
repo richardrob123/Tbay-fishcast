@@ -336,20 +336,21 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
              targets=TARGETS, species=(), own_m=None, others_m=()):
     """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
 
-    Two honest signals, no false precision:
-    * AREA fills — the reachable region for EACH thermal target (12/10/8 °C), central bias,
-      tagged temp=t12|t10|t8. Nested (colder needs deeper bottom ⇒ t8 ⊆ t10 ⊆ t12), shaded
-      light→deep so the angler reads how cold the reachable water is, with 10–12 °C the
-      laker optimum. Contouring the same corrected LSOFS field at three thresholds — no new
-      data (this is standard optimal-thermal-habitat mapping).
-    * The 12 °C FRONT — central + shallow/deep bias bookends (tagged band=central|possible|
-      certain), so the position UNCERTAINTY (~100–300 m, > the cast band; AUDIT_ROUND3)
-      reads as a ribbon, not a crisp line.
+    Signal: graded per-species suitability AREA fills — for each species, the reachable water
+    graded through its thermal-preference curve (fair/good) intersected with a measured bottom
+    edge (prime), emitted as nested disjoint contours of the SAME bias-corrected LSOFS field.
+    No new data (standard optimal-thermal-habitat mapping).
+
+    Position UNCERTAINTY is NOT drawn as a per-lead front ribbon here. That earlier design
+    computed shallow/central/deep isotherm bookends and never emitted them (dead false precision).
+    The honest uncertainty is now a single MEASURED figure — the isotherm-depth MAE from the
+    accumulated gate (manifest.forecast_error, ADR-031), shown in the legend — not a drawn band
+    whose width we can't defend. `line_features` is kept as an (empty) return slot for the stable
+    manifest reference.
     """
     central, lo, hi, n = bias
     iso_pts = []
     tvals = {t: [] for t in targets}          # central isotherm depth per target
-    f_sh, f_ce, f_de = [], [], []             # 12 °C shallow/central/deep for the front ribbon
     for i, nd in enumerate(inbox):
         col = cols.get(str(int(nd)))
         if col is None or len(col.depths_m) < 4:
@@ -365,9 +366,6 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         for t in targets:
             zc = thermocline.isotherm_band(depths, raw, bm, t)["central"]
             tvals[t].append(zc if zc is not None else 999.0)
-        f_ce.append(prim["central"])
-        f_sh.append(prim["shallow"] if prim["shallow"] is not None else 999.0)
-        f_de.append(prim["deep"] if prim["deep"] is not None else 999.0)
     if len(iso_pts) < 3:
         return None, 0.0, []
     iso_pts = np.array(iso_pts)
