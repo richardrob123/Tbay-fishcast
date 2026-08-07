@@ -211,6 +211,10 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     def _polys(geom):
         if geom is None or geom.is_empty:
             return []
+        if not geom.is_valid:               # marching-squares can self-touch; buffer(0) repairs
+            geom = geom.buffer(0)
+        if geom.is_empty:
+            return []
         if geom.geom_type == "Polygon":
             return [geom]
         return [g for g in geom.geoms if g.geom_type == "Polygon" and not g.is_empty]

@@ -1,16 +1,69 @@
 {
  "issue": "2026-08-06",
  "issued_utc": "2026-08-06T12:00:00Z",
- "built_utc": "2026-08-07T12:58:17Z",
- "age_h": 25.0,
+ "built_utc": "2026-08-07T13:52:11Z",
+ "age_h": 25.9,
  "stale": true,
  "target_c": 12.0,
  "cast_m": 75.0,
  "max_reach_depth_m": 22.0,
  "targets_c": [
+  16.0,
+  14.0,
   12.0,
   10.0,
-  8.0
+  8.0,
+  6.0
+ ],
+ "species": [
+  {
+   "id": "lake_trout",
+   "name": "Lake trout",
+   "range_c": [
+    6.0,
+    12.0
+   ],
+   "front_c": 12.0,
+   "temp_cue": "strong",
+   "default": true,
+   "note": "Lean (nearshore) form. Prime along the ~12 C front; avoids ~15 C."
+  },
+  {
+   "id": "brook_trout",
+   "name": "Brook trout (coaster)",
+   "range_c": [
+    8.0,
+    14.0
+   ],
+   "front_c": 14.0,
+   "temp_cue": "strong",
+   "default": false,
+   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 the upwelling logic fits best here."
+  },
+  {
+   "id": "salmon",
+   "name": "Salmon (chinook/coho)",
+   "range_c": [
+    10.0,
+    14.0
+   ],
+   "front_c": 14.0,
+   "temp_cue": "weak",
+   "default": false,
+   "note": "Mostly river-mouth/season driven (Kaministiquia, Current R.). Temperature is a minor cue."
+  },
+  {
+   "id": "steelhead",
+   "name": "Steelhead / rainbow",
+   "range_c": [
+    12.0,
+    16.0
+   ],
+   "front_c": 16.0,
+   "temp_cue": "weak",
+   "default": false,
+   "note": "Feeds at temperature breaks/plumes; largely decoupled from the cold-hypolimnion signal."
+  }
  ],
  "n_leads": 6,
  "bias": {
@@ -56,37 +109,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 71.7
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 55.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 60.3
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 55.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 56.6
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 138.3
+     "reach_ha": 95.1
     }
    ],
    "area": "data/areas/little_trout_bay.geojson",
@@ -127,19 +180,19 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 7.7
+     "reach_ha": 7.5
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 16.8
+     "reach_ha": 16.3
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.2
+     "reach_ha": 8.1
     },
     {
      "label": "Sun Aug 9",
@@ -151,7 +204,7 @@
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 7.8
+     "reach_ha": 7.7
     },
     {
      "label": "Tue Aug 11",
@@ -204,13 +257,13 @@
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 71.8
+     "reach_ha": 44.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 58.9
+     "reach_ha": 23.8
     },
     {
      "label": "Sun Aug 9",
@@ -228,7 +281,7 @@
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 56.5
+     "reach_ha": 56.6
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -269,25 +322,25 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 81.0
+     "reach_ha": 75.9
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 81.1
+     "reach_ha": 49.1
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 69.8
+     "reach_ha": 36.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 60.8
+     "reach_ha": 56.0
     },
     {
      "label": "Mon Aug 10",
@@ -340,25 +393,25 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 71.5
+     "reach_ha": 63.7
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 70.5
+     "reach_ha": 51.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 55.6
+     "reach_ha": 48.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 45.5
+     "reach_ha": 45.6
     },
     {
      "label": "Mon Aug 10",
@@ -411,13 +464,13 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 25.1
+     "reach_ha": 19.7
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 24.0
+     "reach_ha": 17.6
     },
     {
      "label": "Sat Aug 8",
@@ -488,7 +541,7 @@
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 4.9
+     "reach_ha": 5.0
     },
     {
      "label": "Sat Aug 8",
@@ -565,7 +618,7 @@
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 10.3
+     "reach_ha": 10.4
     },
     {
      "label": "Sun Aug 9",
@@ -654,7 +707,7 @@
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 20.2
+     "reach_ha": 20.3
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",
@@ -695,37 +748,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 53.7
+     "reach_ha": 43.6
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 61.2
+     "reach_ha": 36.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 59.0
+     "reach_ha": 36.4
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 60.7
+     "reach_ha": 36.3
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 58.1
+     "reach_ha": 35.0
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 50.2
+     "reach_ha": 41.4
     }
    ],
    "area": "data/areas/silver_islet.geojson",
