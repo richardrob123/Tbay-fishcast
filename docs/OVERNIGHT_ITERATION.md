@@ -96,10 +96,10 @@ and needs sign-off; see proposed ADRs below.
 1. **Local subsurface truth.** The whole accuracy story hinges on far buoys. Bare Point intake
    FOI (docs/BARE_POINT_DATA_REQUEST.md, task #8) would put a nearshore temperature series in
    the city — highest-leverage accuracy input, currently blocked awaiting the user to send it.
-2. **Surface anchor is a single point per 8 km box.** GLSEA is sampled once at box center and
-   applied to every column; it resolves a nearshore-warm gradient (Landsat shows +1.7…+2.8 °C
-   shore-warm) that is currently collapsed. Using the GLSEA field per-node is more faithful and
-   needs no tuning — but it changes the prediction. Proposed ADR-020.
+2. **Nearshore-warm surface signal is invisible to GLSEA.** Landsat 30 m shows the shore
+   +1.7…+2.8 °C warmer than the offshore GLSEA anchor, but GLSEA at 1 km spans only 0.31 °C
+   across a box — per-node GLSEA can't recover it (ADR-020 checked and demoted). Capturing it
+   needs Landsat blended into the anchor, which is too intermittent/thin (n=3) to use yet.
 3. **Lead-time uncertainty is flat.** The isotherm band width comes only from buoy-bias spread;
    it does not widen at +72…120 h as LSOFS forecast error grows. Honest intervals should. No
    clean data-driven growth rate exists yet (LSOFS isn't ensemble). Proposed ADR-021.
@@ -111,14 +111,15 @@ and needs sign-off; see proposed ADRs below.
 
 ## Proposed ADRs (awaiting human sign-off — NOT yet implemented)
 
-> **ADR-020 (PROPOSED) — Per-node GLSEA surface anchor instead of one box-center point.**
-> Sample the GLSEA SST field at each LSOFS node's location rather than once at box center, so
-> the surface bias correction follows the resolved nearshore→offshore SST gradient. Rationale:
-> uses more of an authoritative field already fetched; no new tuning parameter; the collapse to
-> one point demonstrably discards a +1.7…+2.8 °C nearshore signal (nearshore_anchor.csv).
-> Risk: heavier per-node anchor changes the shipped isotherm; validate against gate_log before
-> and after; GLSEA at 1 km still under-resolves true nearshore warming. Recommend: implement
-> behind a flag, A/B against the accumulating gate, promote only if it reduces MAE.
+> **ADR-020 (PROPOSED, then DEMOTED same session — kept for the record).** *Idea:* sample
+> GLSEA per LSOFS node instead of once at box center to follow the nearshore→offshore SST
+> gradient. *Empirical check (this session):* GLSEA SST across the whole `mackenzie_silver`
+> box spans only **0.31 °C** (17.5–17.8) — at 1 km resolution GLSEA does not resolve the
+> nearshore warming that Landsat sees at 30 m (+1.7…+2.8 °C). Per-node GLSEA would move the
+> isotherm <0.3 m — not worth a core-path change. **Capturing the real nearshore-warm effect
+> needs Landsat 30 m blended into the anchor**, but Landsat is intermittent (16-day repeat,
+> cloud) and n=3 — too thin to anchor on. Revisit once the nearshore_anchor log has a
+> respectable clear-scene n; until then the single-point GLSEA anchor is adequate at box scale.
 
 > **ADR-021 (PROPOSED) — Lead-dependent isotherm band widening.** Widen the isotherm-depth
 > band with forecast lead to reflect growing LSOFS error, so +120 h reads as less certain than
