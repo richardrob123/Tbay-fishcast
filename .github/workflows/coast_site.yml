@@ -99,7 +99,12 @@ jobs:
           # the failure alert below fires; verify our commit is ahead before pushing.
           BR=claude/tbay-fishcast-phase-0-6kh5lx
           git fetch origin "$BR"
-          git rebase "origin/$BR" || { git rebase --abort; echo "rebase conflict — data commit not pushed"; exit 1; }
+          # --autostash: the build step leaves web/data/** (tracked) dirty in the working
+          # tree; without it `git rebase` aborts with "cannot rebase: You have unstaged
+          # changes" and the accuracy logs never persist (they were silently failing every
+          # run). autostash shelves the build artifacts, rebases just the obs-log commit,
+          # then restores them (uncommitted — they belong on gh-pages, never on the branch).
+          git rebase --autostash "origin/$BR" || { git rebase --abort 2>/dev/null; echo "rebase conflict — data commit not pushed"; exit 1; }
           test -n "$(git rev-list origin/$BR..HEAD)" || { echo "commit lost in rebase"; exit 1; }
           git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             "HEAD:$BR"
