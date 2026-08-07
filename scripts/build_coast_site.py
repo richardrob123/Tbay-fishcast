@@ -346,26 +346,34 @@ def _bottom_temp_field(iso_fields, targets, depth):
 # temperature grading (fair/good) and in the upwelling-phase banner. The edge bar is ABSOLUTE
 # (below), NOT a per-scene percentile — so a flat, featureless stretch yields little or no prime,
 # and "prime" means truly good conditions, not best-available-today. Disjoint tiers (no overlap).
-SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
-# Tier cutoffs are the PUBLISHED BANDS themselves, not picked suitability numbers (validation
-# finding: OPTIMAL_SUIT=0.7 / IN_RANGE_SUIT=0.15 were unsourced picks that silently decided the
-# whole map). thermal_suitability is 1.0 across the optimal_c plateau and tapers to 0 at the
-# range_c edges, so:
-#   fair (s1) = anywhere in the preferred RANGE (range_c)     -> suit > 0
-#   good (s2) = in the OPTIMAL core (optimal_c) plateau        -> suit >= 1.0
-# The boundaries are now exactly the literature bands from stations.yaml (T2/T3, cited), with no
-# arbitrary cutoff between them. prime (s3) = good AND a measured edge.
-IN_RANGE_SUIT = 0.0     # fair = strictly inside the preferred range (suit > this)
+# TWO honest axes, kept SEPARATE (conjunction, no fabricated blend — rule 7):
+#   TEMPERATURE (discrete, CITED bands): fair = inside the preferred range (range_c); good = the
+#     optimal_c core plateau. Boundaries are the literature bands from stations.yaml (T2/T3), not
+#     picked suitability numbers (the old OPTIMAL_SUIT=0.7 / IN_RANGE_SUIT=0.15 were unsourced).
+#   STRUCTURE (CONTINUOUS glow): within the optimal zone, the measured break STRENGTH grades the
+#     fill so the strongest breaks glow brightest — no binary "prime" blob. This is the hybrid the
+#     user chose: temperature discrete-and-cited, structure continuous, hard floor below.
+SUIT_LEVELS = [
+    ("s1", "in range"),      # fair: acceptable temperature (range_c)
+    ("s2", "optimal temp"),  # good: optimal-temperature core (optimal_c), little structure
+    ("s3", "break"),         # optimal temp + a real measured break (regional structure p90)
+    ("s4", "strong break"),  # optimal temp + strong structure (p95)
+    ("s5", "top break"),     # optimal temp + exceptional structure (p99) — the best spots, rare
+]
+IN_RANGE_SUIT = 0.0            # fair = strictly inside the preferred range (suit > this)
 OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
-# DERIVED FROM DATA, not picked: the 90th percentile of |grad depth| pooled over reachable water
-# across all 9 surveyed stretches (n=464k px) = 0.162 rise/run — the steep tail = real breaks, not
-# the gentle shelf. Reproduce with scripts/analyze_bathy_slope.py; measurement in
-# data/calib/bathy_slope.json. Re-run if STRETCHES/bathymetry change.
+# DERIVED FROM DATA, not picked: p90 of |grad depth| / local relief pooled over reachable water
+# across all 9 surveyed stretches (n=464k px). Reproduce with scripts/analyze_bathy_slope.py;
+# measurement in data/calib/bathy_slope.json. Re-run if STRETCHES/bathymetry change.
 STRUCT_SLOPE_ABS = 0.16   # rise/run: a real bottom break / drop-off / ledge (pooled regional p90)
-# Companion relief bar — a shoal TOP / point TIP / crest is locally shallow but flat, so slope
-# misses it; local relief (neighbourhood-mean depth − depth) catches it. Also DERIVED FROM DATA:
-# p90 of pooled regional relief = 1.66 m (data/calib/bathy_slope.json, analyze_bathy_slope.py).
-STRUCT_RELIEF_ABS = 1.66  # m: a real shoal/point rising above its surroundings (pooled regional p90)
+STRUCT_RELIEF_ABS = 1.55  # m: a real shoal/point rising above its surroundings (pooled regional p90)
+# Continuous structure-GLOW band edges = percentiles of the pooled regional STRENGTH distribution
+# (strength = max(slope/STRUCT_SLOPE_ABS, relief/STRUCT_RELIEF_ABS)), so a spot's glow reflects how
+# its break ranks REGIONALLY. Data-derived (p90/p95/p99), NOT picked multipliers — see
+# bathy_slope.json "strength_bands". p99 ("top break") is genuinely the rare best structure.
+STRENGTH_BREAK = 1.45     # p90 of pooled strength — a regionally-typical real break
+STRENGTH_STRONG = 2.06    # p95
+STRENGTH_TOP = 3.68       # p99 — exceptional structure (the best breaks)
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -474,14 +482,17 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         within = within & (d_own <= d_oth)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
-    # EDGE = a genuine bottom drop-off/break OR a shoal-top/point-tip, by ABSOLUTE data-derived
-    # bars (not a per-scene percentile) — so featureless water yields no edge and prime stays
-    # meaningful. Both measured from the NONNA soundings: slope catches drop-off flanks, relief
-    # catches the flat crests slope misses (crucial prime structure).
+    # STRUCTURE STRENGTH — continuous, measured (NONNA soundings), normalized to the ABSOLUTE
+    # data-derived p90 bars so ~1.0 is a regionally-typical break and the strongest breaks score
+    # higher. max of the two measured kinds: slope catches drop-off flanks, relief catches the flat
+    # shoal-tops / point-tips the slope misses. This continuous field drives the glow (no binary
+    # prime blob); featureless water stays ~0 (the floor).
     slope = _su.bathymetric_structure(depth, res)            # rise/run
     relief = _su.bathymetric_relief(depth, res)              # m, shallower-than-surroundings
-    edge = ((np.isfinite(slope) & (slope >= STRUCT_SLOPE_ABS))
-            | (np.isfinite(relief) & (relief >= STRUCT_RELIEF_ABS)))
+    with np.errstate(invalid="ignore"):
+        s_norm = np.where(np.isfinite(slope), slope / STRUCT_SLOPE_ABS, 0.0)
+        r_norm = np.where(np.isfinite(relief), relief / STRUCT_RELIEF_ABS, 0.0)
+    strength = np.maximum(s_norm, r_norm)                    # continuous structure strength
 
     default_id = None
     for sp in species:
@@ -494,10 +505,15 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         suit = np.where(within_sp, suit, 0.0)
         fair = suit > IN_RANGE_SUIT                          # inside the preferred range (range_c)
         good = suit >= OPTIMAL_PLATEAU                       # the optimal-core plateau (optimal_c)
-        prime = good & edge                                  # optimal temp AND a real edge — truly prime
-        # DISJOINT tiers: paint each pixel exactly once (outer fair ring, good ring, prime core)
-        # so semi-transparent fills don't COMPOUND into an opaque slab — a light graded wash.
-        tiers = {"s1": fair & ~good, "s2": good & ~prime, "s3": prime}
+        # continuous structure GLOW within the optimal zone, at data-derived strength bands
+        g_break = good & (strength >= STRENGTH_BREAK)        # a real break (regional p90)
+        g_strong = good & (strength >= STRENGTH_STRONG)      # strong structure (p95)
+        g_top = good & (strength >= STRENGTH_TOP)            # exceptional — the best breaks (p99)
+        # DISJOINT tiers (each pixel painted once): temperature base (s1/s2) + 3 structure-glow
+        # bands (s3<s4<s5) so semi-transparent fills don't compound and the strongest breaks stand
+        # out as a bright core rather than a uniform "prime" slab.
+        tiers = {"s1": fair & ~good, "s2": good & ~g_break,
+                 "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
         emitted_any = False
         for tag, _label in SUIT_LEVELS:
             mask = tiers[tag]
@@ -757,7 +773,7 @@ def main(argv) -> int:
                     for sp in cfg.species],
         "nearshore_delta_c": round(ns_delta, 2), "nearshore_delta_n": ns_n,
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
-        "combine": "optimal-temperature ∩ measured structure (drop-off OR shoal/point; data-derived bars, no fitted weights)",
+        "combine": "cited temperature bands (fair=range, good=optimal) × CONTINUOUS measured structure glow (strength = max slope/relief, normalized to regional p90; glow bands at regional p90/p95/p99) — conjunction, no fitted weights",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),

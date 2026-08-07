@@ -54,8 +54,11 @@ def main() -> int:
                   & (depth <= cfg.product.max_reach_depth_m))
         slope = su.bathymetric_structure(depth, res)
         relief = su.bathymetric_relief(depth, res)
-        vs = slope[within & np.isfinite(slope)]
-        vr = relief[within & np.isfinite(relief)]
+        # aligned pairs under a COMMON mask so the combined structure STRENGTH (max of the two
+        # normalized kinds) can be computed per-pixel for the continuous-glow band edges.
+        common = within & np.isfinite(slope) & np.isfinite(relief)
+        vs = slope[common]
+        vr = relief[common]
         if vs.size < 500:
             continue
         pooled_s.append(vs)
@@ -73,15 +76,27 @@ def main() -> int:
     r_pcts = {p: round(float(np.percentile(allr, p)), 2) for p in (50, 66, 75, 85, 90, 95, 99)}
     s_bar = round(float(np.percentile(alls, PCTILE)), 3)
     r_bar = round(float(np.percentile(allr, PCTILE)), 2)
+    # Continuous structure STRENGTH = max of the two kinds each NORMALIZED by its own p90 bar, so
+    # strength ~1.0 at a regionally-typical "real break" and higher on the strongest structure.
+    # The glow-band edges are percentiles of THIS pooled strength distribution — data-derived, not
+    # picked multipliers. (break = the p90 reference ~1.0; strong/exceptional = p95/p99.)
+    strength = np.maximum(alls / s_bar, allr / r_bar)
+    strength_bands = {
+        "break": round(float(np.percentile(strength, 90)), 2),
+        "strong": round(float(np.percentile(strength, 95)), 2),
+        "exceptional": round(float(np.percentile(strength, 99)), 2),
+    }
     print(f"\nPOOLED n={alls.size} reachable px across {len(per_stretch)} surveyed stretches")
     print("slope percentiles:", s_pcts)
     print("relief percentiles (m):", r_pcts)
+    print("structure-strength glow bands (xp90-normalized):", strength_bands)
     print(f"=> STRUCT_SLOPE_ABS  = p{PCTILE} pooled slope  = {s_bar} rise/run")
     print(f"=> STRUCT_RELIEF_ABS = p{PCTILE} pooled relief = {r_bar} m (shoal/point local rise)")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         "struct_slope_abs": s_bar, "struct_relief_abs_m": r_bar, "percentile": PCTILE,
         "slope_percentiles": s_pcts, "relief_percentiles_m": r_pcts, "n_pixels": int(alls.size),
+        "strength_bands": strength_bands,  # continuous-glow edges (p90/p95/p99 of pooled strength)
         "per_stretch": per_stretch, "stretches": list(per_stretch.keys()),
         "definition": ("Absolute structure bars, both the pXX percentile pooled over reachable "
                        "water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| "

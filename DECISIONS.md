@@ -101,6 +101,24 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-033 — Hybrid render: cited discrete TEMPERATURE bands × CONTINUOUS measured-structure glow.**
+  The fair/good/prime tiering rested on two unsourced picks (OPTIMAL_SUIT=0.7, IN_RANGE_SUIT=0.15)
+  and a binary structure gate (edge > regional p90), which painted 40–48 % of genuinely-rocky
+  stretches (Silver Islet, Little Trout Bay) a uniform "prime" — a blob, not the actionable "best
+  few spots." Fixed in two moves, keeping the two axes SEPARATE (conjunction, no fitted weights —
+  rule 7): (1) TEMPERATURE tiers are now the published bands themselves — fair = inside range_c
+  (suit>0), good = the optimal_c plateau — so the boundaries are cited (stations.yaml T2/T3), not
+  numbers. (2) STRUCTURE is now CONTINUOUS: within the optimal-temp zone the fill glows teal→green→
+  gold by measured break STRENGTH = max(slope/STRUCT_SLOPE_ABS, relief/STRUCT_RELIEF_ABS), with the
+  glow-band edges the regional p90/p95/p99 of the pooled strength distribution (data/calib/
+  bathy_slope.json "strength_bands" = 1.45/2.06/3.68) — data-derived, not picked. Result verified
+  on a live build: "top break" (gold) drops from ~48 % to 0–9 % (only the genuinely-best structure,
+  rare), flat featureless water shows 0 % (the floor holds), and rocky stretches now show an
+  INTERNAL gradient so the strongest breaks stand out. Considered and rejected a single blended
+  heatmap (one colour = temp × structure): blending needs weights we have no catch data to fit, so
+  it would re-introduce the arbitrary fusion the project forbids. Also unified all frozen water
+  masks (re-froze the 3 stretches that were silently hitting live Overpass each build).
+
 - **ADR-032 — Wind model chosen by test, not by "finer = better" (a null result that prevented a regression).**
   Before switching the upwelling-driving wind from GFS 0.25° to the finer icon_seamless (2.2–7 km),
   scripts/validate_wind_model.py scored each candidate's ARCHIVED FORECAST against ERA5 at the

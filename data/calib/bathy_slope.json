@@ -1,6 +1,6 @@
 {
  "struct_slope_abs": 0.162,
- "struct_relief_abs_m": 1.66,
+ "struct_relief_abs_m": 1.55,
  "percentile": 90,
  "slope_percentiles": {
   "50": 0.021,
@@ -12,51 +12,56 @@
   "99": 0.527
  },
  "relief_percentiles_m": {
-  "50": 0.08,
-  "66": 0.27,
-  "75": 0.52,
-  "85": 1.14,
-  "90": 1.66,
-  "95": 2.54,
-  "99": 4.68
+  "50": 0.06,
+  "66": 0.25,
+  "75": 0.46,
+  "85": 1.05,
+  "90": 1.55,
+  "95": 2.42,
+  "99": 4.51
  },
  "n_pixels": 463960,
+ "strength_bands": {
+  "break": 1.45,
+  "strong": 2.06,
+  "exceptional": 3.68
+ },
  "per_stretch": {
   "chippewa": {
    "slope_p90": 0.108,
-   "relief_p90_m": 0.94
+   "relief_p90_m": 0.9
   },
   "kam_mission": {
    "slope_p90": 0.189,
-   "relief_p90_m": 2.09
+   "relief_p90_m": 1.92
   },
   "mckellar_harbour": {
    "slope_p90": 0.188,
-   "relief_p90_m": 1.67
+   "relief_p90_m": 1.56
   },
   "marina_mcvicar": {
    "slope_p90": 0.173,
-   "relief_p90_m": 1.31
+   "relief_p90_m": 1.24
   },
   "boulevard_current": {
    "slope_p90": 0.09,
-   "relief_p90_m": 0.64
+   "relief_p90_m": 0.57
   },
   "current_barepoint": {
    "slope_p90": 0.064,
-   "relief_p90_m": 0.65
+   "relief_p90_m": 0.62
   },
   "shipyard_mackenzie": {
    "slope_p90": 0.138,
-   "relief_p90_m": 1.64
+   "relief_p90_m": 1.57
   },
   "mackenzie_silver": {
    "slope_p90": 0.13,
-   "relief_p90_m": 1.39
+   "relief_p90_m": 1.25
   },
   "silver_islet": {
    "slope_p90": 0.331,
-   "relief_p90_m": 3.44
+   "relief_p90_m": 3.33
   }
  },
  "stretches": [
@@ -71,5 +76,5 @@
   "silver_islet"
  ],
  "definition": "Absolute structure bars, both the pXX percentile pooled over reachable water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| (drop-off flanks); relief = neighbourhood-mean depth \u2212 depth (shoal tops / point tips / crests the slope misses). Reproducible, not picked constants.",
- "retrieved_utc": "2026-08-07T18:31:03Z"
+ "retrieved_utc": "2026-08-07T19:59:14Z"
 }

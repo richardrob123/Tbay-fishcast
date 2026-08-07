@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T18:39:39Z",
- "age_h": 6.7,
+ "built_utc": "2026-08-07T20:09:46Z",
+ "age_h": 8.2,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -94,18 +94,26 @@
  "suit_levels": [
   {
    "tag": "s1",
-   "label": "fair"
+   "label": "in range"
   },
   {
    "tag": "s2",
-   "label": "good"
+   "label": "optimal temp"
   },
   {
    "tag": "s3",
-   "label": "prime"
+   "label": "break"
+  },
+  {
+   "tag": "s4",
+   "label": "strong break"
+  },
+  {
+   "tag": "s5",
+   "label": "top break"
   }
  ],
- "combine": "optimal-temperature \u2229 measured bottom-structure (absolute bars, no fitted weights)",
+ "combine": "cited temperature bands (fair=range, good=optimal) \u00d7 CONTINUOUS measured structure glow (strength = max slope/relief, normalized to regional p90; glow bands at regional p90/p95/p99) \u2014 conjunction, no fitted weights",
  "favor_calibrated": false,
  "n_leads": 6,
  "bias": {
@@ -114,6 +122,48 @@
   "hi": 5.2,
   "n": 12,
   "source": "live"
+ },
+ "forecast_error": {
+  "source": "data/forecast_gate_log.csv",
+  "n": 25,
+  "chains": [
+   "45216",
+   "llo1"
+  ],
+  "chains_with_moving_obs": [],
+  "n_effective_chains": 0,
+  "pooled_mae_m": 1.789,
+  "pooled_p90_m": 3.84,
+  "per_lead": {
+   "24": {
+    "n": 5,
+    "mae_m": 1.762,
+    "p90_m": 4.61
+   },
+   "48": {
+    "n": 5,
+    "mae_m": 1.498,
+    "p90_m": 3.5
+   },
+   "72": {
+    "n": 5,
+    "mae_m": 2.23,
+    "p90_m": 4.55
+   },
+   "96": {
+    "n": 5,
+    "mae_m": 1.724,
+    "p90_m": 2.8
+   },
+   "120": {
+    "n": 5,
+    "mae_m": 1.732,
+    "p90_m": 3.84
+   }
+  },
+  "lead_slope_m_per_h": 0.00069,
+  "lead_trend_detected": false,
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.789 m over leads 24-120 h. Lead trend NOT detected (OLS slope +0.0007 m/h; per-lead means span 0.73 m). CAVEAT: n=25, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
  },
  "stretches": [
   {
@@ -223,37 +273,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 13.1
+     "reach_ha": 14.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.5
+     "reach_ha": 9.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 6.9
+     "reach_ha": 7.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 4.9
+     "reach_ha": 5.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 3.5
+     "reach_ha": 3.8
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 3.8
+     "reach_ha": 4.1
     }
    ],
    "degraded": false,
@@ -295,19 +345,19 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 22.5
+     "reach_ha": 26.0
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 19.5
+     "reach_ha": 20.0
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 20.0
+     "reach_ha": 21.5
     },
     {
      "label": "Mon Aug 10",
@@ -319,13 +369,13 @@
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.2
+     "reach_ha": 18.8
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 17.2
+     "reach_ha": 18.8
     }
    ],
    "degraded": false,
@@ -359,7 +409,7 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-06",
+   "anchor_day": "2026-08-05",
    "survey_cov": 0.54,
    "low_confidence": false,
    "days": [
@@ -379,7 +429,7 @@
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 42.8
+     "reach_ha": 42.7
     },
     {
      "label": "Mon Aug 10",
@@ -439,7 +489,7 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 13.5
+     "reach_ha": 18.9
     },
     {
      "label": "Sat Aug 8",
@@ -451,25 +501,25 @@
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 4.1
+     "reach_ha": 4.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 2.9
+     "reach_ha": 3.6
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 4.6
+     "reach_ha": 4.5
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 3.3
+     "reach_ha": 4.1
     }
    ],
    "degraded": false,
@@ -523,7 +573,7 @@
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 0.7
+     "reach_ha": 0.8
     },
     {
      "label": "Mon Aug 10",
@@ -535,7 +585,7 @@
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 0.9
+     "reach_ha": 1.0
     },
     {
      "label": "Wed Aug 12",
@@ -583,37 +633,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 0.0
+     "reach_ha": 1.1
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.0
+     "reach_ha": 0.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 0.0
+     "reach_ha": 1.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 0.0
+     "reach_ha": 1.0
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 0.0
+     "reach_ha": 1.1
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 0.1
+     "reach_ha": 1.1
     }
    ],
    "degraded": false,
@@ -655,37 +705,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 7.1
+     "reach_ha": 8.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 1.2
+     "reach_ha": 1.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 2.9
+     "reach_ha": 4.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 2.1
+     "reach_ha": 4.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 3.4
+     "reach_ha": 5.1
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 3.5
+     "reach_ha": 5.0
     }
    ],
    "degraded": false,
@@ -727,37 +777,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 9.7
+     "reach_ha": 5.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 7.8
+     "reach_ha": 6.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 8.5
+     "reach_ha": 7.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 7.5
+     "reach_ha": 5.9
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 8.6
+     "reach_ha": 9.4
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 8.1
+     "reach_ha": 7.3
     }
    ],
    "degraded": false,
@@ -823,7 +873,7 @@
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 26.3
+     "reach_ha": 22.7
     },
     {
      "label": "Wed Aug 12",
@@ -846,12 +896,12 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 17.3,
+   "surf_sst": 19.7,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 4.0,
+     "iso": 4.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -859,7 +909,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 4.3,
+     "iso": 4.7,
      "reach": true,
      "certain": true,
      "possible": true
@@ -867,7 +917,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 3.9,
+     "iso": 4.3,
      "reach": true,
      "certain": true,
      "possible": true
@@ -875,7 +925,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 4.1,
+     "iso": 4.6,
      "reach": true,
      "certain": true,
      "possible": true
@@ -883,7 +933,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 4.0,
+     "iso": 4.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -891,7 +941,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 4.1,
+     "iso": 4.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -906,12 +956,12 @@
    "now": true,
    "now_certain": false,
    "verdict": "open now and still open at +120 h (edge of band \u2014 uncertain)",
-   "surf_sst": 17.5,
+   "surf_sst": 20.1,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 4.5,
+     "iso": 4.8,
      "reach": true,
      "certain": false,
      "possible": true
@@ -919,7 +969,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 4.8,
+     "iso": 5.1,
      "reach": true,
      "certain": false,
      "possible": true
@@ -927,7 +977,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 4.7,
+     "iso": 5.0,
      "reach": true,
      "certain": true,
      "possible": true
@@ -935,7 +985,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 4.3,
+     "iso": 4.7,
      "reach": true,
      "certain": true,
      "possible": true
@@ -943,7 +993,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 3.9,
+     "iso": 4.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -951,7 +1001,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 3.5,
+     "iso": 4.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -966,12 +1016,12 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 15.4,
+   "surf_sst": 17.8,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 1.3,
+     "iso": 1.7,
      "reach": true,
      "certain": true,
      "possible": true
@@ -979,7 +1029,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 1.1,
+     "iso": 2.0,
      "reach": true,
      "certain": true,
      "possible": true
@@ -987,7 +1037,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 3.4,
+     "iso": 4.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -995,7 +1045,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 1.2,
+     "iso": 3.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1003,7 +1053,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 1.2,
+     "iso": 3.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1011,7 +1061,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 2.4,
+     "iso": 3.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1119,7 +1169,8 @@
   },
   "obs_station": "CYQT",
   "obs_available": true,
-  "threshold_kn": 10.0,
+  "threshold_obs_kn": 10.0,
+  "threshold_forecast_kn": 13.0,
   "sector_deg": [
    225.0,
    315.0
@@ -1166,47 +1217,5 @@
   "label": "Summer (stratified)",
   "upwelling": "primary",
   "note": "The model's core regime: cold-reachability + the thermal/structure edge predict opportunity; reward the relaxation after a blow."
- },
- "forecast_error": {
-  "source": "data/forecast_gate_log.csv",
-  "n": 25,
-  "chains": [
-   "45216",
-   "llo1"
-  ],
-  "chains_with_moving_obs": [],
-  "n_effective_chains": 0,
-  "pooled_mae_m": 1.789,
-  "pooled_p90_m": 3.84,
-  "per_lead": {
-   "24": {
-    "n": 5,
-    "mae_m": 1.762,
-    "p90_m": 4.61
-   },
-   "48": {
-    "n": 5,
-    "mae_m": 1.498,
-    "p90_m": 3.5
-   },
-   "72": {
-    "n": 5,
-    "mae_m": 2.23,
-    "p90_m": 4.55
-   },
-   "96": {
-    "n": 5,
-    "mae_m": 1.724,
-    "p90_m": 2.8
-   },
-   "120": {
-    "n": 5,
-    "mae_m": 1.732,
-    "p90_m": 3.84
-   }
-  },
-  "lead_slope_m_per_h": 0.00069,
-  "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.789 m over leads 24-120 h. Lead trend NOT detected (OLS slope +0.0007 m/h; per-lead means span 0.73 m). CAVEAT: n=25, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
  }
 }
