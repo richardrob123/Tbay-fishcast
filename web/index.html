@@ -87,15 +87,17 @@
     <span><span class="sw" style="background:#7be08f"></span>≤12°</span>
     <span><span class="sw" style="background:#22b39a"></span>≤10°<span class="opt">opt</span></span>
     <span><span class="sw" style="background:#2f83d6"></span>≤8°</span>
-    <span><span class="sw" style="background:#ff1e3c"></span>front</span>
+    <span><span class="sw" style="background:#7be08f;opacity:.4"></span>past cast</span>
+    <span><span class="sw" style="background:#ff1e3c"></span>edge</span>
   </div>
   <details id="legnote">
     <summary>darker = colder reachable water · 10–12&nbsp;°C = laker sweet spot · ⓘ</summary>
     <div class="more">Shaded where the bottom is colder than each threshold within a ~75&nbsp;m cast
       (≤22&nbsp;m deep); nested, so darker = colder. Lakers prefer ~10&nbsp;°C — <b>10–12&nbsp;°C is the
-      sweet spot</b>, ≤8&nbsp;°C marks strongest upwelling (not "colder is better"). Edges are uncertain
-      ~100–300&nbsp;m, so the red front is a fuzzy ribbon. Forecasts <b>water, not fish</b> — check Ontario
-      regs before fishing.</div>
+      sweet spot</b>, ≤8&nbsp;°C marks strongest upwelling (not "colder is better"). The faint hatched zone
+      is cold water just <b>past a standard cast</b> (a long cast or a short wade off a point) — the red
+      line is the edge of easy-cast reach. Edges are uncertain ~100–300&nbsp;m. Forecasts <b>water, not
+      fish</b> — check Ontario regs before fishing.</div>
   </details>
 </div>
 
@@ -170,6 +172,12 @@ map.on('load', async () => {
     // Everything is VECTOR so it stays crisp at any zoom (no raster pixelation).
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
+      // "just past a standard cast" — faint, drawn UNDER the solid fills, with a dashed
+      // outline so it reads as "cold water is here but beyond an easy cast" (points).
+      map.addLayer({ id:'arfar'+i, type:'fill', source:'ar'+i, filter:FT(lead0,'t12far'),
+        paint:{ 'fill-color':'#7be08f', 'fill-opacity':0.14 } });
+      map.addLayer({ id:'arfaro'+i, type:'line', source:'ar'+i, filter:FT(lead0,'t12far'),
+        paint:{ 'line-color':'#7be08f', 'line-width':1, 'line-opacity':0.5, 'line-dasharray':[3,2] } });
       TEMP.forEach(([t,col,op]) => {
         map.addLayer({ id:'ar'+t+i, type:'fill', source:'ar'+i, filter:FT(lead0,t),
           paint:{ 'fill-color':col, 'fill-opacity':op } });
@@ -273,7 +281,8 @@ function setDay(i){
                        ['==', ['coalesce',['get','band'],'central'], b]];
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
-    const tmp = { ['art12'+k]:'t12', ['art10'+k]:'t10', ['art8'+k]:'t8' };
+    const tmp = { ['arfar'+k]:'t12far', ['arfaro'+k]:'t12far',
+                  ['art12'+k]:'t12', ['art10'+k]:'t10', ['art8'+k]:'t8' };
     Object.entries(tmp).forEach(([id,t]) => {
       if(map.getLayer(id)) map.setFilter(id, FT(day.lead, t)); });
     ['lnh'+k,'ln'+k].forEach(id => {                 // red edge line: filter by day only

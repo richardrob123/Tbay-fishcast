@@ -169,6 +169,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     area_feats, lines = [], []
     reach_px_primary = 0.0
     t12_rings = []
+    t12_reach = None
     for t in TARGETS:
         iso = _iso_field(gx, gy, iso_pts, tvals[t])
         _cold, reachable = cold_reachable(depth, iso, dist, **kw)
@@ -176,8 +177,21 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         if t == prod.target_c:
             reach_px_primary = float(reachable.sum())
             t12_rings = rings_list
+            t12_reach = reachable
         for rings in rings_list:
             area_feats.append((f"t{int(t)}", rings))
+    # "Just past a standard cast": cold water at fishable depth between one and two casts
+    # out (a long cast, or a short wade onto the shelf then a cast — how you actually fish
+    # a point). Shown FAINT so a point reveals its cold edge instead of reading empty,
+    # while staying honest that it is beyond a standard cast. Off Silver point this is the
+    # broad ~12-14 m cold shelf just outside 75 m (user-caught: "the cold water is close").
+    if t12_reach is not None:
+        iso12 = _iso_field(gx, gy, iso_pts, tvals[prod.target_c])
+        _c, reach_far = cold_reachable(depth, iso12, dist, cast_m=2.0 * prod.cast_m,
+                                       max_reach_depth_m=prod.max_reach_depth_m)
+        far_only = reach_far & ~t12_reach
+        for rings in reachable_area_features(far_only, bounds_3857, res):
+            area_feats.append(("t12far", rings))
     # The red line is the BOUNDARY of the reachable-cold (12 C) zone — so it bounds the
     # green exactly, by construction. (Previously an independent depth==iso contour, which
     # was force-hugged to the shore and diverged from the fills near points — user-caught.)
