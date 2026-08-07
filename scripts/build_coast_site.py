@@ -320,8 +320,11 @@ def _bottom_temp_field(iso_fields, targets, depth):
         with np.errstate(invalid="ignore", divide="ignore"):
             frac = np.where(valid & (dl > dh), (depth - dh) / (dl - dh), 0.0)
         b = np.where(m, T[k] + (T[k + 1] - T[k]) * frac, b)
-    # clamp: shallower than the warmest isotherm -> warmer than warmest T; deeper than the
-    # coldest -> colder than coldest T (bounded to the modelled range, no extrapolation).
+    # CLAMP: water shallower than the warmest isotherm pins to the warmest T; deeper than the
+    # coldest pins to the coldest T. This is a floor/ceiling, NOT interpolation — genuinely colder
+    # or warmer water reads as exactly the extreme target, so the extreme targets must sit OUTSIDE
+    # every species band (CLAMP_EXTEND adds 4 °C / 18 °C) or cold water would pin to a species'
+    # optimum and over-shade (validation T1a). Callers pass the extended target set.
     b = np.where(np.isnan(b) & np.isfinite(D[0]) & (depth < D[0]), T[0], b)
     b = np.where(np.isnan(b) & np.isfinite(D[-1]) & (depth > D[-1]), T[-1], b)
     return b
@@ -362,18 +365,43 @@ SUIT_LEVELS = [
 ]
 IN_RANGE_SUIT = 0.0            # fair = strictly inside the preferred range (suit > this)
 OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
-# DERIVED FROM DATA, not picked: p90 of |grad depth| / local relief pooled over reachable water
-# across all 9 surveyed stretches (n=464k px). Reproduce with scripts/analyze_bathy_slope.py;
-# measurement in data/calib/bathy_slope.json. Re-run if STRETCHES/bathymetry change.
-STRUCT_SLOPE_ABS = 0.16   # rise/run: a real bottom break / drop-off / ledge (pooled regional p90)
-STRUCT_RELIEF_ABS = 1.55  # m: a real shoal/point rising above its surroundings (pooled regional p90)
-# Continuous structure-GLOW band edges = percentiles of the pooled regional STRENGTH distribution
-# (strength = max(slope/STRUCT_SLOPE_ABS, relief/STRUCT_RELIEF_ABS)), so a spot's glow reflects how
-# its break ranks REGIONALLY. Data-derived (p90/p95/p99), NOT picked multipliers — see
-# bathy_slope.json "strength_bands". p99 ("top break") is genuinely the rare best structure.
-STRENGTH_BREAK = 1.45     # p90 of pooled strength — a regionally-typical real break
-STRENGTH_STRONG = 2.06    # p95
-STRENGTH_TOP = 3.68       # p99 — exceptional structure (the best breaks)
+# Structure bars + glow bands are LOADED from the calibration record at runtime (single source of
+# truth), NOT transcribed — so re-running scripts/analyze_bathy_slope.py actually propagates and the
+# code can't silently drift from its own measurement (validation T1b). The values are the pooled
+# regional percentiles over reachable water across the surveyed stretches (n~464k px):
+#   struct_slope_abs / struct_relief_abs = p90 of |grad depth| / local relief (a "real break");
+#   strength_bands = p90/p95/p99 of the pooled STRENGTH = max(slope/slope_bar, relief/relief_bar),
+#   so a spot's glow reflects how its break ranks REGIONALLY. The percentile CHOICE is a bounded
+#   judgment (see PROVENANCE_LEDGER); the values are measured. Fallbacks below are last-resort only.
+_BATHY_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "bathy_slope.json"
+
+
+def _load_struct_calib():
+    try:
+        d = json.loads(_BATHY_CALIB.read_text())
+        sb = d.get("strength_bands", {})
+        return (float(d["struct_slope_abs"]), float(d["struct_relief_abs_m"]),
+                float(sb["break"]), float(sb["strong"]), float(sb["exceptional"]))
+    except (OSError, ValueError, KeyError) as e:  # noqa: BLE001
+        print(f"⚠ bathy_slope.json unreadable ({e}) — using fallback structure bars")
+        return (0.162, 1.55, 1.45, 2.06, 3.68)
+
+
+(STRUCT_SLOPE_ABS, STRUCT_RELIEF_ABS,
+ STRENGTH_BREAK, STRENGTH_STRONG, STRENGTH_TOP) = _load_struct_calib()
+
+# CLAMP-EXTENSION isotherms (°C). _bottom_temp_field clamps water beyond the coldest/warmest target
+# to that target's temperature. If the coldest target equals a species' band edge (6 °C == laker
+# cold floor), ALL colder water clamps up to that edge and reads in-band — so a strong upwelling
+# paints the whole area optimal-green ("coldest = best", validation T1a). Adding a 4 °C and 18 °C
+# target moves the clamp floor/ceiling OUTSIDE every species band, so genuinely cold (<4) / warm
+# (>18) water reads out-of-range, and the 4-6 / 16-18 °C margins TAPER instead of pinning to optimal.
+# On the 2 °C grid so each isotherm is still computed once. Union with the species band endpoints.
+CLAMP_EXTEND = (4.0, 18.0)
+
+
+def _clamp_targets(band_temps):
+    return tuple(sorted(set(band_temps) | set(CLAMP_EXTEND), reverse=True))
 
 
 def _species_tiers(bottom_c, strength, within, depth, sp, prod):
@@ -646,7 +674,7 @@ def main(argv) -> int:
             ds.close()
             area, reach_px = _overlay(depth, dist, gx, gy, inbox, node_xy,
                                       cols, g_sst, bias, patch.bounds_3857, res,
-                                      cfg.product, targets=cfg.band_temps,
+                                      cfg.product, targets=_clamp_targets(cfg.band_temps),
                                       species=cfg.species,
                                       own_m=centers_m[si],
                                       others_m=[c for j, c in enumerate(centers_m) if j != si])

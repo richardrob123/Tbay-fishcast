@@ -51,7 +51,9 @@ product:
 species:
   - id: lake_trout
     name: "Lake trout"
-    range_c: [6, 12]          # adult lean 6-9.5 C summer; older-fish preferendum ~11.7 C ~ 12
+    range_c: [4, 12]          # occupy 4-12 C (cold-adapted); cold edge 4 C so upwelled cold water
+                              # TAPERS (fair) instead of clamping to optimal (validation T1a). Older-
+                              # fish preferendum ~11.7 C ~ 12 warm edge.
     optimal_c: [6, 10]        # adults 6-9.5 C (occupancy) through 10.1 C age-0 preferendum — the core
     front_c: 12
     min_depth_m: 4            # adults don't hold in <~4 m from shore in summer daylight even if cold
