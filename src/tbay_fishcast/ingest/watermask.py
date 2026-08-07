@@ -264,6 +264,11 @@ def water_mask(bounds_3857, shape_hw):
     frozen = _frozen_get(bounds_3857, H, W)   # COMMITTED mask wins — deterministic, offline
     if frozen is not None:
         return frozen
+    # LOUD on a frozen miss: falling through to live Overpass reintroduces the non-deterministic,
+    # rate-limit-prone shoreline that ADR-020 froze away (the Silver-tip flicker). A silent revert
+    # is exactly what rule 5 forbids — say so, so a build/CI can catch a masking regression.
+    print(f"⚠ watermask: FROZEN MASK MISS for bounds {tuple(round(float(v),1) for v in bounds_3857)} "
+          f"shape {H}x{W} — falling back to LIVE Overpass (non-deterministic; re-run freeze_watermask.py)")
     x0, y0, x1, y1 = [float(v) for v in bounds_3857]
     lon0, lat0 = _merc_to_lonlat(min(x0, x1), min(y0, y1))
     lon1, lat1 = _merc_to_lonlat(max(x0, x1), max(y0, y1))

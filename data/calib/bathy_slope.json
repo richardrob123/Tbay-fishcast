@@ -1,7 +1,8 @@
 {
  "struct_slope_abs": 0.162,
+ "struct_relief_abs_m": 1.66,
  "percentile": 90,
- "pooled_percentiles": {
+ "slope_percentiles": {
   "50": 0.021,
   "66": 0.044,
   "75": 0.066,
@@ -10,61 +11,52 @@
   "95": 0.257,
   "99": 0.527
  },
+ "relief_percentiles_m": {
+  "50": 0.08,
+  "66": 0.27,
+  "75": 0.52,
+  "85": 1.14,
+  "90": 1.66,
+  "95": 2.54,
+  "99": 4.68
+ },
  "n_pixels": 463960,
- "per_stretch_percentiles": {
+ "per_stretch": {
   "chippewa": {
-   "50": 0.007,
-   "75": 0.04,
-   "90": 0.108,
-   "95": 0.177
+   "slope_p90": 0.108,
+   "relief_p90_m": 0.94
   },
   "kam_mission": {
-   "50": 0.021,
-   "75": 0.071,
-   "90": 0.189,
-   "95": 0.279
+   "slope_p90": 0.189,
+   "relief_p90_m": 2.09
   },
   "mckellar_harbour": {
-   "50": 0.019,
-   "75": 0.072,
-   "90": 0.188,
-   "95": 0.281
+   "slope_p90": 0.188,
+   "relief_p90_m": 1.67
   },
   "marina_mcvicar": {
-   "50": 0.023,
-   "75": 0.072,
-   "90": 0.173,
-   "95": 0.263
+   "slope_p90": 0.173,
+   "relief_p90_m": 1.31
   },
   "boulevard_current": {
-   "50": 0.018,
-   "75": 0.039,
-   "90": 0.09,
-   "95": 0.15
+   "slope_p90": 0.09,
+   "relief_p90_m": 0.64
   },
   "current_barepoint": {
-   "50": 0.017,
-   "75": 0.04,
-   "90": 0.064,
-   "95": 0.085
+   "slope_p90": 0.064,
+   "relief_p90_m": 0.65
   },
   "shipyard_mackenzie": {
-   "50": 0.042,
-   "75": 0.086,
-   "90": 0.138,
-   "95": 0.185
+   "slope_p90": 0.138,
+   "relief_p90_m": 1.64
   },
   "mackenzie_silver": {
-   "50": 0.019,
-   "75": 0.058,
-   "90": 0.13,
-   "95": 0.202
+   "slope_p90": 0.13,
+   "relief_p90_m": 1.39
   },
   "silver_islet": {
-   "50": 0.05,
-   "75": 0.152,
-   "90": 0.331,
-   "95": 0.488
+   "slope_p90": 0.331,
+   "relief_p90_m": 3.44
   }
  },
  "stretches": [
@@ -78,6 +70,6 @@
   "mackenzie_silver",
   "silver_islet"
  ],
- "definition": "Absolute bar for a real bottom break: the pXX percentile of |grad depth| pooled over reachable water across all surveyed stretches (CHS NONNA-10). Reproducible from the regional bathymetry, not a picked constant.",
- "retrieved_utc": "2026-08-07T18:23:18Z"
+ "definition": "Absolute structure bars, both the pXX percentile pooled over reachable water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| (drop-off flanks); relief = neighbourhood-mean depth \u2212 depth (shoal tops / point tips / crests the slope misses). Reproducible, not picked constants.",
+ "retrieved_utc": "2026-08-07T18:31:03Z"
 }

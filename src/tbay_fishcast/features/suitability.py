@@ -93,6 +93,25 @@ def bathymetric_structure(depth_m, res_m: float):
     return np.hypot(gx, gy)
 
 
+def bathymetric_relief(depth_m, res_m: float, radius_m: float = 60.0):
+    """Local relief (m): how much SHALLOWER a pixel is than its surroundings — positive over
+    the flat top of a shoal, the crest of a reef, or the tip of a point, which the slope term
+    MISSES (they are locally flat). = neighbourhood-mean depth − depth, so a hump reads +, a
+    hole reads −. Neighbourhood is a ~radius_m box; NaN-aware (normalized box filter over the
+    water mask, so land doesn't drag the mean). Directly measured from NONNA soundings."""
+    from scipy.ndimage import uniform_filter
+    d = np.asarray(depth_m, dtype=float)
+    mask = np.isfinite(d).astype(float)
+    filled = np.where(np.isfinite(d), d, 0.0)
+    size = max(3, int(round(2 * radius_m / max(res_m, 1e-6))) | 1)   # odd box ~2*radius wide
+    num = uniform_filter(filled, size=size, mode="nearest")
+    den = uniform_filter(mask, size=size, mode="nearest")
+    with np.errstate(invalid="ignore", divide="ignore"):
+        local_mean = np.where(den > 0, num / den, np.nan)
+    relief = local_mean - d                                          # + where shallower than around
+    return np.where(np.isfinite(d), relief, np.nan)
+
+
 def thermal_suitability(bottom_c, range_c, optimal_c=None):
     """Graded 0..1 thermal suitability of a bottom temperature for a species.
 

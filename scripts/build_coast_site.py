@@ -307,6 +307,10 @@ IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
 # the gentle shelf. Reproduce with scripts/analyze_bathy_slope.py; measurement in
 # data/calib/bathy_slope.json. Re-run if STRETCHES/bathymetry change.
 STRUCT_SLOPE_ABS = 0.16   # rise/run: a real bottom break / drop-off / ledge (pooled regional p90)
+# Companion relief bar — a shoal TOP / point TIP / crest is locally shallow but flat, so slope
+# misses it; local relief (neighbourhood-mean depth − depth) catches it. Also DERIVED FROM DATA:
+# p90 of pooled regional relief = 1.66 m (data/calib/bathy_slope.json, analyze_bathy_slope.py).
+STRUCT_RELIEF_ABS = 1.66  # m: a real shoal/point rising above its surroundings (pooled regional p90)
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -418,11 +422,14 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         within = within & (d_own <= d_oth)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
-    # EDGE = a genuine bottom break/drop-off, by an ABSOLUTE physical bar (not a per-scene
-    # percentile) — so featureless water yields no edge and prime stays meaningful. Directly
-    # measured from the NONNA soundings (the reliable edge signal).
-    slope = _su.bathymetric_structure(depth, res)            # rise/run, from NONNA soundings
-    edge = np.isfinite(slope) & (slope >= STRUCT_SLOPE_ABS)
+    # EDGE = a genuine bottom drop-off/break OR a shoal-top/point-tip, by ABSOLUTE data-derived
+    # bars (not a per-scene percentile) — so featureless water yields no edge and prime stays
+    # meaningful. Both measured from the NONNA soundings: slope catches drop-off flanks, relief
+    # catches the flat crests slope misses (crucial prime structure).
+    slope = _su.bathymetric_structure(depth, res)            # rise/run
+    relief = _su.bathymetric_relief(depth, res)              # m, shallower-than-surroundings
+    edge = ((np.isfinite(slope) & (slope >= STRUCT_SLOPE_ABS))
+            | (np.isfinite(relief) & (relief >= STRUCT_RELIEF_ABS)))
 
     default_id = None
     for sp in species:
@@ -576,11 +583,17 @@ def main(argv) -> int:
         # currently only Little Trout Bay: sparse soundings + few LSOFS nodes + a sheltered bay
         # far from any validation, which together produce a large but poorly-constrained cold
         # area (~138 ha vs 7–80 ha for verified stretches). Flagged, not hidden.
+        # per-stretch HEALTH so the client can warn on THIS stretch, not just a global banner:
+        # degraded = bathymetry-only shore (imagery mask failed → artifact-prone reachable area);
+        # anchor_stale = the GLSEA surface anchor is missing or > ~2 days old (correction weakens).
+        anchor_stale = (anchor_day is None) or (
+            (issue - date.fromisoformat(anchor_day)).days > 2 if anchor_day else True)
         stretches_out.append({"id": sid, "name": name, "corners": corners,
                               "center": [clat, clon], "res_m": round(res, 1),
                               "exposure": exposure, "anchor_day": anchor_day,
                               "survey_cov": round(float(patch.coverage_frac), 2),
                               "low_confidence": sid in LOW_CONFIDENCE, "days": days,
+                              "degraded": bool(degraded), "anchor_stale": bool(anchor_stale),
                               "area": f"data/areas/{sid}.geojson",
                               "lines": f"data/lines/{sid}.geojson"})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
@@ -675,7 +688,7 @@ def main(argv) -> int:
                     for sp in cfg.species],
         "nearshore_delta_c": round(ns_delta, 2), "nearshore_delta_n": ns_n,
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
-        "combine": "optimal-temperature ∩ measured bottom-structure (absolute bars, no fitted weights)",
+        "combine": "optimal-temperature ∩ measured structure (drop-off OR shoal/point; data-derived bars, no fitted weights)",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),

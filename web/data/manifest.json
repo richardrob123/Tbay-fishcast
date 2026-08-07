@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T18:20:33Z",
- "age_h": 6.3,
+ "built_utc": "2026-08-07T18:39:39Z",
+ "age_h": 6.7,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -184,6 +184,8 @@
      "reach_ha": 82.9
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/little_trout_bay.geojson",
    "lines": "data/lines/little_trout_bay.geojson"
   },
@@ -255,6 +257,8 @@
      "reach_ha": 3.8
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/chippewa.geojson",
    "lines": "data/lines/chippewa.geojson"
   },
@@ -326,6 +330,8 @@
      "reach_ha": 17.2
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/kam_mission.geojson",
    "lines": "data/lines/kam_mission.geojson"
   },
@@ -397,6 +403,8 @@
      "reach_ha": 38.1
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/mckellar_harbour.geojson",
    "lines": "data/lines/mckellar_harbour.geojson"
   },
@@ -468,6 +476,8 @@
      "reach_ha": 3.3
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/marina_mcvicar.geojson",
    "lines": "data/lines/marina_mcvicar.geojson"
   },
@@ -539,6 +549,8 @@
      "reach_ha": 0.6
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/boulevard_current.geojson",
    "lines": "data/lines/boulevard_current.geojson"
   },
@@ -610,6 +622,8 @@
      "reach_ha": 0.1
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/current_barepoint.geojson",
    "lines": "data/lines/current_barepoint.geojson"
   },
@@ -681,6 +695,8 @@
      "reach_ha": 3.5
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/shipyard_mackenzie.geojson",
    "lines": "data/lines/shipyard_mackenzie.geojson"
   },
@@ -752,6 +768,8 @@
      "reach_ha": 8.1
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/mackenzie_silver.geojson",
    "lines": "data/lines/mackenzie_silver.geojson"
   },
@@ -823,6 +841,8 @@
      "reach_ha": 28.2
     }
    ],
+   "degraded": false,
+   "anchor_stale": false,
    "area": "data/areas/silver_islet.geojson",
    "lines": "data/lines/silver_islet.geojson"
   }

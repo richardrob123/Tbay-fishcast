@@ -101,6 +101,27 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-030 — Audit Round 4: data-derive the thresholds, per-species depth, honest degradation.**
+  A four-lane audit (docs/AUDIT_ROUND4.md) drove a sweep to replace judgment with evidence.
+  (1) **Per-species hold depth** (stations.yaml `min_depth_m`/`max_depth_m`): the shallow/marina
+  over-cover was the offshore stratification applied to 2 m water; adult lake trout don't hold
+  <4 m in summer daylight (coasters do), so gating `within` per species removed the shallow flats
+  from the laker map for a biological reason (marina laker ha 62→13.5), not a temperature guess.
+  (2) **Measured nearshore surface delta** (+2.35 °C, Landsat 30 m shore vs GLSEA, n=3, from
+  data/nearshore_anchor.csv) added to the surface anchor — GLSEA's ~1 km pixel reads the nearshore
+  too cold. (3) **Structure bars DERIVED FROM DATA**, not picked: `analyze_bathy_slope.py` pools
+  |grad depth| and local relief over reachable water across all 9 surveyed stretches; the bars are
+  the p90 (slope 0.16 rise/run, relief 1.66 m), recorded in data/calib/bathy_slope.json. Added the
+  **relief** term so the edge catches shoal-TOPS and point-TIPS (locally shallow but flat) that the
+  slope alone missed. (4) **Phase forecast tail** now uses the 13 kn over-lake bar, not the 10 kn
+  airport bar (day 0 keeps airport). (5) **Honest scorecard**: skill is pooled over the diagnostic
+  (moving-obs) chains only, n_effective printed (currently 1); the "+47%" is one real comparison,
+  not a pooled number; the lead-decay table is flagged not-yet-diagnostic. (6) **Per-stretch health**
+  (degraded shore, stale/missing anchor) is threaded into the manifest and badged client-side — no
+  more silent degradation (rule 5). (7) **Loud frozen-mask miss** so a live-Overpass revert can't
+  undo ADR-020 invisibly. GLOS multi-depth profiles (the ideal nearshore-bias input) stay unwired:
+  GLOS ERDDAP is HTTP-000 unreachable from this environment — documented, not faked.
+
 - **ADR-029 — "Prime" must be ABSOLUTE, not best-of-scene; temperature stays primary.** Field
   review of the live map (operator) surfaced two flaws. (1) The edge threshold that defined prime
   was a per-scene PERCENTILE (top ~third of each stretch's gradient/slope), so ~a third of every

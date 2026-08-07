@@ -71,6 +71,23 @@ def test_bathymetric_structure_finds_dropoffs():
     assert np.allclose(su.bathymetric_structure(np.full((4, 4), 8.0), 10.0), 0.0)
 
 
+def test_bathymetric_relief_finds_shoals_and_points():
+    # a flat 10 m basin with a shallow 3 m shoal in the middle: the shoal reads high POSITIVE
+    # relief (shallower than surroundings) even though its flat top has ~zero slope.
+    depth = np.full((21, 21), 10.0)
+    depth[8:13, 8:13] = 3.0                                  # a shoal/hump
+    relief = su.bathymetric_relief(depth, res_m=10.0, radius_m=60.0)
+    assert relief[10, 10] > 3.0                              # shoal top: much shallower than around
+    assert su.bathymetric_structure(depth, 10.0)[10, 10] == pytest.approx(0.0, abs=1e-9)  # flat top, no slope
+    assert relief[0, 0] < 1.0                                # flat basin corner: ~no relief
+    # a hole (deeper than surroundings) reads NEGATIVE relief, not structure
+    d2 = np.full((21, 21), 5.0); d2[9:12, 9:12] = 15.0
+    assert su.bathymetric_relief(d2, 10.0)[10, 10] < 0
+    # NaN (land) stays NaN
+    d3 = np.full((5, 5), 8.0); d3[0, 0] = np.nan
+    assert np.isnan(su.bathymetric_relief(d3, 10.0)[0, 0])
+
+
 def test_ensemble_favorability_graded_vs_binary():
     # west wind at 10 kt for a whole day, one member: binary prob (>=13) = 0, favorability > 0
     time = [f"2026-08-07T{h:02d}:00" for h in range(24)]

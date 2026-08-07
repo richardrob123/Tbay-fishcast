@@ -37,10 +37,10 @@ PCTILE = 90  # a "real break" is the steep tail — the top ~10% of reachable re
 
 def main() -> int:
     cfg = load_config()
-    pooled = []
+    pooled_s, pooled_r = [], []
     per_stretch = {}
     for sid, name, clat, clon, exposure in bcs.STRETCHES:
-        if sid in bcs.LOW_CONFIDENCE:            # sparse survey -> noisy slope, exclude from the fit
+        if sid in bcs.LOW_CONFIDENCE:            # sparse survey -> noisy -> exclude from the fit
             continue
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=bcs.HALF_M, scale_px=bcs.PX)
@@ -53,31 +53,40 @@ def main() -> int:
         within = (np.isfinite(depth) & (dist <= cfg.product.cast_m)
                   & (depth <= cfg.product.max_reach_depth_m))
         slope = su.bathymetric_structure(depth, res)
-        v = slope[within & np.isfinite(slope)]
-        if v.size < 500:
+        relief = su.bathymetric_relief(depth, res)
+        vs = slope[within & np.isfinite(slope)]
+        vr = relief[within & np.isfinite(relief)]
+        if vs.size < 500:
             continue
-        pooled.append(v)
-        per_stretch[sid] = {p: round(float(np.percentile(v, p)), 3) for p in (50, 75, 90, 95)}
-        print(f"{sid:20s} n={v.size:6d}  p50 {np.percentile(v,50):.3f}  p75 {np.percentile(v,75):.3f}  "
-              f"p90 {np.percentile(v,90):.3f}  p95 {np.percentile(v,95):.3f}")
+        pooled_s.append(vs)
+        pooled_r.append(vr)
+        per_stretch[sid] = {"slope_p90": round(float(np.percentile(vs, 90)), 3),
+                            "relief_p90_m": round(float(np.percentile(vr, 90)), 2)}
+        print(f"{sid:20s} n={vs.size:6d}  slope p90 {np.percentile(vs,90):.3f}  "
+              f"relief p90 {np.percentile(vr,90):.2f} m")
 
-    if not pooled:
-        print("no surveyed stretches produced slope data"); return 1
-    allv = np.concatenate(pooled)
-    pcts = {p: round(float(np.percentile(allv, p)), 3) for p in (50, 66, 75, 85, 90, 95, 99)}
-    bar = round(float(np.percentile(allv, PCTILE)), 3)
-    print(f"\nPOOLED n={allv.size} reachable px across {len(per_stretch)} surveyed stretches")
-    print("pooled percentiles:", pcts)
-    print(f"=> STRUCT_SLOPE_ABS = p{PCTILE} of pooled regional slope = {bar} rise/run")
+    if not pooled_s:
+        print("no surveyed stretches produced data"); return 1
+    alls = np.concatenate(pooled_s)
+    allr = np.concatenate(pooled_r)
+    s_pcts = {p: round(float(np.percentile(alls, p)), 3) for p in (50, 66, 75, 85, 90, 95, 99)}
+    r_pcts = {p: round(float(np.percentile(allr, p)), 2) for p in (50, 66, 75, 85, 90, 95, 99)}
+    s_bar = round(float(np.percentile(alls, PCTILE)), 3)
+    r_bar = round(float(np.percentile(allr, PCTILE)), 2)
+    print(f"\nPOOLED n={alls.size} reachable px across {len(per_stretch)} surveyed stretches")
+    print("slope percentiles:", s_pcts)
+    print("relief percentiles (m):", r_pcts)
+    print(f"=> STRUCT_SLOPE_ABS  = p{PCTILE} pooled slope  = {s_bar} rise/run")
+    print(f"=> STRUCT_RELIEF_ABS = p{PCTILE} pooled relief = {r_bar} m (shoal/point local rise)")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
-        "struct_slope_abs": bar, "percentile": PCTILE,
-        "pooled_percentiles": pcts, "n_pixels": int(allv.size),
-        "per_stretch_percentiles": per_stretch,
-        "stretches": list(per_stretch.keys()),
-        "definition": ("Absolute bar for a real bottom break: the pXX percentile of |grad depth| "
-                       "pooled over reachable water across all surveyed stretches (CHS NONNA-10). "
-                       "Reproducible from the regional bathymetry, not a picked constant."),
+        "struct_slope_abs": s_bar, "struct_relief_abs_m": r_bar, "percentile": PCTILE,
+        "slope_percentiles": s_pcts, "relief_percentiles_m": r_pcts, "n_pixels": int(alls.size),
+        "per_stretch": per_stretch, "stretches": list(per_stretch.keys()),
+        "definition": ("Absolute structure bars, both the pXX percentile pooled over reachable "
+                       "water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| "
+                       "(drop-off flanks); relief = neighbourhood-mean depth − depth (shoal tops / "
+                       "point tips / crests the slope misses). Reproducible, not picked constants."),
         "retrieved_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }, indent=1))
     print(f"wrote {OUT}")

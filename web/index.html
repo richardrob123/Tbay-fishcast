@@ -107,6 +107,7 @@
   <h1><span class="fish">🎣</span> Thunder Bay shore-fishing forecast</h1>
   <span class="age" id="age"></span>
   <span class="age" id="season" style="cursor:help"></span>
+  <span class="age" id="health" style="cursor:help;color:var(--warn);display:none"></span>
   <span class="spacer"></span>
   <div id="species" class="species"></div>
   <div id="legend"></div>
@@ -340,6 +341,18 @@ map.on('load', async () => {
     se.textContent = '· ' + s.label + (primary ? '' : ' ⚠');
     se.title = s.note + (primary ? '' : '\n(the map is a summer thermal/edge model — weight it less this season)');
     se.style.color = primary ? '' : 'var(--warn)';
+  }
+  // per-stretch HEALTH — warn honestly when an area ran degraded or on a stale/missing anchor
+  // today (silent degradation is worse than a caveat). Names listed on hover.
+  const bad = (man.stretches||[]).filter(s => s.degraded || s.anchor_stale);
+  const he = document.getElementById('health');
+  if(he && bad.length){
+    const deg = bad.filter(s=>s.degraded).map(s=>s.name.split('—')[0].trim());
+    const stale = bad.filter(s=>s.anchor_stale&&!s.degraded).map(s=>s.name.split('—')[0].trim());
+    he.style.display = '';
+    he.textContent = `· ⚠ ${bad.length} area${bad.length>1?'s':''} degraded`;
+    he.title = (deg.length?`bathymetry-only shore (reachable area less reliable): ${deg.join(', ')}\n`:'')
+             + (stale.length?`stale/missing surface anchor: ${stale.join(', ')}`:'');
   }
 
   // ticks from the first stretch's day labels
