@@ -174,25 +174,18 @@ map.on('load', async () => {
         map.addLayer({ id:'ar'+t+i, type:'fill', source:'ar'+i, filter:FT(lead0,t),
           paint:{ 'fill-color':col, 'fill-opacity':op } });
       });
-      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:FT(lead0,'t12'),
-        layout:{ 'line-join':'round' }, paint:{ 'line-color':'#7be08f', 'line-width':1.2, 'line-opacity':0.85 } });
     }
-    // RED 12 C front: central solid with halo; band bookends as faint thin lines so
-    // the position uncertainty reads as a ribbon, not a false-precision line.
+    // RED line = the boundary of the reachable-cold (12 C) zone. It is the outline of
+    // the ≤12 °C fill, so it bounds the green EXACTLY (coherent by construction); the
+    // colder ≤10/≤8 fills nest inside it. Dark halo so it reads over land and pale water.
     if(s.lines){
       map.addSource('ln'+i, { type:'geojson', data: s.lines + V });
-      ['possible','certain'].forEach(b => {
-        map.addLayer({ id:'lnb'+b+i, type:'line', source:'ln'+i, filter:FB(lead0,b),
-          layout:{ 'line-cap':'round', 'line-join':'round' },
-          paint:{ 'line-color':'#ff1e3c', 'line-width':1.1, 'line-opacity':0.35,
-                  'line-dasharray':[2,2] } });
-      });
-      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i, filter:FB(lead0,'central'),
+      map.addLayer({ id:'lnh'+i, type:'line', source:'ln'+i, filter:['==',['get','lead'],lead0],
         layout:{ 'line-cap':'round', 'line-join':'round' },
-        paint:{ 'line-color':'#0b0f14', 'line-width':4.4, 'line-opacity':0.5 } });
-      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i, filter:FB(lead0,'central'),
+        paint:{ 'line-color':'#0b0f14', 'line-width':4.2, 'line-opacity':0.45 } });
+      map.addLayer({ id:'ln'+i, type:'line', source:'ln'+i, filter:['==',['get','lead'],lead0],
         layout:{ 'line-cap':'round', 'line-join':'round' },
-        paint:{ 'line-color':'#ff1e3c', 'line-width':2.4, 'line-opacity':0.98 } });
+        paint:{ 'line-color':'#ff1e3c', 'line-width':2.2, 'line-opacity':0.97 } });
     }
     s.corners.forEach(c => bounds.extend(c));
   });
@@ -240,7 +233,7 @@ map.on('load', async () => {
       map.getLayer('art12'+i) && map.setPaintProperty('art12'+i,'fill-opacity', o*0.36);
       map.getLayer('art10'+i) && map.setPaintProperty('art10'+i,'fill-opacity', o*0.48);
       map.getLayer('art8'+i)  && map.setPaintProperty('art8'+i,'fill-opacity', o*0.62);
-      map.getLayer('aro'+i)   && map.setPaintProperty('aro'+i,'line-opacity', o*0.85);
+      map.getLayer('ln'+i)    && map.setPaintProperty('ln'+i,'line-opacity', o*0.97);
     });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
@@ -280,13 +273,11 @@ function setDay(i){
                        ['==', ['coalesce',['get','band'],'central'], b]];
   man.stretches.forEach((s, k) => {
     const day = s.days[Math.min(i, s.days.length-1)];
-    const tmp = { ['art12'+k]:'t12', ['art10'+k]:'t10', ['art8'+k]:'t8', ['aro'+k]:'t12' };
+    const tmp = { ['art12'+k]:'t12', ['art10'+k]:'t10', ['art8'+k]:'t8' };
     Object.entries(tmp).forEach(([id,t]) => {
       if(map.getLayer(id)) map.setFilter(id, FT(day.lead, t)); });
-    const per = { ['lnbpossible'+k]:'possible', ['lnbcertain'+k]:'certain',
-                  ['lnh'+k]:'central', ['ln'+k]:'central' };
-    Object.entries(per).forEach(([id,b]) => {
-      if(map.getLayer(id)) map.setFilter(id, FB(day.lead, b)); });
+    ['lnh'+k,'ln'+k].forEach(id => {                 // red edge line: filter by day only
+      if(map.getLayer(id)) map.setFilter(id, ['==',['get','lead'], day.lead]); });
   });
   const d0 = man.stretches[0].days[i];
   document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');

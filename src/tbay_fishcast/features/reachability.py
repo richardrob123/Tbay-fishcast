@@ -41,15 +41,26 @@ def corrected_fields(depth: np.ndarray, bounds_3857, res_ground_m: float):
     shore only. Degrades to the naive field (degraded=True) if imagery is unavailable —
     callers must surface that flag."""
     from ..ingest import basemap
+    from ..ingest.watermask import WaterMaskError, water_mask
     from .overlay import (bridge_survey_gaps, fill_unsurveyed_water,
                           imagery_unsurveyed_water, land_shore_distance)
 
     depth = fill_unsurveyed_water(depth, res_ground_m)
-    not_land = None
     degraded = False
+    # PRIMARY: authoritative OSM land/water geometry (traces treed points/islands exactly).
+    try:
+        wm = water_mask(bounds_3857, depth.shape)
+        unsurv = wm & ~np.isfinite(depth)        # authoritative water with no sounding yet
+        depth, _ = bridge_survey_gaps(depth, unsurv, res_ground_m)
+        dist, _land = land_shore_distance(depth, res_ground_m, land_mask=~wm)
+        return depth, dist, degraded
+    except WaterMaskError:
+        pass                                     # fall through to the imagery heuristic
+    # FALLBACK: imagery brightness+texture heuristic (kept for when Overpass is down).
+    not_land = None
     try:
         rgb = basemap.fetch_imagery_3857(bounds_3857, size_px=depth.shape[0])
-        unsurv = imagery_unsurveyed_water(depth, rgb)   # RGB: dark AND not vegetation = water
+        unsurv = imagery_unsurveyed_water(depth, rgb)
         depth, not_land = bridge_survey_gaps(depth, unsurv, res_ground_m)
     except Exception:  # noqa: BLE001
         degraded = True

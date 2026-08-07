@@ -36,7 +36,7 @@ from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
 from tbay_fishcast.features.overlay import (  # noqa: E402
-    cold_front_features, cold_reachable, merc, reachable_area_features)
+    cold_reachable, merc, reachable_area_features)
 from tbay_fishcast.features.reachability import corrected_fields  # noqa: E402
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
@@ -49,13 +49,21 @@ LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
 _R = 6378137.0
 
 # Shore stretches spanning the developed Thunder Bay arc (SW Kam mouth -> NE
-# MacKenzie/Silver). Overlapping ~8.4 km boxes; a stretch with no NONNA water or
-# no LSOFS nodes is skipped gracefully.
+# MacKenzie/Silver), overlapping ~8.4 km boxes. The 3 infill boxes (McKellar,
+# Boulevard, Shipyard) close the gaps for continuous coverage; centers/exposure chosen
+# from a NONNA-coverage probe. Beyond this arc the outer bay is unsurveyed (Sturgeon
+# Bay ~0% NONNA) or the deliberately-excluded warmwater embayment. A stretch with no
+# NONNA water or no LSOFS nodes is still skipped gracefully at build time.
+# exposure: qualitative fetch to W-quadrant upwelling wind — 'high' open shore (most
+# reliable), 'med', 'low' sheltered harbour (the physics is least calibrated there).
 STRETCHES = [
-    ("kam_mission", "Kam mouth / Mission Island", 48.395, -89.240),
-    ("marina_mcvicar", "Marina Park / McVicar / Boulevard", 48.442, -89.190),
-    ("current_barepoint", "Current River / Trowbridge shore", 48.487, -89.095),
-    ("mackenzie_silver", "MacKenzie Point / Silver Harbour", 48.516, -88.962),
+    ("kam_mission", "Kam mouth / Mission Island", 48.395, -89.240, "low"),
+    ("mckellar_harbour", "McKellar / north harbour", 48.420, -89.212, "low"),
+    ("marina_mcvicar", "Marina Park / McVicar", 48.442, -89.190, "med"),
+    ("boulevard_current", "Boulevard / Current mouth", 48.468, -89.148, "med"),
+    ("current_barepoint", "Current River / Trowbridge shore", 48.487, -89.095, "high"),
+    ("shipyard_mackenzie", "Shipyard / MacKenzie approach", 48.505, -89.025, "med"),
+    ("mackenzie_silver", "MacKenzie Point / Silver Harbour", 48.516, -88.962, "high"),
 ]
 
 OUT = Path(__file__).resolve().parents[1] / "web" / "data"
@@ -160,17 +168,22 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m}
     area_feats, lines = [], []
     reach_px_primary = 0.0
+    t12_rings = []
     for t in TARGETS:
         iso = _iso_field(gx, gy, iso_pts, tvals[t])
         _cold, reachable = cold_reachable(depth, iso, dist, **kw)
+        rings_list = reachable_area_features(reachable, bounds_3857, res)
         if t == prod.target_c:
             reach_px_primary = float(reachable.sum())
-        for rings in reachable_area_features(reachable, bounds_3857, res):
+            t12_rings = rings_list
+        for rings in rings_list:
             area_feats.append((f"t{int(t)}", rings))
-    for tag, vals in (("possible", f_sh), ("central", f_ce), ("certain", f_de)):
-        iso = _iso_field(gx, gy, iso_pts, vals)
-        for path in cold_front_features(depth, iso, dist, bounds_3857):
-            lines.append((tag, path))
+    # The red line is the BOUNDARY of the reachable-cold (12 C) zone — so it bounds the
+    # green exactly, by construction. (Previously an independent depth==iso contour, which
+    # was force-hugged to the shore and diverged from the fills near points — user-caught.)
+    for rings in t12_rings:
+        for ring in rings:                    # exterior ring, then any holes
+            lines.append(("edge", ring))
     return area_feats, reach_px_primary, lines
 
 
@@ -195,7 +208,7 @@ def main(argv) -> int:
         print("⚠ live buoy bias unavailable — frozen prior in use (degraded mode)")
 
     stretches_out = []
-    for sid, name, clat, clon in STRETCHES:
+    for sid, name, clat, clon, exposure in STRETCHES:
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
         except Exception as e:  # noqa: BLE001
@@ -275,7 +288,7 @@ def main(argv) -> int:
             json.dumps({"type": "FeatureCollection", "features": area_feats}))
         stretches_out.append({"id": sid, "name": name, "corners": corners,
                               "center": [clat, clon], "res_m": round(res, 1),
-                              "anchor_day": anchor_day, "days": days,
+                              "exposure": exposure, "anchor_day": anchor_day, "days": days,
                               "area": f"data/areas/{sid}.geojson",
                               "lines": f"data/lines/{sid}.geojson"})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "

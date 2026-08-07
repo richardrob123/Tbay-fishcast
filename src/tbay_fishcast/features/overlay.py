@@ -355,7 +355,8 @@ def bridge_survey_gaps(depth: np.ndarray, unsurveyed_water: np.ndarray, res_m: f
 
 def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2.5,
                         min_land_px: int = 12, mainland_only: bool = True,
-                        not_land: np.ndarray | None = None):
+                        not_land: np.ndarray | None = None,
+                        land_mask: np.ndarray | None = None):
     """Distance-to-shore (ground metres) keeping only GENUINE, walk-to land as shore.
 
     A NaN component counts as land only if it (a) borders water shallower than
@@ -375,18 +376,29 @@ def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2
     (dist_m, shore_mask).
     """
     water = np.isfinite(depth)
-    nodata = ~water
-    if not_land is not None:
-        nodata = nodata & ~not_land
-    lbl, n = label(nodata)
-    land = np.zeros_like(water)
-    for c in range(1, n + 1):
-        comp = lbl == c
-        if comp.sum() < min_land_px:
-            continue
-        ring = binary_dilation(comp) & water
-        if ring.any() and float(np.nanmin(depth[ring])) < shallow_m:
-            land |= comp
+    if land_mask is not None:
+        # Authoritative land (e.g. ~water_mask from OSM geometry): keep components of at
+        # least min_land_px, skipping the shallow-border heuristic (the geometry is truth,
+        # not an inference). mainland-only + opening below still drop offshore islands.
+        lbl, n = label(land_mask.astype(bool))
+        land = np.zeros(land_mask.shape, dtype=bool)
+        for c in range(1, n + 1):
+            comp = lbl == c
+            if comp.sum() >= min_land_px:
+                land |= comp
+    else:
+        nodata = ~water
+        if not_land is not None:
+            nodata = nodata & ~not_land
+        lbl, n = label(nodata)
+        land = np.zeros_like(water)
+        for c in range(1, n + 1):
+            comp = lbl == c
+            if comp.sum() < min_land_px:
+                continue
+            ring = binary_dilation(comp) & water
+            if ring.any() and float(np.nanmin(depth[ring])) < shallow_m:
+                land |= comp
     if mainland_only and land.any():
         clbl, _ = label(land)
         border = (set(clbl[0, :]) | set(clbl[-1, :]) | set(clbl[:, 0]) | set(clbl[:, -1]))
@@ -395,8 +407,10 @@ def land_shore_distance(depth: np.ndarray, res_m: float, *, shallow_m: float = 2
             land = np.isin(clbl, list(border))
     # remove thin land tendrils (NONNA tile-seam / no-data slivers that reach into the
     # lake). Opening erodes then dilates, so the solid coast is preserved (edge restored)
-    # but 1-2 px slivers vanish — killing the linear "reachable" streaks they seed.
-    if land.any():
+    # but 1-2 px slivers vanish — killing the linear "reachable" streaks they seed. Skip
+    # for an authoritative land_mask: that geometry is already clean, and opening would
+    # only nibble ~1 px off the true coastline (esp. at the image border).
+    if land.any() and land_mask is None:
         land = binary_opening(land, iterations=1)
     return distance_transform_edt(~land) * res_m, land
 
