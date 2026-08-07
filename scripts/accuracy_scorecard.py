@@ -146,11 +146,22 @@ def render(stats, anchor, lead_stats=None) -> str:
          "coarse/surface proxy for the product's ~6 m target — so this tracks *trend and sign of",
          "skill*, not a Thunder Bay 6 m verification. Local truth (Bare Point intake) would replace",
          "these proxies.", ""]
-    p_raw, p_corr = pooled(stats, "raw_mae"), pooled(stats, "corr_mae")
+    # A "diagnostic" chain has a MOVING observed isotherm — only those can measure correction
+    # skill. Chains whose obs is a pinned sensor floor (whole column colder than 12 °C, so the
+    # crossing sits at the shallowest sensor every day) are non-diagnostic: the "error" against a
+    # constant is not skill. Pool skill over the diagnostic chains only, and report n_effective.
+    diag = {c: s for c, s in stats.items() if not s["obs_constant"]}
+    p_raw, p_corr = pooled(diag, "raw_mae"), pooled(diag, "corr_mae")
     p_skill = (1 - p_corr / p_raw) if (p_raw and p_corr is not None and p_raw > 0) else None
     n_tot = sum(s["n"] for s in stats.values())
+    n_eff = sum(s["n"] for s in diag.values())
     L += ["## Isotherm-depth (12 °C) gate", "",
-          f"Scored day×chain rows: **{n_tot}**", "",
+          f"Scored day×chain rows: **{n_tot}** · **n_effective (moving-obs, skill-bearing): {n_eff}**",
+          "",
+          f"> Skill is pooled over the **{len(diag)} diagnostic chain(s)** with a varying observed "
+          "isotherm; sensor-floor-pinned chains are shown but excluded from the skill number (their "
+          "'error' against a constant is not skill). With n_effective this small, read the sign and "
+          "rough magnitude, not the exact percent.", "",
           "| chain | n | raw MAE | corrected MAE | skill vs raw | persistence MAE | note |",
           "|---|---|---|---|---|---|---|"]
     for chain, s in sorted(stats.items()):
@@ -159,7 +170,7 @@ def render(stats, anchor, lead_stats=None) -> str:
         L.append(f"| {chain} | {s['n']} | {_fmt(s['raw_mae'],' m')} | {_fmt(s['corr_mae'],' m')} "
                  f"| {skill_s} | {_fmt(s['persistence_mae'],' m')} | {note} |")
     skill_p = f"{p_skill*100:+.0f}%" if p_skill is not None else "—"
-    L.append(f"| **pooled** | {n_tot} | {_fmt(p_raw,' m')} | {_fmt(p_corr,' m')} | {skill_p} | | n-weighted |")
+    L.append(f"| **pooled (diagnostic)** | {n_eff} | {_fmt(p_raw,' m')} | {_fmt(p_corr,' m')} | {skill_p} | | moving-obs chains only |")
     L += ["",
           f"**Read:** the correction {'beats' if (p_skill or 0) > 0 else 'does NOT beat'} raw LSOFS "
           f"pooled ({_fmt(p_corr,' m')} vs {_fmt(p_raw,' m')}). "
@@ -167,7 +178,11 @@ def render(stats, anchor, lead_stats=None) -> str:
           ""]
     if lead_stats:
         L += ["## Forecast skill by lead (12 C isotherm, forecast vs obs — ADR-021)", "",
-              "How the forecast the map ships degrades with lead time. Same far-chain caveats.", "",
+              "How the forecast the map ships degrades with lead time. Same far-chain caveats. "
+              "**NOT YET DIAGNOSTIC:** most forecast rows are the sensor-floor-pinned chain, so the "
+              "per-lead MAE below is largely noise around a constant and is expected to be flat / "
+              "non-monotonic — do not read lead-decay from it until ≥2 chains carry a moving obs "
+              "across ≥2 leads.", "",
               "| lead | n | corrected MAE | raw MAE |", "|---|---|---|---|"]
         for Lh in sorted(lead_stats):
             s = lead_stats[Lh]

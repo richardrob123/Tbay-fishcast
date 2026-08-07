@@ -9,19 +9,21 @@ these proxies.
 
 ## Isotherm-depth (12 °C) gate
 
-Scored day×chain rows: **3**
+Scored day×chain rows: **3** · **n_effective (moving-obs, skill-bearing): 1**
+
+> Skill is pooled over the **1 diagnostic chain(s)** with a varying observed isotherm; sensor-floor-pinned chains are shown but excluded from the skill number (their 'error' against a constant is not skill). With n_effective this small, read the sign and rough magnitude, not the exact percent.
 
 | chain | n | raw MAE | corrected MAE | skill vs raw | persistence MAE | note |
 |---|---|---|---|---|---|---|
 | 45216 | 1 | 7.37 m | 3.93 m | +47% | — |  |
 | llo1 | 2 | 2.33 m | 1.22 m | +48% | 0.00 m | obs sensor-pinned (constant) — persistence is trivially 0, discount it |
-| **pooled** | 3 | 4.01 m | 2.12 m | +47% | | n-weighted |
+| **pooled (diagnostic)** | 1 | 7.37 m | 3.93 m | +47% | | moving-obs chains only |
 
-**Read:** the correction beats raw LSOFS pooled (2.12 m vs 4.01 m). Skill is the audit's demotion test (ADR-006): a correction that can't beat raw gets benched.
+**Read:** the correction beats raw LSOFS pooled (3.93 m vs 7.37 m). Skill is the audit's demotion test (ADR-006): a correction that can't beat raw gets benched.
 
 ## Forecast skill by lead (12 C isotherm, forecast vs obs — ADR-021)
 
-How the forecast the map ships degrades with lead time. Same far-chain caveats.
+How the forecast the map ships degrades with lead time. Same far-chain caveats. **NOT YET DIAGNOSTIC:** most forecast rows are the sensor-floor-pinned chain, so the per-lead MAE below is largely noise around a constant and is expected to be flat / non-monotonic — do not read lead-decay from it until ≥2 chains carry a moving obs across ≥2 leads.
 
 | lead | n | corrected MAE | raw MAE |
 |---|---|---|---|

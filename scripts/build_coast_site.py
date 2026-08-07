@@ -302,9 +302,11 @@ TARGETS = (12.0, 10.0, 8.0)
 SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
 OPTIMAL_SUIT = 0.7      # thermal_suitability at/above this = optimal-temperature core
 IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
-# From the measured CHS NONNA slope distribution, a genuine nearshore drop-off/ledge is ~>=0.15
-# rise/run (~8-12% of reachable water — real breaks, not the shelf). Tier T4 physical bar.
-STRUCT_SLOPE_ABS = 0.15   # rise/run: a real bottom break / drop-off / ledge
+# DERIVED FROM DATA, not picked: the 90th percentile of |grad depth| pooled over reachable water
+# across all 9 surveyed stretches (n=464k px) = 0.162 rise/run — the steep tail = real breaks, not
+# the gentle shelf. Reproduce with scripts/analyze_bathy_slope.py; measurement in
+# data/calib/bathy_slope.json. Re-run if STRETCHES/bathymetry change.
+STRUCT_SLOPE_ABS = 0.16   # rise/run: a real bottom break / drop-off / ledge (pooled regional p90)
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,

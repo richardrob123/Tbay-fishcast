@@ -1,0 +1,83 @@
+{
+ "struct_slope_abs": 0.162,
+ "percentile": 90,
+ "pooled_percentiles": {
+  "50": 0.021,
+  "66": 0.044,
+  "75": 0.066,
+  "85": 0.115,
+  "90": 0.162,
+  "95": 0.257,
+  "99": 0.527
+ },
+ "n_pixels": 463960,
+ "per_stretch_percentiles": {
+  "chippewa": {
+   "50": 0.007,
+   "75": 0.04,
+   "90": 0.108,
+   "95": 0.177
+  },
+  "kam_mission": {
+   "50": 0.021,
+   "75": 0.071,
+   "90": 0.189,
+   "95": 0.279
+  },
+  "mckellar_harbour": {
+   "50": 0.019,
+   "75": 0.072,
+   "90": 0.188,
+   "95": 0.281
+  },
+  "marina_mcvicar": {
+   "50": 0.023,
+   "75": 0.072,
+   "90": 0.173,
+   "95": 0.263
+  },
+  "boulevard_current": {
+   "50": 0.018,
+   "75": 0.039,
+   "90": 0.09,
+   "95": 0.15
+  },
+  "current_barepoint": {
+   "50": 0.017,
+   "75": 0.04,
+   "90": 0.064,
+   "95": 0.085
+  },
+  "shipyard_mackenzie": {
+   "50": 0.042,
+   "75": 0.086,
+   "90": 0.138,
+   "95": 0.185
+  },
+  "mackenzie_silver": {
+   "50": 0.019,
+   "75": 0.058,
+   "90": 0.13,
+   "95": 0.202
+  },
+  "silver_islet": {
+   "50": 0.05,
+   "75": 0.152,
+   "90": 0.331,
+   "95": 0.488
+  }
+ },
+ "stretches": [
+  "chippewa",
+  "kam_mission",
+  "mckellar_harbour",
+  "marina_mcvicar",
+  "boulevard_current",
+  "current_barepoint",
+  "shipyard_mackenzie",
+  "mackenzie_silver",
+  "silver_islet"
+ ],
+ "definition": "Absolute bar for a real bottom break: the pXX percentile of |grad depth| pooled over reachable water across all surveyed stretches (CHS NONNA-10). Reproducible from the regional bathymetry, not a picked constant.",
+ "retrieved_utc": "2026-08-07T18:23:18Z"
+}

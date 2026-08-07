@@ -106,7 +106,7 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   was a per-scene PERCENTILE (top ~third of each stretch's gradient/slope), so ~a third of every
   stretch was always flagged prime regardless of whether real structure existed — "best available
   today", not "truly good". Replaced with an ABSOLUTE physical bar from the measured NONNA slope
-  distribution: a real drop-off/break is >=0.15 rise/run (~8-12% of reachable water). Now a flat,
+  distribution: a real drop-off/break is >=0.16 rise/run (the p90 of the pooled regional slope; scripts/analyze_bathy_slope.py, data/calib/bathy_slope.json). Now a flat,
   featureless stretch yields little or no prime; prime concentrates on genuine breaks (city arc
   prime fell to ~0-9% of shaded, staying high only where the geography really is steep-and-cold —
   Silver Islet, and the low-confidence Little Trout Bay). (2) The modelled thermal-FRONT gradient
