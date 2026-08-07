@@ -85,7 +85,12 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
     # the surface — every spot reads reachable). Slowly-varying SST makes a recent
     # prior day a sound anchor.
     _px = glsea.fetch_recent_sst(lat, lon, issue)
-    surf_sst = _px.sst_c if _px is not None else None
+    # Apply the SAME measured nearshore warm-delta the map uses (validation finding #1): GLSEA's
+    # ~1 km pixel reads the nearshore too cold, so the pins must warm the anchor identically or
+    # the two published views disagree on the same water. Shared helper = single source of truth.
+    from tbay_fishcast.features.nearshore import nearshore_surface_delta
+    _ns_delta, _ = nearshore_surface_delta()
+    surf_sst = (_px.sst_c + _ns_delta) if _px is not None else None
     points = []
     grid = None
     for kind, fh, lead in LEADS:

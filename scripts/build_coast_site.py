@@ -108,24 +108,12 @@ OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
 
 
-NEARSHORE_ANCHOR = Path(__file__).resolve().parents[1] / "data" / "nearshore_anchor.csv"
-
-
 def _nearshore_delta():
-    """Measured shore-minus-GLSEA surface warm-delta (°C) and its n, from the Landsat
-    nearshore-anchor log. GLSEA's ~1 km pixel cannot resolve the nearshore warming; Landsat
-    30 m over the shore reads +1.7…2.8 °C warmer (n small). We add this to the surface anchor
-    so the shallow nearshore profile isn't dragged cold by the offshore satellite value — a
-    MEASURED correction (directionally certain), not a guess. Returns (delta_c, n) or (0.0, 0)."""
-    try:
-        import csv
-        rows = list(csv.DictReader(open(NEARSHORE_ANCHOR)))
-        deltas = [float(r["delta_c"]) for r in rows if r.get("delta_c") not in (None, "")]
-    except (OSError, ValueError, KeyError):
-        return 0.0, 0
-    if not deltas:
-        return 0.0, 0
-    return sum(deltas) / len(deltas), len(deltas)
+    """Measured shore-minus-GLSEA surface warm-delta (°C) and its n. Delegates to the SHARED
+    features.nearshore helper so the map and the station-pin path apply the identical correction
+    (validation finding #1 — they had diverged). See that module for provenance."""
+    from tbay_fishcast.features.nearshore import nearshore_surface_delta
+    return nearshore_surface_delta()
 
 
 FORECAST_ERR = Path(__file__).resolve().parents[1] / "data" / "calib" / "forecast_lead_error.json"
