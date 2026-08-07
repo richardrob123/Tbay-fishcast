@@ -79,15 +79,22 @@ The spatial/thermal engine is **disciplined and mostly honest**, but three thing
   "Best for … today" chip row in the header; clicking a spot flies the map there.
 - **T4b Mobile layout** — the two cards squeeze the map into a thin strip; the forecast is the
   smallest thing on a phone (the primary use case). Reclaim map space (collapsible header, etc.).
-- **T4c Species-aware station pins** — green/blue = cold-water reachability (a laker signal) shown
-  unchanged for warm-preferring salmon/steelhead, and not legended.
-- **T4d Wave / safety layer** — the product tells humans to stand on exposed Superior points; a
-  wave/chop layer (NDBC `WVHT` + Open-Meteo marine, cross-checked) is a safety completion + a
-  feeding-trigger note.
+- **T4c Species-aware station pins** — ✅ station pins (cold-water reachability = a lake-trout
+  signal) now recolor to a muted tone + dim to 0.5 for the warm-preferring weak-cue species, and the
+  popup says plainly "this is cold-water reachability, a lake-trout signal; for <species> fish the
+  river mouths + run windows instead." UI-only, no fabricated data.
+- **T4d Wave / safety layer** — ❌ REJECTED on data quality (tested 2026-08-07). No trustworthy
+  nearshore wave source is cheaply available: Open-Meteo `marine` returns 0.66–0.74 m for Thunder
+  Bay on a light-wind day when the nearest real buoy (NDBC 45027) observes 0.10 m — a ~7× disagreement
+  (the marine model is not validated for Lake Superior nearshore), and the offshore NDBC buoys are
+  ~30–150 km out with WVHT often `MM`, so they don't represent shore chop. Shipping a safety-critical
+  layer from unvalidated data is worse than none (rule 3/8). Moved to the tested-rejected list.
 
 ## Explicitly NOT chasing (tested-and-rejected or no cheap source)
 
 FVCOM currents (u/v coherent at only 1 of 3 spots — demoted, DATA_AUDIT.md), net_heat_flux (not
 orthogonal), spatial SST fronts (LSOFS r≈0.14, GLSEA coarser), chlorophyll/turbidity (null at the
 Thunder Bay nearshore), tributary temperature (not served by ECCC), creel/stocking/forage surveys
-(static climatology, not a dynamic input). The one true unlock remains operator field-catch logs.
+(static climatology, not a dynamic input), **nearshore wave/chop (T4d — Open-Meteo marine unvalidated
+for Superior, ~7× off the one real buoy obs; offshore buoys too far/missing).** The one true unlock
+remains operator field-catch logs.

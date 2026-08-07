@@ -223,6 +223,7 @@ function applyLayers(){
   paintFills();
   renderLegend();
   updateMarkers();
+  updateStations();
   renderTopSpots();
 }
 // Fill opacity, honesty-aware. For a WEAK-cue species (salmon/steelhead) the model itself says
@@ -391,6 +392,22 @@ function renderTopSpots(){
   });
 }
 
+let STATIONS = [];
+// station pins = cold-water reachability = a LAKE-TROUT signal. Recolor/dim per species: full
+// green/gray for the cold-cued species (laker, coaster), muted for the warm-preferring weak-cue
+// species where "cold reachable" is not the point (T4c). Popup carries the same caveat.
+function updateStations(){
+  if(!curSp) return;
+  const coldCued = curSp.temp_cue !== 'weak';
+  STATIONS.forEach(o => {
+    const st = o.st;
+    const bg = coldCued ? (st.now ? (st.now_certain===false ? '#a7d98c' : '#39d353') : '#8894a0')
+                        : '#6b7682';           // one muted tone for warm-cued species
+    o.el.style.background = bg;
+    o.el.style.opacity = coldCued ? '1' : '0.5';
+    o.pop.setHTML(stationHTML(st, coldCued));
+  });
+}
 let MARKERS = [];
 function updateMarkers(){
   if(!curSp) return;
@@ -470,15 +487,18 @@ map.on('load', async () => {
   buildSpeciesChips();
   if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: {top:70,bottom:150,left:30,right:30}, duration:0 });
 
-  // station markers (solid green only when the WHOLE bias band agrees it's open)
+  // station markers. The green/gray verdict is COLD-WATER REACHABILITY — a lake-trout signal
+  // (cold hypolimnion within a cast). For the warm-preferring weak-cue species it doesn't mean
+  // "good here", so the pins de-emphasize + the popup says so when such a species is selected (T4c).
   (man.stations||[]).forEach(st => {
-    const bg = st.now ? (st.now_certain===false ? '#a7d98c' : '#39d353') : '#8894a0';
     const el = document.createElement('div');
     el.style.cssText = 'width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;'+
-      'box-shadow:0 0 0 2px #0009;cursor:pointer;background:'+bg;
-    const pop = new maplibregl.Popup({offset:14, closeButton:false}).setHTML(stationHTML(st));
+      'box-shadow:0 0 0 2px #0009;cursor:pointer;transition:opacity .15s,background .15s';
+    const pop = new maplibregl.Popup({offset:14, closeButton:false});
     new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
+    STATIONS.push({el, st, pop});
   });
+  updateStations();
 
   // river-mouth structure markers — plume/forage that rivals temperature for shore catch,
   // decisive for the weak-cue species (docs/FISH_BEHAVIOR_REVIEW.md). Teardrop pins, dimmed
@@ -548,17 +568,21 @@ map.on('load', async () => {
   renderTopSpots();    // best spots for the default species
 });
 
-function stationHTML(st){
+function stationHTML(st, coldCued=true){
   // cell tone mirrors the band: solid green = whole band agrees, pale = central-only
   const traj = (st.traj||[]).map(p => {
     const cls = p.certain ? 'go' : (p.reach ? 'go soft' : '');
     return `<div class="c ${cls}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${p.label}</div>`;
   }).join('');
+  // for the warm-preferring weak-cue species, say plainly that cold-reachability isn't their signal
+  const caveat = coldCued
+    ? `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div>`
+    : `<div class="v" style="color:#8a6d00;font-size:10.5px;margin-top:5px">this pin is cold-water reachability — a lake-trout signal. For ${curSp?curSp.name.split(/[(\/]/)[0].trim().toLowerCase():'this species'} it's a minor cue; fish river mouths + the run windows instead.</div>`;
   return `<div class="pop"><b class="v">${st.name.split('—')[0].trim()}</b>`+
     `<div class="v" style="margin-top:3px">${st.verdict}</div>`+
     (st.surf_sst!=null?`<div class="v" style="color:#555;font-size:12px;margin-top:2px">surface ${st.surf_sst}°C</div>`:'')+
     `<div class="traj">${traj}</div>`+
-    `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div></div>`;
+    caveat+`</div>`;
 }
 
 function markerHTML(m){
