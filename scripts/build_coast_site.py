@@ -413,7 +413,10 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         core = suit >= OPTIMAL_SUIT
         good = core | (fair & edge)
         prime = core & edge                                  # hold + feed — the combined best bet
-        tiers = {"s1": fair, "s2": good, "s3": prime}
+        # DISJOINT tiers: paint each pixel exactly once (outer fair ring, good ring, prime core)
+        # so semi-transparent fills don't COMPOUND into an opaque slab over enclosed basins —
+        # the map reads as a light graded wash you can see the water through, not a solid blob.
+        tiers = {"s1": fair & ~good, "s2": good & ~prime, "s3": prime}
         emitted_any = False
         for tag, _label in SUIT_LEVELS:
             mask = tiers[tag]
