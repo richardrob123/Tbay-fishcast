@@ -145,7 +145,8 @@ def _iso_field(gx, gy, iso_pts, vals):
 TARGETS = (12.0, 10.0, 8.0)
 
 
-def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod):
+def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
+             targets=TARGETS, species=()):
     """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
 
     Two honest signals, no false precision:
@@ -160,7 +161,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     """
     central, lo, hi, n = bias
     iso_pts = []
-    tvals = {t: [] for t in TARGETS}          # central isotherm depth per target
+    tvals = {t: [] for t in targets}          # central isotherm depth per target
     f_sh, f_ce, f_de = [], [], []             # 12 °C shallow/central/deep for the front ribbon
     for i, nd in enumerate(inbox):
         col = cols.get(str(int(nd)))
@@ -174,7 +175,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             continue
         iso_pts.append(node_xy[i])
         # 999 sentinel = no crossing (column never that cold) => below any bottom => unreachable
-        for t in TARGETS:
+        for t in targets:
             zc = thermocline.isotherm_band(depths, raw, bm, t)["central"]
             tvals[t].append(zc if zc is not None else 999.0)
         f_ce.append(prim["central"])
@@ -223,39 +224,28 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             rings += [[list(c) for c in r.coords] for r in gg.interiors]
             area_feats.append((tag, rings))
 
-    geoms = {}
-    for t in TARGETS:
-        iso = _iso_field(gx, gy, iso_pts, tvals[t])
-        _cold, reachable = cold_reachable(depth, iso, dist, **kw)
-        if t == prod.target_c:
-            reach_px_primary = float(reachable.sum())
-        geoms[t] = _shape(reachable)
-    # CLIP each colder band into its warmer parent so the nested fills align EXACTLY.
-    # The masks nest at pixel level, but independent smoothing during polygonization let a
-    # colder band's edge drift outside its parent, showing teal/blue slivers with no green
-    # under them (user-caught colour blotches). Intersection removes that.
-    if geoms[10.0] and geoms[12.0]:
-        geoms[10.0] = geoms[10.0].intersection(geoms[12.0])
-    if geoms[8.0] and geoms[10.0]:
-        geoms[8.0] = geoms[8.0].intersection(geoms[10.0])
-    for t in TARGETS:
-        _emit(geoms[t], f"t{int(t)}")
-
-    # "Just past a standard cast": the 75-150 m cold RING (a long cast, or a short wade onto
-    # the shelf then a cast), clipped to sit strictly OUTSIDE the within-cast zone so the
-    # faint band never overlaps the solid fills.
-    iso12 = _iso_field(gx, gy, iso_pts, tvals[prod.target_c])
-    cold12 = np.isfinite(depth) & (depth >= iso12) & (depth <= prod.max_reach_depth_m)
-    far_ring = cold12 & (dist > prod.cast_m) & (dist <= 2.0 * prod.cast_m)
-    far_geom = _shape(far_ring)
-    if far_geom is not None and geoms[12.0] is not None:
-        far_geom = far_geom.difference(geoms[12.0])
-    _emit(far_geom, "t12far")
-
-    # t12 boundary kept in the lines file (the web no longer draws it, but the manifest
-    # still references it) — harmless and tiny.
-    for gg in _polys(geoms[12.0]):
-        lines.append(("edge", [list(c) for c in gg.exterior.coords]))
+    # PREFERRED-RANGE model (docs/FISH_BEHAVIOR_REVIEW.md): for each species, shade water whose
+    # BOTTOM temperature is within [cold, warm] and reachable within a cast — a depth annulus
+    # between two isotherms, not "colder = better". The isotherm-DEPTH field for each temperature
+    # is computed once and reused across species. The UI outlines each range band; that outline is
+    # the thermal FRONT / feeding edge (the prime mark), so no separate line geometry is emitted.
+    iso_fields = {t: _iso_field(gx, gy, iso_pts, tvals[t]) for t in targets}
+    water = np.isfinite(depth)
+    within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
+    default_id = None
+    for sp in species:
+        cold_c, warm_c = sp.range_c
+        iso_warm = iso_fields.get(warm_c)      # shallow isotherm = warm edge of the range
+        iso_cold = iso_fields.get(cold_c)      # deeper isotherm = cold edge
+        if iso_warm is None or iso_cold is None:
+            continue
+        # bottom in [cold, warm]  <=>  iso_depth(warm) <= depth <= iso_depth(cold)
+        rng = within & (depth >= iso_warm) & (depth <= iso_cold)
+        _emit(_shape(rng), "sp:" + sp.id)
+        if sp.default or (default_id is None and sp is species[0]):
+            reach_px_primary = float(rng.sum())
+            default_id = sp.id
+    # keep a (possibly empty) lines file so the manifest reference stays valid
     return area_feats, reach_px_primary, lines
 
 
@@ -334,7 +324,8 @@ def main(argv) -> int:
             ds.close()
             area, reach_px, lines = _overlay(depth, dist, gx, gy, inbox, node_xy,
                                              cols, g_sst, bias, patch.bounds_3857, res,
-                                             cfg.product)
+                                             cfg.product, targets=cfg.band_temps,
+                                             species=cfg.species)
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
@@ -421,7 +412,10 @@ def main(argv) -> int:
         "age_h": round(age_h, 1), "stale": age_h > 18,
         "target_c": cfg.product.target_c, "cast_m": cfg.product.cast_m,
         "max_reach_depth_m": cfg.product.max_reach_depth_m,
-        "targets_c": list(TARGETS),        # thermal-habitat bands shaded on the map
+        "targets_c": list(cfg.band_temps),  # every isotherm shaded (union across species)
+        "species": [{"id": sp.id, "name": sp.name, "range_c": list(sp.range_c),
+                     "front_c": sp.front_c, "temp_cue": sp.temp_cue,
+                     "default": sp.default, "note": sp.note} for sp in cfg.species],
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},

@@ -91,11 +91,50 @@ class ProductConfig:
 
 
 @dataclass(frozen=True)
+class Species:
+    """A target species and its PREFERRED-RANGE thermal model (stations.yaml `species:`).
+    range_c=(cold, warm) °C: the map shades where the bottom is within this range and reachable
+    within a cast. front_c is the warm-edge isotherm (the thermal break where fish feed) drawn as
+    the prime mark. temp_cue 'strong'|'weak' flags how predictive temperature is for this species.
+    See docs/FISH_BEHAVIOR_REVIEW.md."""
+    id: str
+    name: str
+    range_c: tuple[float, float]
+    front_c: float
+    temp_cue: str = "strong"
+    default: bool = False
+    tier: str = "T3"
+    note: str = ""
+
+
+def _default_species() -> tuple[Species, ...]:
+    return (Species("lake_trout", "Lake trout", (6.0, 12.0), 12.0, "strong", default=True),)
+
+
+@dataclass(frozen=True)
 class Config:
     lsofs: LsofsConfig
     temporal_split: TemporalSplit
     stations: tuple[Station, ...] = field(default_factory=tuple)
     product: ProductConfig = field(default_factory=ProductConfig)
+    species: tuple[Species, ...] = field(default_factory=_default_species)
+
+    @property
+    def default_species(self) -> Species:
+        for s in self.species:
+            if s.default:
+                return s
+        return self.species[0]
+
+    @property
+    def band_temps(self) -> tuple[float, ...]:
+        """All distinct isotherm temperatures needed across species (range endpoints + fronts),
+        warmest first — the map computes each isotherm-depth field once and reuses it."""
+        temps = set()
+        for sp in self.species:
+            temps.update(sp.range_c)
+            temps.add(sp.front_c)
+        return tuple(sorted(temps, reverse=True))
 
     def station(self, station_id: str) -> Station:
         for s in self.stations:
@@ -153,8 +192,18 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
         cast_m=float(p.get("cast_m", 75.0)),
         max_reach_depth_m=float(p.get("max_reach_depth_m", 22.0)),
     )
+    sp_raw = raw.get("species") or []
+    species = tuple(
+        Species(id=s["id"], name=s["name"],
+                range_c=(float(s["range_c"][0]), float(s["range_c"][1])),
+                front_c=float(s.get("front_c", s["range_c"][1])),
+                temp_cue=s.get("temp_cue", "strong"),
+                default=bool(s.get("default", False)),
+                tier=s.get("tier", "T3"), note=s.get("note", ""))
+        for s in sp_raw
+    ) or _default_species()
     return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations,
-                  product=product)
+                  product=product, species=species)
 
 
 def knowledge_pack_version(knowledge_dir: Path | str = KNOWLEDGE_DIR) -> str:

@@ -60,7 +60,15 @@ species.
 - **Fall:** lake trout stage on rocky shoals to spawn at 8–11 °C surface, cooling/photoperiod-
   driven; upwelling secondary. Best shore window of the year — deserves its own regime.
 
-## Proposed changes (need sign-off)
+## Status (ADR-024)
+
+**Shipped:** species-aware **preferred-range** map (bottom-temp within `range_c`, reachable within
+a cast) with the warm-edge **front** as the prime mark; species chips; salmon/steelhead flagged
+weak-cue. This replaces the "colder = better" single band.
+**Next increment (not yet shipped):** upwelling-**phase** indicator from **observed** recent winds
+(relaxation = prime), and **river-mouth** structure markers.
+
+## Original proposed changes
 
 1. **Relabel the thermal bands** (small, ships in the map): sweet spot → ~6–10 °C, 12 °C = outer
    margin, ceiling 15 °C. Update `stations.yaml product:` provenance + the legend copy.

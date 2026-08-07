@@ -31,3 +31,16 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
 - **ADR-021 — Forecast-lead verification gate + (deferred) lead-dependent band.** The isotherm-depth gate scored only the nowcast; the product ships a +0…120 h forecast. `accumulate_forecast_gate.py` now scores the FORECAST at each lead (issued L hours before the valid day, anchored to issue-time GLSEA — no truth-leak) into `data/forecast_gate_log.csv`, so the scorecard can report how skill decays with lead. The lead-dependent band-widening it enables is DEFERRED until that log has respectable per-lead n — the widening factor must come from the measured lead error, not a hand-picked coefficient (rules 6/8).
 - **ADR-022 — Coverage beyond the continuous city arc: detached SW (Little Trout Bay/Cloud Bay) and NE (Silver Islet/Sleeping Giant) clusters.** Added shore stretches SW toward Little Trout Bay and NE at Silver Islet. These are NOT continuous with the city arc — the shore between (≈48.15–48.25 SW; Black Bay to the NE) is unsurveyed in NONNA, so they render as separate fishable clusters. Centers were geocoded (OSM Nominatim) after a coordinate error put earlier guesses tens of km offshore; each was re-probed for NONNA coverage before inclusion (Little Trout Bay ~14 %, Silver Islet ~70 %). Access/regs for Sleeping Giant PP are the operator's to verify (owner handles regs, per this session). Little Trout Bay's low NONNA coverage is disclosed, not hidden (docs/COVERAGE.md); satellite-derived bathymetry is the only path to fill it further and is left as a future option.
 - **ADR-023 — LSOFS file bytes cached in-process (bounded LRU).** The coast build opened each LSOFS lead file once per stretch; caching the fetched bytes by URL (files are immutable once posted) cuts N_stretches×N_leads fetches to one per distinct file — the efficiency lever that makes coverage expansion cheap. Bounded (8-slot LRU) so long backfill day-loops can't OOM.
+
+- **ADR-024 — Species-aware PREFERRED-RANGE map (not "colder = better").** The fish-behavior
+  review (docs/FISH_BEHAVIOR_REVIEW.md) showed the single cold-band map conflated *where cold-
+  adapted fish live* with *where they're catchable*, and inverted the signal for warmer-preferring
+  species. The map is now species-aware: per species a `range_c=[cold,warm]` preferred band (bottom
+  temperature within range, reachable within a cast) with the warm-edge **front** drawn as the prime
+  mark (fish feed at the thermal edge / on upwelling relaxation, not the coldest trough). Species
+  and their ranges live in `stations.yaml species:` (behavioural T3, refine vs GLFC/USGS); the build
+  computes each isotherm once and emits one range band per species (temp='sp:<id>'); the UI chips
+  swap species and flag temp_cue=weak (salmon/steelhead are plume/season driven). NEXT (not yet
+  shipped): an upwelling-PHASE indicator driven by OBSERVED recent winds (setup/peak/relaxing — the
+  relaxation phase is the prime bite), and river-mouth structure markers. lake_trout stays the
+  default and best-calibrated.

@@ -28,7 +28,11 @@
   .age{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .age.stale{color:var(--warn);font-weight:650}
   .spacer{flex:1}
-  #legend{display:flex;gap:11px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .species{display:flex;gap:6px;flex-wrap:wrap;width:100%;margin:2px 0 7px}
+  .spchip{font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;
+    background:var(--chip,#2a2f37);color:var(--ink);border:1px solid #ffffff22;line-height:1.1}
+  .spchip.on{background:#22b39a;color:#04120d;border-color:#22b39a;font-weight:650}
+  #legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap;width:100%}
   #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
   #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:5px;opacity:.9}
   #legnote summary{cursor:pointer;list-style:none;line-height:1.3}
@@ -80,23 +84,21 @@
 <div id="err"></div>
 
 <div class="card" id="top">
-  <h1><span class="fish">🎣</span> Thunder Bay cold-water forecast</h1>
+  <h1><span class="fish">🎣</span> Thunder Bay shore-fishing forecast</h1>
   <span class="age" id="age"></span>
   <span class="spacer"></span>
-  <div id="legend">
-    <span><span class="sw" style="background:#7be08f"></span>≤12°</span>
-    <span><span class="sw" style="background:#22b39a"></span>≤10°<span class="opt">opt</span></span>
-    <span><span class="sw" style="background:#2f83d6"></span>≤8°</span>
-    <span><span class="sw" style="background:#7be08f;opacity:.4"></span>past cast</span>
-  </div>
+  <div id="species" class="species"></div>
+  <div id="legend"></div>
   <details id="legnote">
-    <summary>darker = colder reachable water · 10–12&nbsp;°C = laker sweet spot · ⓘ</summary>
-    <div class="more">Shaded where the bottom is colder than each threshold within a ~75&nbsp;m cast
-      (≤22&nbsp;m deep); nested, so darker = colder. Lakers prefer ~10&nbsp;°C — <b>10–12&nbsp;°C is the
-      sweet spot</b>, ≤8&nbsp;°C marks strongest upwelling (not "colder is better"). The faint zone is
-      cold water just <b>past a standard cast</b> (a long cast or a short wade off a point). Edges are
-      uncertain ~100–300&nbsp;m, so treat them as fuzzy. Forecasts <b>water, not fish</b> — check Ontario
-      regs before fishing.</div>
+    <summary>how to read this · ⓘ</summary>
+    <div class="more">Shaded where the <b>bottom temperature is within the selected species' preferred
+      range</b> and reachable within a ~75&nbsp;m cast (≤22&nbsp;m deep). The bold edge is the
+      <b>thermal front</b> — the temperature break where cold upwelled water meets warmer water and
+      baitfish gather; that edge is where fish feed, especially as an upwelling <b>relaxes</b> (a
+      fresh cold blast first slows the bite). Edges are uncertain ~100–300&nbsp;m — treat them as
+      fuzzy. Temperature is one cue: <b>river mouths, points, break walls, and dawn/dusk</b> matter
+      too, and for salmon/steelhead the plume/season drives more than temperature. Forecasts
+      <b>water, not fish</b> — check Ontario regs before fishing.</div>
   </details>
 </div>
 
@@ -118,7 +120,40 @@
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC";
 
-let MAP, MAN, cur = 0, playing = null;
+let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
+// species-band filter: features carry temp='sp:<id>'
+const SF = (l,id) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id]];
+function buildSpeciesChips(){
+  const el = document.getElementById('species'); if(!el) return;
+  el.innerHTML = SPECIES.map(s =>
+    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${s.id}" title="${s.note||''}">${s.name}</button>`).join('');
+  el.querySelectorAll('.spchip').forEach(b => b.addEventListener('click', () => {
+    curSp = SPECIES.find(x=>x.id===b.dataset.id);
+    el.querySelectorAll('.spchip').forEach(x=>x.classList.toggle('on', x===b));
+    applyLayers();
+  }));
+}
+function applyLayers(){
+  if(!MAN || !curSp) return;
+  MAN.stretches.forEach((s,k) => {
+    if(!s.area) return;
+    const day = s.days[Math.min(cur, s.days.length-1)];
+    const f = SF(day.lead, curSp.id);
+    map.getLayer('arfill'+k) && map.setFilter('arfill'+k, f);
+    map.getLayer('arln'+k)   && map.setFilter('arln'+k, f);
+  });
+  renderLegend();
+}
+function renderLegend(){
+  const el = document.getElementById('legend'); if(!el || !curSp) return;
+  const weak = curSp.temp_cue === 'weak';
+  const cue = weak ? '⚠ temperature is a MINOR cue here — fish river mouths/plumes'
+                   : 'temperature predicts this species well';
+  el.innerHTML =
+    `<span><span class="sw" style="background:#22b39a"></span>${curSp.range_c[0]}–${curSp.range_c[1]}°C reachable</span>`+
+    `<span><span class="sw" style="background:#0f5132;height:3px;border-radius:0"></span>thermal front — cast the edge</span>`+
+    `<span style="color:${weak?'#c98a2b':'var(--muted)'}">${cue}</span>`;
+}
 
 function fail(msg){
   document.getElementById('load').style.display='none';
@@ -157,37 +192,25 @@ map.on('load', async () => {
   const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
   man._v = V;
   const lead0 = man.stretches[0].days[0].lead;
-  // day + thermal-band filters. Area fills carry temp=t12|t10|t8 (nested: t8 ⊆ t10 ⊆ t12);
-  // front lines carry band=central|possible|certain (12 °C uncertainty ribbon).
-  const FT = (l,t) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], t]];
-  const FB = (l,b) => ['all', ['==',['get','lead'], l],
-                       ['==', ['coalesce',['get','band'],'central'], b]];
-  // Thermal-habitat palette: 12 °C = comfort ceiling (light green), 10 °C = laker
-  // optimum (teal), 8 °C = deep cold / strong upwelling (blue). Painter order t12→t8
-  // so the coldest reachable water reads darkest on top.
-  const TEMP = [['t12','#7be08f',0.30], ['t10','#22b39a',0.40], ['t8','#2f83d6',0.52]];
+  // PREFERRED-RANGE model: area features carry temp='sp:<id>' (per species). One soft fill +
+  // one crisp FRONT outline per stretch; the outline is the thermal edge where fish feed. The
+  // species chips + day slider just re-target the filter. See docs/FISH_BEHAVIOR_REVIEW.md.
+  SPECIES = (man.species && man.species.length) ? man.species
+    : [{id:'lake_trout',name:'Lake trout',range_c:[6,12],front_c:12,temp_cue:'strong',default:true}];
+  curSp = SPECIES.find(s=>s.default) || SPECIES[0];
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
-    // Everything is VECTOR so it stays crisp at any zoom (no raster pixelation).
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
-      // "just past a standard cast" — faint fill, no outline (an outline around a thin
-      // band draws both its sides and reads as a doubled line — user-caught).
-      map.addLayer({ id:'arfar'+i, type:'fill', source:'ar'+i, filter:FT(lead0,'t12far'),
-        paint:{ 'fill-color':'#7be08f', 'fill-opacity':0.16 } });
-      TEMP.forEach(([t,col,op]) => {
-        map.addLayer({ id:'ar'+t+i, type:'fill', source:'ar'+i, filter:FT(lead0,t),
-          paint:{ 'fill-color':col, 'fill-opacity':op } });
-      });
-      // ONE thin, muted outline on the ≤12 °C edge for definition — not the old bold red
-      // front, which (as a closed boundary of a thin band) traced each side and looked
-      // like two red lines. The nested fills carry the story; this just crisps the edge.
-      map.addLayer({ id:'aro'+i, type:'line', source:'ar'+i, filter:FT(lead0,'t12'),
+      map.addLayer({ id:'arfill'+i, type:'fill', source:'ar'+i, filter:SF(lead0, curSp.id),
+        paint:{ 'fill-color':'#22b39a', 'fill-opacity':0.30 } });
+      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:SF(lead0, curSp.id),
         layout:{ 'line-join':'round' },
-        paint:{ 'line-color':'#1f7a44', 'line-width':0.8, 'line-opacity':0.5 } });
+        paint:{ 'line-color':'#0f5132', 'line-width':1.6, 'line-opacity':0.85 } });
     }
     s.corners.forEach(c => bounds.extend(c));
   });
+  buildSpeciesChips();
   if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: {top:70,bottom:150,left:30,right:30}, duration:0 });
 
   // station markers (solid green only when the WHOLE bias band agrees it's open)
@@ -229,10 +252,8 @@ map.on('load', async () => {
   document.getElementById('op').addEventListener('input', e => {
     const o = +e.target.value/100;
     man.stretches.forEach((s,i)=>{
-      map.getLayer('art12'+i) && map.setPaintProperty('art12'+i,'fill-opacity', o*0.36);
-      map.getLayer('art10'+i) && map.setPaintProperty('art10'+i,'fill-opacity', o*0.48);
-      map.getLayer('art8'+i)  && map.setPaintProperty('art8'+i,'fill-opacity', o*0.62);
-      map.getLayer('aro'+i)   && map.setPaintProperty('aro'+i,'line-opacity', o*0.5);
+      map.getLayer('arfill'+i) && map.setPaintProperty('arfill'+i,'fill-opacity', o*0.30);
+      map.getLayer('arln'+i)   && map.setPaintProperty('arln'+i,'line-opacity', o*0.85);
     });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
@@ -267,16 +288,7 @@ function localLabel(d){
 function setDay(i){
   cur = i;
   const man = MAN;
-  const FT = (l,t) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], t]];
-  const FB = (l,b) => ['all', ['==',['get','lead'], l],
-                       ['==', ['coalesce',['get','band'],'central'], b]];
-  man.stretches.forEach((s, k) => {
-    const day = s.days[Math.min(i, s.days.length-1)];
-    const tmp = { ['arfar'+k]:'t12far', ['art12'+k]:'t12', ['art10'+k]:'t10',
-                  ['art8'+k]:'t8', ['aro'+k]:'t12' };
-    Object.entries(tmp).forEach(([id,t]) => {
-      if(map.getLayer(id)) map.setFilter(id, FT(day.lead, t)); });
-  });
+  applyLayers();                       // re-target the species bands to this day's lead
   const d0 = man.stretches[0].days[i];
   document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');
   // headline total counts only well-surveyed stretches — a sparse-survey box (e.g. Little
