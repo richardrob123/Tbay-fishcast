@@ -211,18 +211,25 @@ function paintFills(){
   if(!MAN || !curSp) return;
   const o = (+document.getElementById('op').value)/100;
   const weak = curSp.temp_cue === 'weak';
+  // PHASE-SUPPRESSION dimming (audit T1c): during peak upwelling the bite is cold-shocked off, yet
+  // the thermal map would glow brightest (cold water = laker-optimal). Don't let the map shout
+  // "prime" when the banner says the bite is suppressed — dim the whole spatial layer. This is a
+  // DISPLAY coupling, not a fitted weight (the phase stays a separate honest signal, rules 6-8).
+  const lead = MAN.stretches[0] ? MAN.stretches[0].days[Math.min(cur, MAN.stretches[0].days.length-1)].lead : 0;
+  const ph = (MAN.phase && MAN.phase.by_lead) ? MAN.phase.by_lead[String(lead)] : null;
+  const suppress = ph && (ph.suppressed || ph.phase === 'peak') ? 0.35 : 1.0;
   MAN.stretches.forEach((s,k) => {
     SUIT.forEach(z => {
       const id = 'arfill'+k+'_'+z.suf;
       if(!map.getLayer(id)) return;
-      let op = o * z.op;
+      let op = o * z.op * suppress;
       // weak-cue species (salmon/steelhead): temperature AND structure barely locate them (they
       // follow plumes), so hide the confident structure GLOW entirely and fade the temp base.
       if(weak) op = GLOW.includes(z.suf) ? 0 : op*0.5;
       map.setPaintProperty(id, 'fill-opacity', op);
     });
     const ln = 'arln'+k;
-    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', weak ? 0 : o*0.7);
+    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', (weak ? 0 : o*0.7) * suppress);
   });
 }
 function renderLegend(){

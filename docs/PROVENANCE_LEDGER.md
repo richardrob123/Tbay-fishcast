@@ -25,13 +25,22 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 | Species thermal range / optimal | per species | **LITERATURE** | stations.yaml, tier T2/T3 with citations (Edsall & Cleland 2000; coaster telemetry; GLFC) |
 | Per-species min/max hold depth | e.g. laker ≥4 m | **LITERATURE** | telemetry (adult lakers off the summer-daylight flats; coasters <7 m) |
 | Bottom-temp isotherm targets | 6–16 °C, 2 °C grid | **LITERATURE** | union of the species band endpoints (`config.band_temps`) |
-| Nearshore surface warm-delta | +2.35 °C (n=3) | **DATA** | Landsat 30 m shore − GLSEA, `data/nearshore_anchor.csv` (small n, labelled) |
+| Nearshore surface warm-delta | +2.35 °C | **DATA (single scene) — a prior, not n=3** | Landsat shore − GLSEA, but the 3 rows are 3 stations on ONE pass (2026-07-28, city arc); applied region-wide + every lead + every calendar day. Direction certain; magnitude/spatial-transfer/seasonal-stability are one summer snapshot (audit T1e). |
+| Per-species min/max hold depth | e.g. laker ≥4 m | **T3/T4 judgment (not flat LITERATURE)** | round-number behavioral gates; laker 4 m is a map-mover from a *subarctic-lake* telemetry study (transfer caveat), not a Superior measurement |
+| Relief neighborhood radius | 60 m | **PICKED (bounded)** | sets the spatial scale of "shoal/point"; self-consistent (live path + calib both use it) but the scale is a judgment |
+| Structure percentile choice | p90 bar; p90/95/99 glow | **PICKED (bounded)** | the *values* are measured; *which* percentile means "a real break" is a judgment ("pin at a high percentile") |
+| Structure combine form | `max(slope/bar, relief/bar)` | **METHOD (picked, defensible)** | avoids double-counting a spot that is both steep and high-relief — the right form, but a chosen one |
+| Speckle/area/sentinel cuts | min_reach_px 4, MIN_AREA 120, sentinel-majority >0.5 | **PICKED (bounded)** | polygon hygiene; small effect on where the edge is drawn |
 | Cast reach / max depth | 75 m / 22 m | **DEFINITIONAL** | shore-cast product scope — not a quality judgment |
-| How temp × structure combine | conjunction | **METHOD** | no fitted weights — there is no catch data to fit them (rule 7); each axis stays separate |
+| How temp × structure combine | conjunction | **METHOD (with a caveat)** | no fitted weights (rule 7). CAVEAT: within an 8.4 km box only a handful of LSOFS nodes feed the isotherm interp, so `bottom_c` is a near-planar remap of the depth raster — "temperature × structure" is largely ONE bathymetry raster read twice + a coarse thermal offset. Drop-offs at the right depth *are* where you fish, but the axes are less independent than ADR-033 implies. |
 
-**Every spatial good-vs-bad boundary is DATA, LITERATURE, or DEFINITIONAL. No picked numbers.**
-The structure bars/bands are measured from the shore's own bathymetry; the temperature bands are the
-cited literature niches; the tier boundaries are those bands themselves.
+**The measured VALUES (structure bars/bands, temperature niches, nearshore delta) are DATA or cited
+LITERATURE. But the ESTIMATOR CHOICES around them — the relief radius, the percentile that defines
+"a break," the combine form, the polygon cuts — are PICKED, bounded judgments, and the nearshore
+delta is a single-scene prior, not n=3 independent data.** The earlier flat claim "no picked
+numbers" was too strong (audit T1e): the map is *mostly* data-driven with honestly-bounded picks,
+not a system with zero judgment. What is genuinely un-picked: the tier boundaries (= the cited
+literature bands) and the structure bar/band *values* (reproducible from the pooled distribution).
 
 ## WHEN — the upwelling phase / timing banner
 

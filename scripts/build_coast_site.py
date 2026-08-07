@@ -404,7 +404,7 @@ def _clamp_targets(band_temps):
     return tuple(sorted(set(band_temps) | set(CLAMP_EXTEND), reverse=True))
 
 
-def _species_tiers(bottom_c, strength, within, depth, sp, prod):
+def _species_tiers(bottom_c, strength, within, depth, sp, prod, season=None):
     """Pure, testable core of the per-species render: apply the DEPTH gate, grade TEMPERATURE into
     the cited bands (fair=range, good=optimal plateau), then split the optimal zone by CONTINUOUS
     structure STRENGTH into the data-derived glow bands. Returns (disjoint tiers dict, fair mask).
@@ -415,6 +415,11 @@ def _species_tiers(bottom_c, strength, within, depth, sp, prod):
     from tbay_fishcast.features import suitability as _su
     lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
     hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
+    # FALL shoal-staging (audit T1d): in fall the season badge says lake trout move onto SHALLOW
+    # rocky shoals to spawn — so the summer ≥4 m adult-hold gate would exclude the very water the
+    # badge points to. Drop the laker min-depth floor during fall so the map stops contradicting it.
+    if season == "fall" and sp.id == "lake_trout":
+        lo_d = 0.0
     within_sp = within & (depth >= lo_d) & (depth <= hi_d)     # per-species depth band from shore
     suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
     suit = _np.where(within_sp, suit, 0.0)
@@ -430,7 +435,7 @@ def _species_tiers(bottom_c, strength, within, depth, sp, prod):
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
-             targets=(), species=(), own_m=None, others_m=()):
+             targets=(), species=(), own_m=None, others_m=(), season=None):
     """Return (area_features, reach_px) for one lead, or (None, 0.0).
 
     Signal: graded per-species suitability AREA fills — for each species, the reachable water
@@ -549,7 +554,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
 
     default_id = None
     for sp in species:
-        tiers, fair = _species_tiers(bottom_c, strength, within, depth, sp, prod)
+        tiers, fair = _species_tiers(bottom_c, strength, within, depth, sp, prod, season=season)
         # WEAK-CUE species (salmon/steelhead) are plume/season driven — temperature AND structure
         # barely locate them — so the DATA does not emit the confident structure glow for them
         # (honesty in the artifact, not just the UI hiding it; a non-web consumer sees the truth).
@@ -613,6 +618,8 @@ def main(argv) -> int:
     stretches_out = []
     lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
     centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in stretches_in]  # for the territory clip
+    from tbay_fishcast.features import season as _season
+    _issue_season = _season.regime(issue).season   # summer|fall|... — drives the fall laker gate (T1d)
     ns_delta, ns_n = _nearshore_delta()   # measured shore-minus-GLSEA surface warm-delta
     if ns_delta > 0:
         print(f"nearshore surface delta +{ns_delta:.2f} C applied to anchor (Landsat n={ns_n})")
@@ -677,7 +684,8 @@ def main(argv) -> int:
                                       cfg.product, targets=_clamp_targets(cfg.band_temps),
                                       species=cfg.species,
                                       own_m=centers_m[si],
-                                      others_m=[c for j, c in enumerate(centers_m) if j != si])
+                                      others_m=[c for j, c in enumerate(centers_m) if j != si],
+                                      season=_issue_season)
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,

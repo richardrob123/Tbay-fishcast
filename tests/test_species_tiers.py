@@ -79,3 +79,15 @@ def test_out_of_range_temperature_is_floor_blank():
 def _species_and_check(bottom_c, strength, within, depth, sp):
     tiers, fair = _bcs._species_tiers(bottom_c, strength, within, depth, sp, _Prod())
     return tiers, fair
+
+
+def test_fall_laker_gate_relaxes_shallow():
+    """T1d: in FALL, lake trout stage on shallow shoals, so the summer >=4 m gate must relax —
+    otherwise the map excludes the very water the fall season badge points anglers to."""
+    bottom_c = _row([8, 8]); strength = _row([0, 0]); within = _row([1, 1]).astype(bool)
+    depth = _row([2.0, 8.0])                       # 2 m is below the summer 4 m laker floor
+    lt = _Sp("lake_trout", (4, 12), (6, 10), min_depth_m=4.0)
+    _, fair_summer = _bcs._species_tiers(bottom_c, strength, within, depth, lt, _Prod(), season="summer")
+    _, fair_fall = _bcs._species_tiers(bottom_c, strength, within, depth, lt, _Prod(), season="fall")
+    assert not fair_summer[0, 0] and fair_summer[0, 1]      # summer: 2 m excluded
+    assert fair_fall[0, 0] and fair_fall[0, 1]              # fall: 2 m shoal now included
