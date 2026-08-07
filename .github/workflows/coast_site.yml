@@ -94,9 +94,13 @@ jobs:
           git config user.name "coast-site bot"
           # regenerate the honest back-test scorecard from the freshly-appended logs
           python scripts/accuracy_scorecard.py || true
+          # regenerate the MEASURED forecast-lead uncertainty (ADR-031) so the ±m the map shows
+          # stays current as the gate grows — never a stale one-time number (rule 5).
+          python scripts/analyze_forecast_error.py || true
           # add only files that exist — forecast_gate_log.csv is absent until the forecast gate
           # first produces rows (e.g. GLOS down), and a bare `git add` on it would fail under set -e.
-          for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv docs/ACCURACY_SCORECARD.md; do
+          for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv \
+                   data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md; do
             [ -f "$f" ] && git add "$f"
           done
           if git diff --staged --quiet; then
