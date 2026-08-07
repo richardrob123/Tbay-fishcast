@@ -265,10 +265,40 @@ def _node_columns_in_box(cfg, issue, clat, clon):
 
 
 def _iso_field(gx, gy, iso_pts, vals):
-    iso = griddata(iso_pts, vals, (gx, gy), method="linear")
-    nan = ~np.isfinite(iso)
-    if nan.any():
-        iso[nan] = griddata(iso_pts, vals, (gx[nan], gy[nan]), method="nearest")
+    """Grid the per-node isotherm DEPTHS onto (gx, gy). Nodes whose column never reaches the
+    target carry the 999 sentinel (isotherm below the bottom). We must NOT linearly interpolate
+    a real depth (say 5 m) against a 999 sentinel — that manufactures a spurious ~400 m ramp at
+    the crossing/no-crossing frontier that survives into the bottom-temperature inversion
+    exactly where the cold edge matters (validation R5, agents A#4/D#3). Instead: interpolate
+    depth from the REAL crossings only, and separately interpolate the 0/1 sentinel indicator;
+    where the local node majority is no-crossing, emit the sentinel (isotherm below bottom)."""
+    vals = np.asarray(vals, dtype=float)
+    pts = np.asarray(iso_pts, dtype=float)
+    sentinel = vals >= 900.0
+    if sentinel.all():
+        return np.full(gx.shape, 999.0)          # nothing reaches this target anywhere
+    real = ~sentinel
+    rp, rv = pts[real], vals[real]
+
+    def _grid(p, v):
+        # linear where a triangulation exists (>=3 non-degenerate points), else nearest;
+        # nearest-fill any remaining NaN. Robust to collinear/sparse node sets.
+        out = np.full(gx.shape, np.nan)
+        if len(p) >= 3:
+            try:
+                out = griddata(p, v, (gx, gy), method="linear")
+            except Exception:  # noqa: BLE001  (QhullError on collinear/degenerate input)
+                out = np.full(gx.shape, np.nan)
+        nan = ~np.isfinite(out)
+        if nan.any():
+            out[nan] = griddata(p, v, (gx[nan], gy[nan]), method="nearest")
+        return out
+
+    iso = _grid(rp, rv)                            # depth from REAL crossings only (no 5->999 ramp)
+    if sentinel.any():
+        # fraction of surrounding nodes that never reach the target; >0.5 => below-bottom here
+        frac = _grid(pts, sentinel.astype(float))
+        iso = np.where(frac > 0.5, 999.0, iso)
     return iso
 
 
