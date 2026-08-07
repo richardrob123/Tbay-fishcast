@@ -1169,7 +1169,7 @@
   },
   "obs_station": "CYQT",
   "obs_available": true,
-  "threshold_obs_kn": 10.0,
+  "threshold_obs_kn": 13.0,
   "threshold_forecast_kn": 13.0,
   "sector_deg": [
    225.0,

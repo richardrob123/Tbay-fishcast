@@ -28,7 +28,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from tbay_fishcast.features.wind import in_sector  # noqa: E402
-from tbay_fishcast.ingest import ndbc  # noqa: E402
+from tbay_fishcast.ingest import metar, ndbc  # noqa: E402
 
 LOG = Path(__file__).resolve().parents[1] / "data" / "wind_gate_log.csv"
 OVERLAKE_BUOYS = ["45027", "45023"]          # real over-water anemometers on the lake
@@ -50,7 +50,19 @@ def _forecast_wind(lat, lon):
     return out
 
 
-def _score_buoy(bid):
+def _airport_wind():
+    """{hour_iso: speed_kn} observed CYQT (airport) wind, or {} if unavailable."""
+    try:
+        import urllib.request as _u
+        recs = json.loads(_u.urlopen(f"{metar.METAR_URL}?ids={metar.CYQT}&format=json&hours=72",
+                                     timeout=40).read())
+        return {w.time.strftime("%Y-%m-%dT%H"): w.speed_kn
+                for w in metar.parse_metar_json(recs) if w.speed_kn is not None}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _score_buoy(bid, airport):
     b = ndbc.BUOYS[bid]
     obs = ndbc.fetch_stdmet_wind(bid)            # WindRecord list
     if not obs:
@@ -59,38 +71,48 @@ def _score_buoy(bid):
     if not fcst:
         return None
     o_all, f_all, o_fav, f_fav = [], [], [], []
+    a_fav_diff, a_all_diff = [], []              # airport-minus-buoy offset (the threshold check)
     for w in obs:
         k = w.time.strftime("%Y-%m-%dT%H")
         if k not in fcst:
             continue
         fs, _fd = fcst[k]
         o_all.append(w.speed_kn); f_all.append(fs)
-        if bool(in_sector(np.array([w.dir_deg]))[0]):   # observed wind is in the W quadrant
+        fav = bool(in_sector(np.array([w.dir_deg]))[0])   # observed wind is in the W quadrant
+        if fav:
             o_fav.append(w.speed_kn); f_fav.append(fs)
+        if k in airport:
+            a_all_diff.append(airport[k] - w.speed_kn)
+            if fav:
+                a_fav_diff.append(airport[k] - w.speed_kn)
     n = len(o_all)
     if n < 3:
         return None
     o_all, f_all = np.array(o_all), np.array(f_all)
-    mae = float(np.mean(np.abs(f_all - o_all)))
-    bias = float(np.mean(f_all - o_all))
     ofm = float(np.mean(o_fav)) if o_fav else None
     ffm = float(np.mean(f_fav)) if f_fav else None
     return {
         "buoy": bid, "n_hours": n,
-        "mae_kn": round(mae, 2), "bias_kn": round(bias, 2),
+        "mae_kn": round(float(np.mean(np.abs(f_all - o_all))), 2),
+        "bias_kn": round(float(np.mean(f_all - o_all)), 2),
         "obs_fav_hours": len(o_fav),
         "obs_fav_mean_kn": round(ofm, 2) if ofm is not None else "",
         "fcst_fav_mean_kn": round(ffm, 2) if ffm is not None else "",
         "d_fav_kn": round(ffm - ofm, 2) if (ofm is not None and ffm is not None) else "",
+        # airport-minus-buoy offset: accumulates the evidence for/against a separate airport
+        # phase threshold (positive = CYQT reads HIGH vs the over-lake buoy).
+        "airport_offset_kn": round(float(np.mean(a_all_diff)), 2) if a_all_diff else "",
+        "airport_offset_fav_kn": round(float(np.mean(a_fav_diff)), 2) if a_fav_diff else "",
     }
 
 
 def main(argv) -> int:
     issue = date.fromisoformat(argv[1]) if len(argv) > 1 else datetime.now(timezone.utc).date()
+    airport = _airport_wind()
     rows = []
     for bid in OVERLAKE_BUOYS:
         try:
-            s = _score_buoy(bid)
+            s = _score_buoy(bid, airport)
         except Exception as e:  # noqa: BLE001
             print(f"buoy {bid}: skip ({type(e).__name__}: {str(e)[:50]})"); continue
         if s:
@@ -99,7 +121,8 @@ def main(argv) -> int:
         print("no over-lake buoy/forecast overlap this run — nothing logged"); return 0
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     fields = ["issue", "buoy", "n_hours", "mae_kn", "bias_kn", "obs_fav_hours",
-              "obs_fav_mean_kn", "fcst_fav_mean_kn", "d_fav_kn", "retrieved_utc"]
+              "obs_fav_mean_kn", "fcst_fav_mean_kn", "d_fav_kn",
+              "airport_offset_kn", "airport_offset_fav_kn", "retrieved_utc"]
     new = not LOG.exists()
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with LOG.open("a", newline="") as f:

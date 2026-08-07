@@ -150,10 +150,10 @@ def _load_favor_calib():
     return d
 
 
-# Over-lake Wedderburn bar for the ensemble (already-over-lake) forecast tail. Named so it isn't
-# a bare literal that can drift from the value the manifest reports (validation finding #9). Day-0
-# OBSERVED wind uses the lower airport bar (up.OBSERVED_THRESHOLD_KN=10) because CYQT reads ~3 kn
-# low vs the lake; the forecast tail uses this ~13 kn over-lake bar (see ADR-030 item 4).
+# Wedderburn upwelling bar (low end of the ~12-17 kt range) for the ensemble forecast tail. Named
+# so it isn't a bare literal that can drift from the value the manifest reports (validation #9). Now
+# EQUAL to the observed bar (up.OBSERVED_THRESHOLD_KN): the old lower airport bar assumed CYQT reads
+# ~3 kn low, which the buoy measurement refuted (see upwelling_phase.py). Both segments use 13 kn.
 FORECAST_THRESHOLD_KN = 13.0
 
 

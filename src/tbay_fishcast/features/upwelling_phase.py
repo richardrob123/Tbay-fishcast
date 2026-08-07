@@ -39,10 +39,18 @@ RELAXATION = "relaxation"
 NEUTRAL = "neutral"
 UNKNOWN = "unknown"
 
-# CYQT is inland — over-lake wind reads stronger, so the ensemble's over-lake ~13 kn blow
-# is ~10 kn at the airport. Threshold set there so the observed phase catches real events
-# without firing on light air (tier T4 judgment; documented in ADR-025).
-OBSERVED_THRESHOLD_KN = 10.0
+# Upwelling-favorable wind threshold — the LOW end of the documented Wedderburn range (~12-17 kt
+# sustained, mixed-layer-depth dependent; CLAUDE.md domain physics). Used for BOTH the observed
+# (airport) and the forecast (over-lake ensemble) segments.
+#
+# Previously the observed segment used a lower 10 kn bar on the rationale that "CYQT reads ~3 kn low
+# vs the over-lake wind." Measured against the NDBC over-lake buoys (45027/45023) that rationale is
+# REFUTED: the airport-vs-buoy offset is ~±1 kn, and in the upwelling-favorable west quadrant CYQT
+# reads ~1 kn HIGHER, not lower (data/wind_gate_log.csv accumulates this each build). With no data
+# basis for a separate, sub-Wedderburn airport bar, both segments use the physics value. If the
+# accumulating gate later shows a stable, significant airport offset, split it THEN with data behind
+# it — not on a guess.
+OBSERVED_THRESHOLD_KN = 13.0
 # A genuine sustained blow dips below threshold for the odd hour (airport gust structure);
 # a lull no longer than GRACE_H does not end it. Longer than that = two separate blows.
 GRACE_H = 2.0
