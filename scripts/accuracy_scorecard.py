@@ -27,6 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / "data" / "gate_log.csv"
 ANCHOR = ROOT / "data" / "nearshore_anchor.csv"
+OFFSHORE_LOG = ROOT / "data" / "offshore_check_log.csv"
+WIND_LOG = ROOT / "data" / "wind_gate_log.csv"
 OUT = ROOT / "docs" / "ACCURACY_SCORECARD.md"
 
 
@@ -35,6 +37,42 @@ def _f(x):
         return float(x)
     except (TypeError, ValueError):
         return None
+
+
+def _rows(path):
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return list(csv.DictReader(f))
+
+
+def _mean_of(rows, col):
+    vals = [_f(r.get(col)) for r in rows]
+    vals = [v for v in vals if v is not None]
+    return (sum(vals) / len(vals)) if vals else None
+
+
+def _log_summary(path):
+    """Offshore cross-check summary: mean model−clim mixed-layer + iso-12 deltas, divergent count."""
+    rows = _rows(path)
+    if not rows:
+        return None
+    ml = _mean_of(rows, "d_ml_c")
+    iso = _mean_of(rows, "d_iso_m")
+    return {"n": len(rows), "ml": ml if ml is not None else 0.0,
+            "iso": iso if iso is not None else 0.0,
+            "divergent": sum(1 for r in rows if r.get("verdict") == "DIVERGENT")}
+
+
+def _wind_summary():
+    rows = _rows(WIND_LOG)
+    if not rows:
+        return None
+    return {"n": len(rows),
+            "mae": _mean_of(rows, "mae_kn") or 0.0,
+            "dfav": _mean_of(rows, "d_fav_kn") or 0.0,
+            "aoff": _mean_of(rows, "airport_offset_kn") or 0.0,
+            "aoff_fav": _mean_of(rows, "airport_offset_fav_kn") or 0.0}
 
 
 def _mae(errs):
@@ -204,6 +242,23 @@ def render(stats, anchor, lead_stats=None) -> str:
               f"(range {anchor['lo']:+.2f}…{anchor['hi']:+.2f}). "
               "GLSEA (1 km) cannot resolve this nearshore warming; too few scenes to fold into the "
               "anchor yet (see OVERNIGHT_ITERATION ADR-020).", ""]
+    off = _log_summary(OFFSHORE_LOG)
+    if off:
+        L += ["## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)", "",
+              f"n={off['n']} days · mixed-layer model−clim mean **{off['ml']:+.2f} °C**, "
+              f"iso-12 depth model−clim mean **{off['iso']:+.1f} m** · "
+              f"{off['divergent']} DIVERGENT day(s). Independent (observed) check that the model's "
+              "central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).",
+              ""]
+    wnd = _wind_summary()
+    if wnd:
+        L += ["## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)", "",
+              f"n={wnd['n']} buoy-days · GFS speed MAE **{wnd['mae']:.2f} kn**, W-quadrant "
+              f"forecast−obs bias **{wnd['dfav']:+.2f} kn** · airport(CYQT)−buoy offset "
+              f"**{wnd['aoff']:+.2f} kn** (W-quadrant {wnd['aoff_fav']:+.2f}). The real over-lake "
+              "test the wind-model choice deferred; the airport offset is what a separate phase "
+              "threshold would need to earn — currently within noise, so one Wedderburn bar is used.",
+              ""]
     return "\n".join(L)
 
 
