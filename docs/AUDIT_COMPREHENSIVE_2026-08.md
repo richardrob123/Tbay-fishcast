@@ -59,9 +59,11 @@ The spatial/thermal engine is **disciplined and mostly honest**, but three thing
 
 ## TIER 3 — dynamic plume + run timing (decisive for salmon/steelhead)
 
-- **T3a River discharge → live plume strength.** ECCC GeoMet (`api.weather.gc.ca`) is REACHABLE now
-  (the `hydat.py` "403-blocked" note is STALE — verified live: Kaministiquia 20.0, N Current 0.084,
-  Neebing 0.228 m³/s). Modulate the river-mouth markers by flow/freshet instead of static dots.
+- **T3a River discharge → live plume strength.** ✅ `ingest/hydat.py` (realtime GeoMet fetch;
+  `hydrometric-realtime`, since daily-mean lags ~7 mo) + `features/river_flow.py` (7 unit tests).
+  Each river-mouth marker carries the current discharge + a 3-day trend (rising=freshet=staging
+  trigger / steady / falling) in its popup — no fabricated "high/low" percentile (needs a per-gauge
+  climatology the system doesn't hold). Gauges: Kam 02AB006, Current 02AB014, Neebing 02AB008.
 - **T3b Wire the spawning-run calendar** — ✅ `features/run_calendar.py` (reads the committed
   `events_calendar.yaml`; 7 unit tests). River-mouth markers gold-highlight in-window for the
   selected species, dim off-window; the popup states the active run. "Best spots" surfaces active

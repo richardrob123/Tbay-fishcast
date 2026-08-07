@@ -116,7 +116,10 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   (3) **Spawning-run phenology** (`features/run_calendar.py`, reads the committed
   `events_calendar.yaml` that nothing had parsed) — river-mouth markers gold-highlight only inside a
   species' typical run window and read "no run" honestly off-window; `freeze_up` end pinned to
-  12-01 (bounded pick). (4) **"Best spots today"** (`features/top_spots.py`) — ranks stretches per
+  12-01 (bounded pick). Plus **live river discharge** (T3a; `hydat.py` realtime GeoMet — the
+  "403-blocked" note was stale, verified live — + `features/river_flow.py`): each mouth's popup shows
+  current flow + a 3-day rising/steady/falling trend (rising=freshet=staging trigger), no fabricated
+  high/low percentile (would need a per-gauge climatology). (4) **"Best spots today"** (`features/top_spots.py`) — ranks stretches per
   species by the map's OWN lead-0 weighted habitat area (0–100 relative index, weights an ORDERING
   of the disjoint tiers, not a fit), with a data-derived reason; weak-cue species carry the
   run-timing caveat and their active runs are surfaced. Hands the angler the shortlist instead of a

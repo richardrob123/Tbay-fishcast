@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T22:46:44Z",
- "age_h": 10.8,
+ "built_utc": "2026-08-07T23:02:14Z",
+ "age_h": 11.0,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -843,7 +843,7 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.71,
    "low_confidence": false,
    "days": [
@@ -851,31 +851,31 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 16.6
+     "reach_ha": 16.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.9
+     "reach_ha": 8.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 13.1
+     "reach_ha": 12.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 8.7
+     "reach_ha": 8.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.4
+     "reach_ha": 17.3
     },
     {
      "label": "Wed Aug 12",
@@ -1193,6 +1193,13 @@
     "active": false,
     "runs": [],
     "species_active": []
+   },
+   "flow": {
+    "q_cms": 20.0,
+    "trend_pct": -3.0,
+    "state": "steady",
+    "freshet": false,
+    "note": "20 m\u00b3/s, steady (-3% / 3d)."
    }
   },
   {
@@ -1210,6 +1217,13 @@
     "active": false,
     "runs": [],
     "species_active": []
+   },
+   "flow": {
+    "q_cms": 0.084,
+    "trend_pct": -27.0,
+    "state": "falling",
+    "freshet": false,
+    "note": "0.08 m\u00b3/s and dropping (-27% / 3d) \u2014 plume easing."
    }
   },
   {
@@ -1226,6 +1240,13 @@
     "active": false,
     "runs": [],
     "species_active": []
+   },
+   "flow": {
+    "q_cms": 0.228,
+    "trend_pct": 0.0,
+    "state": "steady",
+    "freshet": false,
+    "note": "0.23 m\u00b3/s, steady (+0% / 3d)."
    }
   }
  ],
@@ -1341,12 +1362,12 @@
      "reason": "10 ha optimal temp over 2 ha of structure (breaks/points)"
     },
     {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
-     "score": 25,
-     "opt_ha": 6.8,
-     "glow_ha": 0.2,
-     "reason": "7 ha of optimal-temperature water"
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 29,
+     "opt_ha": 6.5,
+     "glow_ha": 1.2,
+     "reason": "6 ha optimal temp over 1 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1401,17 +1422,9 @@
   "steelhead": {
    "ranked": [
     {
-     "id": "silver_islet",
-     "name": "Silver Islet / Sleeping Giant tip",
-     "score": 100,
-     "opt_ha": 11.2,
-     "glow_ha": 0.0,
-     "reason": "18 ha in preferred temperature"
-    },
-    {
      "id": "shipyard_mackenzie",
      "name": "Shipyard / MacKenzie approach",
-     "score": 66,
+     "score": 100,
      "opt_ha": 6.4,
      "glow_ha": 0.0,
      "reason": "14 ha in preferred temperature"
@@ -1419,7 +1432,7 @@
     {
      "id": "boulevard_current",
      "name": "Boulevard / Current mouth",
-     "score": 65,
+     "score": 98,
      "opt_ha": 8.2,
      "glow_ha": 0.0,
      "reason": "9 ha in preferred temperature"
@@ -1427,15 +1440,23 @@
     {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 64,
+     "score": 96,
      "opt_ha": 7.0,
      "glow_ha": 0.0,
      "reason": "11 ha in preferred temperature"
     },
     {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 89,
+     "opt_ha": 3.3,
+     "glow_ha": 0.0,
+     "reason": "18 ha in preferred temperature"
+    },
+    {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 52,
+     "score": 78,
      "opt_ha": 2.8,
      "glow_ha": 0.0,
      "reason": "16 ha in preferred temperature"

@@ -858,15 +858,30 @@ def main(argv) -> int:
     # only inside its species' typical run — June's Kam mouth honestly shows "no run" (ADR-001,
     # deterministic date logic; the map never claims a specific fish is present).
     from tbay_fishcast.features import run_calendar as _runcal
+    # Live river discharge → plume-strength trend (T3a). ECCC GeoMet realtime is reachable; a fetch
+    # failure per gauge just leaves that marker with no flow line (rule 5, staleness loud).
+    _flow_by_id = {}
+    try:
+        from tbay_fishcast.ingest import hydat as _hydat
+        from tbay_fishcast.features import river_flow as _rflow
+        for _mid, _gauge in _hydat.GAUGES.items():
+            try:
+                _flow_by_id[_mid] = _rflow.classify(_hydat.fetch_recent_discharge(_gauge)).as_dict()
+            except Exception as e:  # noqa: BLE001 - per-gauge graceful
+                print(f"river flow {_mid} unavailable: {str(e)[:50]}")
+    except Exception as e:  # noqa: BLE001
+        print(f"river discharge layer unavailable: {str(e)[:60]}")
     markers_out = []
     for m in RIVER_MOUTHS:
         if not _regs_ok(m["name"]):
             continue
         mm = dict(m)
         mm["run"] = _runcal.marker_status(issue, m.get("species", []))
+        mm["flow"] = _flow_by_id.get(m["id"])
         markers_out.append(mm)
     _n_active = sum(1 for m in markers_out if m["run"]["active"])
-    print(f"run markers: {_n_active}/{len(markers_out)} mouths inside a run window on {issue}")
+    _n_fresh = sum(1 for m in markers_out if (m.get("flow") or {}).get("freshet"))
+    print(f"run markers: {_n_active}/{len(markers_out)} in a run window; {_n_fresh} freshet on {issue}")
 
     # Barometric directional prior + cloud (T2b/T2c) — a labelled TIMING prior beside the phase
     # banner, NEVER multiplied into the spatial score (rule 7, no fitted weight). Graceful: a fetch

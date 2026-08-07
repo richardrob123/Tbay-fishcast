@@ -72,6 +72,7 @@ map, never multiplied into the spatial score (rule 7 — no fitted weights, no c
 | Barometric level + trend | ±1 hPa/3h steady band; falling→improving, rising→slowing | **LITERATURE/FOLKLORE (prior, T3)** | pre-frontal feed / post-frontal bluebird (`features/barometric.py`, Open-Meteo `pressure_msl`). A DIRECTION only; the ±1 hPa/3h band is a WMO-style tendency cut, not a fitted threshold |
 | Cloud cover | raw % | **DATA (context)** | Open-Meteo `cloud_cover`; shown as a modifier note (overcast extends the light window), not scored |
 | Spawning-run windows | per calendar entry | **LITERATURE (phenology, T1–T3 per entry)** | `events_calendar.yaml` typical dates (chinook 08-25→09-15, etc.); a mouth lights up only in-window. `freeze_up` end pinned to 12-01 (**PICKED, bounded**) |
+| River discharge + trend | live m³/s, ±% / 3d | **DATA (measured) + PICKED trend band** | ECCC GeoMet realtime (`hydat.py`); rising ≥+12%/3d = freshet (staging trigger). The VALUES are measured live; the ±12% steady band is a bounded pick. No "high/low" claim (would need per-gauge climatology) |
 | "Best spots today" ranking | index = Σ tier_weight × area | **METHOD (derived, no new judgment)** | ranks stretches by the map's OWN lead-0 tier areas (`features/top_spots.py`); weights escalate s1→s5 (an ORDERING of the disjoint literature/measured tiers, not a fitted weight). Reported as a 0–100 RELATIVE index, never a catch rate |
 
 **These are all PRIORS or deterministic clocks, explicitly labelled as timing** — the honest stance is

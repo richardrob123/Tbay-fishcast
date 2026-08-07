@@ -573,11 +573,21 @@ function markerHTML(m){
   } else {
     runLine = `<div class="nt" style="color:#999">no spawning-run window open now (typical dates)</div>`;
   }
+  // live river discharge + trend (plume strength — the real driver for the run species)
+  const f = m.flow;
+  let flowLine = '';
+  if(f && f.state && f.state!=='unknown'){
+    const arrow = f.state==='rising'?'↑':(f.state==='falling'?'↓':'→');
+    const col = f.freshet?'#1a7a3a':'#555';
+    flowLine = `<div class="nt" style="color:${col}">💧 river ${f.q_cms} m³/s ${arrow}`+
+      (f.trend_pct!=null?` (${f.trend_pct>0?'+':''}${f.trend_pct}%/3d)`:'')+
+      (f.freshet?' — freshet, staging trigger':'')+`</div>`;
+  }
   return `<div class="rvpop"><b>${m.name}</b>`+
     `<div class="nt">${m.note||''}</div>`+
-    runLine+
+    runLine+ flowLine+
     (names.length?`<div class="sp">stages: ${names.join(' · ')}</div>`:'')+
-    `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · position approximate (field-verify)</div></div>`;
+    `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · flow ECCC · position approximate (field-verify)</div></div>`;
 }
 
 function localLabel(d){
