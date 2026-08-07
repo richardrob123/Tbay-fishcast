@@ -12,6 +12,10 @@ data/*
 !data/gate_log.csv
 !data/nearshore_anchor.csv
 !data/field_sessions.csv
+# frozen water masks ARE committed: the static shoreline must be deterministic across
+# builds, not re-fetched live from Overpass every run (CLAUDE.md rule #1).
+!data/watermask_frozen/
+!data/watermask_frozen/**
 *.parquet
 *.nc
 !tests/fixtures/*.nc

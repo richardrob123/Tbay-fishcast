@@ -176,34 +176,73 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     # (user-caught: solid green missing right off Silver tip).
     kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m, "min_reach_px": 4}
     MIN_AREA = 120.0
+    from shapely.geometry import Polygon as _ShPoly
+    from shapely.ops import unary_union as _uunion
+
+    def _shape(mask):
+        """reachable_area_features -> one clean shapely (Multi)Polygon (lon/lat)."""
+        polys = []
+        for rings in reachable_area_features(mask, bounds_3857, res, min_area_m2=MIN_AREA):
+            try:
+                p = _ShPoly([(a, b) for a, b in rings[0]],
+                            [[(a, b) for a, b in h] for h in rings[1:]])
+                if not p.is_valid:
+                    p = p.buffer(0)
+                if not p.is_empty:
+                    polys.append(p)
+            except Exception:  # noqa: BLE001
+                pass
+        return _uunion(polys) if polys else None
+
+    def _polys(geom):
+        if geom is None or geom.is_empty:
+            return []
+        if geom.geom_type == "Polygon":
+            return [geom]
+        return [g for g in geom.geoms if g.geom_type == "Polygon" and not g.is_empty]
+
     area_feats, lines = [], []
     reach_px_primary = 0.0
-    t12_rings = []
+
+    def _emit(geom, tag):
+        for gg in _polys(geom):
+            rings = [[list(c) for c in gg.exterior.coords]]
+            rings += [[list(c) for c in r.coords] for r in gg.interiors]
+            area_feats.append((tag, rings))
+
+    geoms = {}
     for t in TARGETS:
         iso = _iso_field(gx, gy, iso_pts, tvals[t])
         _cold, reachable = cold_reachable(depth, iso, dist, **kw)
-        rings_list = reachable_area_features(reachable, bounds_3857, res, min_area_m2=MIN_AREA)
         if t == prod.target_c:
             reach_px_primary = float(reachable.sum())
-            t12_rings = rings_list
-        for rings in rings_list:
-            area_feats.append((f"t{int(t)}", rings))
-    # "Just past a standard cast": cold water at fishable depth in the 75-150 m RING (a long
-    # cast, or a short wade onto the shelf then a cast). Defined strictly by DISTANCE so it
-    # can NEVER include within-cast water — the previous version subtracted the filtered
-    # within-cast mask, so a narrow point's clipped wedge wrongly showed as "past a cast"
-    # right at the tip (user-caught). Shown FAINT so a point reveals its cold edge.
+        geoms[t] = _shape(reachable)
+    # CLIP each colder band into its warmer parent so the nested fills align EXACTLY.
+    # The masks nest at pixel level, but independent smoothing during polygonization let a
+    # colder band's edge drift outside its parent, showing teal/blue slivers with no green
+    # under them (user-caught colour blotches). Intersection removes that.
+    if geoms[10.0] and geoms[12.0]:
+        geoms[10.0] = geoms[10.0].intersection(geoms[12.0])
+    if geoms[8.0] and geoms[10.0]:
+        geoms[8.0] = geoms[8.0].intersection(geoms[10.0])
+    for t in TARGETS:
+        _emit(geoms[t], f"t{int(t)}")
+
+    # "Just past a standard cast": the 75-150 m cold RING (a long cast, or a short wade onto
+    # the shelf then a cast), clipped to sit strictly OUTSIDE the within-cast zone so the
+    # faint band never overlaps the solid fills.
     iso12 = _iso_field(gx, gy, iso_pts, tvals[prod.target_c])
     cold12 = np.isfinite(depth) & (depth >= iso12) & (depth <= prod.max_reach_depth_m)
     far_ring = cold12 & (dist > prod.cast_m) & (dist <= 2.0 * prod.cast_m)
-    for rings in reachable_area_features(far_ring, bounds_3857, res, min_area_m2=MIN_AREA):
-        area_feats.append(("t12far", rings))
-    # The red line is the BOUNDARY of the reachable-cold (12 C) zone — so it bounds the
-    # green exactly, by construction. (Previously an independent depth==iso contour, which
-    # was force-hugged to the shore and diverged from the fills near points — user-caught.)
-    for rings in t12_rings:
-        for ring in rings:                    # exterior ring, then any holes
-            lines.append(("edge", ring))
+    far_geom = _shape(far_ring)
+    if far_geom is not None and geoms[12.0] is not None:
+        far_geom = far_geom.difference(geoms[12.0])
+    _emit(far_geom, "t12far")
+
+    # t12 boundary kept in the lines file (the web no longer draws it, but the manifest
+    # still references it) — harmless and tiny.
+    for gg in _polys(geoms[12.0]):
+        lines.append(("edge", [list(c) for c in gg.exterior.coords]))
     return area_feats, reach_px_primary, lines
 
 

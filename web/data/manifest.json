@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-06",
  "issued_utc": "2026-08-06T12:00:00Z",
- "built_utc": "2026-08-07T01:44:23Z",
- "age_h": 13.7,
+ "built_utc": "2026-08-07T02:54:50Z",
+ "age_h": 14.9,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -123,37 +123,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 70.2
+     "reach_ha": 77.5
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 70.7
+     "reach_ha": 77.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 57.5
+     "reach_ha": 63.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 49.8
+     "reach_ha": 55.4
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 64.5
+     "reach_ha": 71.1
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 62.2
+     "reach_ha": 68.3
     }
    ],
    "area": "data/areas/mckellar_harbour.geojson",
@@ -192,37 +192,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 63.6
+     "reach_ha": 66.8
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 62.8
+     "reach_ha": 65.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 45.8
+     "reach_ha": 47.2
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 37.5
+     "reach_ha": 38.6
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 55.8
+     "reach_ha": 58.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 54.9
+     "reach_ha": 57.1
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -261,37 +261,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 20.6
+     "reach_ha": 23.2
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 19.2
+     "reach_ha": 22.0
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 14.7
+     "reach_ha": 16.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 14.4
+     "reach_ha": 16.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 17.3
+     "reach_ha": 19.9
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 18.5
+     "reach_ha": 21.4
     }
    ],
    "area": "data/areas/boulevard_current.geojson",
@@ -399,37 +399,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 21.5
+     "reach_ha": 20.3
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 21.0
+     "reach_ha": 19.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 9.7
+     "reach_ha": 8.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 18.9
+     "reach_ha": 17.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 17.8
+     "reach_ha": 16.8
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 18.3
+     "reach_ha": 17.3
     }
    ],
    "area": "data/areas/shipyard_mackenzie.geojson",

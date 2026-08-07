@@ -39,10 +39,60 @@ from pathlib import Path
 import numpy as np
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "watermask_cache"
+_ROOT = Path(__file__).resolve().parents[3]
+_CACHE_DIR = _ROOT / "data" / "watermask_cache"
+# FROZEN masks are COMMITTED (unlike _CACHE_DIR, which is gitignored). The Lake Superior
+# shoreline is a static geographic fact; re-fetching it live from Overpass on every 4x-daily
+# runner build put a flaky, rate-limit-prone network dependency in the data path (CLAUDE.md
+# rule #1) — a partial fetch silently shifted the shoreline and dropped the within-cast cold
+# wedge off narrow points (user-caught: Silver Harbour tip flickering solid/faint between
+# builds). Freezing the verified masks makes every build — runner and local — identical.
+_FROZEN_DIR = _ROOT / "data" / "watermask_frozen"
 _R = 6378137.0
 _MIN_COMPONENT_PX = 16
 _MAX_IS_IN_CALLS = 24
+
+
+def _frozen_key(bounds_3857, H, W) -> str:
+    x0, y0, x1, y1 = (round(float(v), 3) for v in bounds_3857)
+    return "wm_" + hashlib.md5(f"{x0}_{y0}_{x1}_{y1}_{H}x{W}".encode()).hexdigest()[:16]
+
+
+def _frozen_get(bounds_3857, H, W):
+    f = _FROZEN_DIR / f"{_frozen_key(bounds_3857, H, W)}.npz"
+    if not f.exists():
+        return None
+    try:
+        with np.load(f) as z:
+            if int(z["h"]) != H or int(z["w"]) != W:
+                return None
+            return np.unpackbits(z["packed"], count=H * W).astype(bool).reshape(H, W)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def save_frozen_mask(bounds_3857, mask) -> Path:
+    """Persist a COMMITTED water mask so builds reuse it instead of re-fetching Overpass."""
+    H, W = mask.shape
+    _FROZEN_DIR.mkdir(parents=True, exist_ok=True)
+    f = _FROZEN_DIR / f"{_frozen_key(bounds_3857, H, W)}.npz"
+    np.savez_compressed(f, packed=np.packbits(mask.astype(bool).ravel()),
+                        h=np.int32(H), w=np.int32(W),
+                        bounds=np.asarray([float(v) for v in bounds_3857], dtype=np.float64))
+    return f
+
+
+def iter_frozen():
+    """Yield (bounds_3857, (H, W), mask) for every committed frozen mask — offline; lets
+    tests round-trip and re-key each one without any network fetch."""
+    if not _FROZEN_DIR.exists():
+        return
+    for f in sorted(_FROZEN_DIR.glob("wm_*.npz")):
+        with np.load(f) as z:
+            H, W = int(z["h"]), int(z["w"])
+            mask = np.unpackbits(z["packed"], count=H * W).astype(bool).reshape(H, W)
+            bounds = tuple(float(v) for v in z["bounds"]) if "bounds" in z else None
+        yield bounds, (H, W), mask
 
 
 class WaterMaskError(RuntimeError):
@@ -180,6 +230,9 @@ def water_mask(bounds_3857, shape_hw):
     H, W = int(shape_hw[0]), int(shape_hw[1])
     if H <= 0 or W <= 0:
         raise WaterMaskError(f"bad shape_hw {shape_hw!r}")
+    frozen = _frozen_get(bounds_3857, H, W)   # COMMITTED mask wins — deterministic, offline
+    if frozen is not None:
+        return frozen
     x0, y0, x1, y1 = [float(v) for v in bounds_3857]
     lon0, lat0 = _merc_to_lonlat(min(x0, x1), min(y0, y1))
     lon1, lat1 = _merc_to_lonlat(max(x0, x1), max(y0, y1))
@@ -219,4 +272,9 @@ def water_mask(bounds_3857, shape_hw):
     if unknown.any():
         _, (ir, ic) = ndimage.distance_transform_edt(unknown, return_indices=True)
         known = known[ir, ic]
-    return known == 1
+    mask = known == 1
+    try:                                  # freeze on first successful live build
+        save_frozen_mask((x0, y0, x1, y1), mask)
+    except Exception:  # noqa: BLE001
+        pass
+    return mask

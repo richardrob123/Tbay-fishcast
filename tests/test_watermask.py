@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 
 from tbay_fishcast.features.overlay import land_shore_distance
-from tbay_fishcast.ingest.watermask import WaterMaskError, water_mask
+from tbay_fishcast.ingest import watermask as wm
+from tbay_fishcast.ingest.watermask import WaterMaskError, iter_frozen, water_mask
 
 
 def test_land_shore_distance_from_explicit_mask():
@@ -37,3 +38,36 @@ def test_land_mask_drops_small_specks():
 def test_water_mask_bad_shape_raises():
     with pytest.raises(WaterMaskError):
         water_mask((0.0, 0.0, 1.0, 1.0), (0, 0))
+
+
+# ---- Frozen (committed) masks: the shoreline must be deterministic, not re-fetched live ----
+
+def test_frozen_masks_present_and_sane():
+    """Every committed mask loads, is a plausible shoreline (not all-land/all-water), and
+    carries its bounds. If this fails the runner will silently re-fetch Overpass and the
+    coast can flicker between builds (the Silver-tip bug)."""
+    entries = list(iter_frozen())
+    assert len(entries) >= 5, f"expected the frozen coast masks to be committed, found {len(entries)}"
+    for bounds, (h, w), mask in entries:
+        assert mask.shape == (h, w) and mask.dtype == bool
+        assert h >= 100 and w >= 100
+        frac = mask.mean()
+        assert 0.03 < frac < 0.99, f"implausible water fraction {frac:.2%} (all land/water?)"
+        assert bounds is not None and len(bounds) == 4
+
+
+def test_water_mask_prefers_frozen_without_network(monkeypatch):
+    """water_mask() must return the COMMITTED mask before any Overpass call — so a build on
+    a fresh runner (empty cache, flaky network) gets the identical verified shoreline."""
+    entries = list(iter_frozen())
+    if not entries:
+        pytest.skip("no frozen masks committed")
+
+    def _boom(*a, **k):
+        raise AssertionError("water_mask hit the network despite a frozen mask being present")
+
+    monkeypatch.setattr(wm, "_overpass", _boom)
+    monkeypatch.setattr(wm, "_fetch_barrier_ways", _boom)
+    for bounds, (h, w), mask in entries:
+        got = water_mask(bounds, (h, w))
+        assert np.array_equal(got, mask)
