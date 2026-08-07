@@ -61,6 +61,14 @@ _FROZEN_DIR = _ROOT / "data" / "watermask_frozen"
 _R = 6378137.0
 _MIN_COMPONENT_PX = 16
 _MAX_IS_IN_CALLS = 24
+# Content-match tolerance for resolving a committed mask (metres, EPSG:3857). The patch
+# bounds returned by the CHS WCS are the server-snapped GeoTIFF corners, NOT the exact
+# deterministic request — so they can drift by sub-metre amounts between builds. A float-
+# rounded filename key turns that drift into a SILENT live-Overpass refetch (ADR-020's
+# Silver-tip flicker). 5 m is orders of magnitude above that drift and orders of magnitude
+# below the ~8400 m patch span / the km spacing between stretch centres, so it never
+# collides two distinct stretches.
+_FROZEN_TOL_M = 5.0
 
 
 def _frozen_key(bounds_3857, H, W) -> str:
@@ -68,10 +76,30 @@ def _frozen_key(bounds_3857, H, W) -> str:
     return "wm_" + hashlib.md5(f"{x0}_{y0}_{x1}_{y1}_{H}x{W}".encode()).hexdigest()[:16]
 
 
-def _frozen_get(bounds_3857, H, W):
-    f = _FROZEN_DIR / f"{_frozen_key(bounds_3857, H, W)}.npz"
-    if not f.exists():
-        return None
+_frozen_index_cache = [None]   # lazy [(bounds, (H,W), Path)] — invalidated on save
+
+
+def _frozen_index():
+    """Content index of committed masks — [(bounds_3857, (H, W), Path)]. Lets lookup be
+    content-addressable (match bounds within _FROZEN_TOL_M) instead of exact-float-key, so a
+    frozen mask resolves through sub-metre WCS bound drift. Deterministic; no network."""
+    if _frozen_index_cache[0] is not None:
+        return _frozen_index_cache[0]
+    idx = []
+    if _FROZEN_DIR.exists():
+        for f in sorted(_FROZEN_DIR.glob("wm_*.npz")):
+            try:
+                with np.load(f) as z:
+                    H, W = int(z["h"]), int(z["w"])
+                    bounds = tuple(float(v) for v in z["bounds"]) if "bounds" in z else None
+                idx.append((bounds, (H, W), f))
+            except Exception:  # noqa: BLE001
+                continue
+    _frozen_index_cache[0] = idx
+    return idx
+
+
+def _load_frozen_file(f, H, W):
     try:
         with np.load(f) as z:
             if int(z["h"]) != H or int(z["w"]) != W:
@@ -79,6 +107,24 @@ def _frozen_get(bounds_3857, H, W):
             return np.unpackbits(z["packed"], count=H * W).astype(bool).reshape(H, W)
     except Exception:  # noqa: BLE001
         return None
+
+
+def _frozen_get(bounds_3857, H, W):
+    # Fast path: exact float-rounded key (hits masks frozen this session with no scan).
+    f = _FROZEN_DIR / f"{_frozen_key(bounds_3857, H, W)}.npz"
+    if f.exists():
+        m = _load_frozen_file(f, H, W)
+        if m is not None:
+            return m
+    # Robust path: content match within tolerance — survives sub-metre bound drift so the
+    # committed mask still wins instead of silently falling through to live Overpass.
+    want = [float(v) for v in bounds_3857]
+    for bounds, (h, w), path in _frozen_index():
+        if bounds is None or (h, w) != (H, W):
+            continue
+        if all(abs(a - b) <= _FROZEN_TOL_M for a, b in zip(bounds, want)):
+            return _load_frozen_file(path, H, W)
+    return None
 
 
 def save_frozen_mask(bounds_3857, mask) -> Path:
@@ -89,6 +135,7 @@ def save_frozen_mask(bounds_3857, mask) -> Path:
     np.savez_compressed(f, packed=np.packbits(mask.astype(bool).ravel()),
                         h=np.int32(H), w=np.int32(W),
                         bounds=np.asarray([float(v) for v in bounds_3857], dtype=np.float64))
+    _frozen_index_cache[0] = None   # a new mask must show up in the content index
     return f
 
 

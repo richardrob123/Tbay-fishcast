@@ -71,3 +71,27 @@ def test_water_mask_prefers_frozen_without_network(monkeypatch):
     for bounds, (h, w), mask in entries:
         got = water_mask(bounds, (h, w))
         assert np.array_equal(got, mask)
+
+
+def test_frozen_survives_submetre_bound_drift(monkeypatch):
+    """A8: the CHS WCS returns server-snapped GeoTIFF corners, so the patch bounds can drift
+    by sub-metre amounts between builds. The committed mask must STILL resolve (content match)
+    instead of falling through to a silent live-Overpass refetch — the ADR-020 regression."""
+    entries = list(iter_frozen())
+    if not entries:
+        pytest.skip("no frozen masks committed")
+    bounds, (h, w), mask = entries[0]
+
+    def _boom(*a, **k):
+        raise AssertionError("hit the network despite a frozen mask within drift tolerance")
+
+    monkeypatch.setattr(wm, "_overpass", _boom)
+    monkeypatch.setattr(wm, "_fetch_barrier_ways", _boom)
+
+    # nudge every corner by a few dm — below tolerance: must resolve to the same mask
+    drifted = tuple(v + d for v, d in zip(bounds, (0.4, -0.3, 0.2, -0.45)))
+    got = water_mask(drifted, (h, w))
+    assert np.array_equal(got, mask)
+    # a perturbation well beyond tolerance is a genuinely different patch — must NOT match
+    far = tuple(v + 50.0 for v in bounds)
+    assert wm._frozen_get(far, h, w) is None
