@@ -135,9 +135,25 @@ and needs sign-off; see proposed ADRs below.
 
 ---
 
+## Confirmations (live)
+
+- **Determinism confirmed.** Frozen-mask build `4d02625` and autostash build `d9330d3` both
+  deployed silver ha **19.9**, res all 4.0, tip solid `t12` (area 2251.7 exact) — byte-identical
+  to local. The flicker is gone. **Side benefit:** builds dropped from ~32 min to **~9 min**
+  (frozen mask removes the live Overpass fetch + is_in probes).
+- **Gate persistence confirmed.** `data/gate_log.csv` gained its first 4 rows (Aug 4–6). First
+  signal: corrected 12 °C-isotherm error 3.93 m @45216, 0.38–1.97 m @llo1; correction beats raw
+  on all 3 scored days.
+- **Accuracy scorecard shipped** (`3a70bf2`). Pooled corrected MAE **2.12 m vs raw 4.01 m
+  (+47 % skill)** — the correction passes the ADR-006 demotion test. Auto-regenerates daily
+  (`docs/ACCURACY_SCORECARD.md`). Honestly flags llo1's sensor-pinned constant obs.
+- **Band-nesting invariant locked** (`8878c2c`) — worst poke-out 0.17 %, CI-guarded.
+
 ## Open / next
 
-- Verify on the next scheduled coast-site run: (a) deployed build is byte-deterministic across
-  runs (frozen mask), (b) `data/gate_log.csv` gains rows (autostash fix).
-- Decide ADR-020/021/022.
-- Unblock local subsurface truth (Bare Point FOI) — the accuracy ceiling until then.
+- Watch the scorecard as the gate grows: skill sign + trend, and whether 45216's ~4 m residual
+  is bias or the far-field/coarse-obs proxy. Real verdict needs respectable n (weeks).
+- Decide ADR-021 (lead-dependent band — needs lead-stratified gate; the gate currently logs the
+  nowcast only, so this also needs the gate extended to score multiple leads) and ADR-022 (NE
+  coverage; verify access-legality T1 first).
+- Unblock local subsurface truth (Bare Point FOI, task #8) — the accuracy ceiling until then.
