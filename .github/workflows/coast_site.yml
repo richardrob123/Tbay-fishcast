@@ -88,7 +88,9 @@ jobs:
           set -e
           git config user.email "actions@github.com"
           git config user.name "coast-site bot"
-          git add data/gate_log.csv data/nearshore_anchor.csv
+          # regenerate the honest back-test scorecard from the freshly-appended logs
+          python scripts/accuracy_scorecard.py || true
+          git add data/gate_log.csv data/nearshore_anchor.csv docs/ACCURACY_SCORECARD.md
           if git diff --staged --quiet; then
             echo "no new observations to commit"; exit 0
           fi
