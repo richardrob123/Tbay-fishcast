@@ -62,7 +62,15 @@ def _cat_bytes(url: str) -> bytes:
     if hit is not None:
         _BYTES_CACHE.move_to_end(url)
         return hit
-    fs = fsspec.filesystem("https", block_size=_FSSPEC_BLOCK)
+    # Bound the fetch: this is the heaviest call in the 4x/day heartbeat hot path and was the ONE
+    # HTTP source with no timeout (aiohttp defaults to 300 s/request), so a stalled NODD host could
+    # block ~5 min/file invisibly (validation finding #10). Every other ingest sets a tight timeout.
+    try:
+        import aiohttp
+        _ckw = {"timeout": aiohttp.ClientTimeout(total=60)}
+    except Exception:  # noqa: BLE001  (aiohttp always present with fsspec[http], but fail safe)
+        _ckw = {}
+    fs = fsspec.filesystem("https", block_size=_FSSPEC_BLOCK, client_kwargs=_ckw)
     data = fs.cat_file(url)
     _BYTES_CACHE[url] = data
     _BYTES_CACHE.move_to_end(url)

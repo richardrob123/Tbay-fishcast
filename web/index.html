@@ -226,11 +226,17 @@ function renderLegend(){
       `<span class="lmut">${opt[0]}–${opt[1]}°C core</span>`;
   }
   // Measured thermal-field uncertainty stays DISCOVERABLE on hover, not crowding the bar.
-  el.title = (fe && fe.pooled_mae_m)
-    ? `Thermal-field position error ±${fe.pooled_mae_m} m depth — measured from the forecast gate `
-      + `(${fe.lead_trend_detected ? 'grows with lead' : 'no lead trend over 24–120 h'}; `
-      + `n=${fe.n}, provisional).`
-    : '';
+  // Honest about what it is: an absolute isotherm-depth error vs a STABLE reference (0 moving-obs
+  // chains), so it's a provisional magnitude, not validated forecast skill — and the "no lead
+  // trend" is what we can measure at n=25, not a proven day-5=day-1 claim.
+  if(fe && fe.pooled_mae_m){
+    const moving = (fe.n_effective_chains|0) > 0;
+    const trend = fe.lead_trend_detected ? 'error grows with lead'
+                : (moving ? 'no lead trend over 24–120 h' : 'no lead trend yet measurable (n=' + fe.n + ')');
+    el.title = `Thermal-field position error ≈ ±${fe.pooled_mae_m} m isotherm depth — ${trend}. `
+             + `Provisional: absolute error vs a stable reference (${fe.n_effective_chains|0} moving-obs `
+             + `chains), not validated forecast skill.`;
+  } else { el.title = ''; }
 }
 
 // upwelling-phase presentation — the fish-review headline: reward the RELAXATION, not the

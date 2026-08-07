@@ -150,6 +150,13 @@ def _load_favor_calib():
     return d
 
 
+# Over-lake Wedderburn bar for the ensemble (already-over-lake) forecast tail. Named so it isn't
+# a bare literal that can drift from the value the manifest reports (validation finding #9). Day-0
+# OBSERVED wind uses the lower airport bar (up.OBSERVED_THRESHOLD_KN=10) because CYQT reads ~3 kn
+# low vs the lake; the forecast tail uses this ~13 kn over-lake bar (see ADR-030 item 4).
+FORECAST_THRESHOLD_KN = 13.0
+
+
 def _build_phase(lead_valid, ens):
     """Regional upwelling-PHASE timeline for the manifest, or None if no wind is reachable.
 
@@ -190,7 +197,7 @@ def _build_phase(lead_valid, ens):
     # the forecast tail is the ensemble control (already over-lake) so it uses the true over-lake
     # Wedderburn bar (~13 kn) — otherwise a modest 10-12 kn forecast wind over-detects a blow.
     obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=up.OBSERVED_THRESHOLD_KN) if o_t else []
-    all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=13.0)
+    all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=FORECAST_THRESHOLD_KN)
 
     by_lead = {}
     for lead, valid in sorted(lead_valid.items()):
@@ -206,7 +213,11 @@ def _build_phase(lead_valid, ens):
     return {"now": by_lead.get("0"), "by_lead": by_lead,
             "obs_station": metar.CYQT if obs else None,
             "obs_available": bool(obs),
-            "threshold_kn": up.OBSERVED_THRESHOLD_KN, "sector_deg": list(up.FAVORABLE_SECTOR)}
+            # BOTH bars are reported honestly: day-0 observed uses the airport bar, the forecast
+            # tail uses the higher over-lake bar. Reporting only the 10 kn understated the tail.
+            "threshold_obs_kn": up.OBSERVED_THRESHOLD_KN,
+            "threshold_forecast_kn": FORECAST_THRESHOLD_KN,
+            "sector_deg": list(up.FAVORABLE_SECTOR)}
 
 
 def _merc_to_ll(x, y):
@@ -336,8 +347,16 @@ def _bottom_temp_field(iso_fields, targets, depth):
 # (below), NOT a per-scene percentile — so a flat, featureless stretch yields little or no prime,
 # and "prime" means truly good conditions, not best-available-today. Disjoint tiers (no overlap).
 SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
-OPTIMAL_SUIT = 0.7      # thermal_suitability at/above this = optimal-temperature core
-IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
+# Tier cutoffs are the PUBLISHED BANDS themselves, not picked suitability numbers (validation
+# finding: OPTIMAL_SUIT=0.7 / IN_RANGE_SUIT=0.15 were unsourced picks that silently decided the
+# whole map). thermal_suitability is 1.0 across the optimal_c plateau and tapers to 0 at the
+# range_c edges, so:
+#   fair (s1) = anywhere in the preferred RANGE (range_c)     -> suit > 0
+#   good (s2) = in the OPTIMAL core (optimal_c) plateau        -> suit >= 1.0
+# The boundaries are now exactly the literature bands from stations.yaml (T2/T3, cited), with no
+# arbitrary cutoff between them. prime (s3) = good AND a measured edge.
+IN_RANGE_SUIT = 0.0     # fair = strictly inside the preferred range (suit > this)
+OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
 # DERIVED FROM DATA, not picked: the 90th percentile of |grad depth| pooled over reachable water
 # across all 9 surveyed stretches (n=464k px) = 0.162 rise/run — the steep tail = real breaks, not
 # the gentle shelf. Reproduce with scripts/analyze_bathy_slope.py; measurement in
@@ -473,8 +492,8 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         within_sp = within & (depth >= lo_d) & (depth <= hi_d)
         suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
         suit = np.where(within_sp, suit, 0.0)
-        fair = suit >= IN_RANGE_SUIT                         # in the preferred temperature range
-        good = suit >= OPTIMAL_SUIT                          # in the optimal-temperature core
+        fair = suit > IN_RANGE_SUIT                          # inside the preferred range (range_c)
+        good = suit >= OPTIMAL_PLATEAU                       # the optimal-core plateau (optimal_c)
         prime = good & edge                                  # optimal temp AND a real edge — truly prime
         # DISJOINT tiers: paint each pixel exactly once (outer fair ring, good ring, prime core)
         # so semi-transparent fills don't COMPOUND into an opaque slab — a light graded wash.
