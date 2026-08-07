@@ -38,10 +38,34 @@ truth (field logs / a Thunder Bay logger) exists — no amount of threshold-tuni
   frontier. Now grids depth from real crossings only + emits the sentinel by node-majority, with a
   degenerate-triangulation fallback. Property-tested.
 
-## Open findings — ranked (to consolidate next)
+## Consolidation completed (follow-up pass, 2026-08-07)
+
+Nearly all of the ranked open items below were then fixed and pushed:
+- **#1 anchor divergence** — map & pins now share `features.nearshore.nearshore_surface_delta`.
+- **#2 censored-ref caveat** — the ±m tooltip states it's provisional absolute error vs a stable
+  reference (0 moving-obs chains), not validated skill; "no lead trend yet measurable (n=25)".
+- **#3 tier cutoffs** — replaced the 0.7/0.15 picks with the cited bands (fair=range, good=optimal
+  plateau); then the whole render went **hybrid** (ADR-033): discrete temperature × CONTINUOUS
+  structure glow with data-derived (regional p90/p95/p99) band edges. Silver-Islet "prime" 48%→9%.
+- **#4 train-on-test** — scorecard flags the diagnostic chain that also feeds the bias (upper bound).
+- **#5 phase thresholds** — manifest now reports both the 10 kn observed and 13 kn forecast bars.
+- **#6 weak-cue** — the DATA path no longer emits structure glow for salmon/steelhead (tested).
+- **#8 dead code** — TARGETS / empty line pipeline / stale docstrings removed.
+- **#9 frozen masks** — re-froze the 3 stretches that were silently hitting live Overpass.
+- **#10 LSOFS timeout** — 60 s client timeout on the one unbounded hot-path fetch.
+- **Data levers:** the GLERL **mooring climatology** is now an offshore LSOFS cross-check
+  (`check_offshore_climatology.py`; first run: model offshore mixed-layer 11.42 vs clim 11.54 °C);
+  the Landsat nearshore delta now reaches the **pins** too (via #1). The heatmap was
+  headless-rendered and eyeballed at many spots (rocky / flat / city / weak-cue).
+
+Still genuinely open (smaller or blocked): nearshore +2.35 °C taper as n grows (#7); heartbeat
+missing-anchor flag (#11); a tiny-grid `_overlay` golden for the depth-gate/clip (#12); the
+FLake bias-envelope (needs a CDS key in CI); a **live buoy/METAR wind gate** (the next real lever —
+same accumulate-then-verify shape as the offshore check, needs the NDBC stdmet wind parser); GLOS
+depth-gate still HTTP-000 (route via UMD LLO CSVs). Original ranked list follows for the record.
 
 ### Correctness
-1. **[HIGH] Map vs station-pin surface-anchor divergence.** The map warms the GLSEA anchor by the
+1. **[HIGH — FIXED] Map vs station-pin surface-anchor divergence.** The map warms the GLSEA anchor by the
    measured nearshore delta (`build_coast_site.py:543`, +2.35 °C); the pin/heartbeat path uses raw
    GLSEA (`forecast_window.py:88`). Two published views disagree on the same water — pins read
    ~2.35 °C colder → deeper isotherm → more "reachable" than the polygons over them. *Fix:* factor
