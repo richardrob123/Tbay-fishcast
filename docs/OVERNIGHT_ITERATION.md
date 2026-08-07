@@ -148,6 +148,9 @@ and needs sign-off; see proposed ADRs below.
   (+47 % skill)** — the correction passes the ADR-006 demotion test. Auto-regenerates daily
   (`docs/ACCURACY_SCORECARD.md`). Honestly flags llo1's sensor-pinned constant obs.
 - **Band-nesting invariant locked** (`8878c2c`) — worst poke-out 0.17 %, CI-guarded.
+- **Scorecard wiring confirmed on the runner** (build `3a70bf2`, deploy 04:06 UTC): the daily
+  Action regenerated and committed `docs/ACCURACY_SCORECARD.md` itself — the back-test is
+  self-maintaining. Determinism held again (silver ha 19.9, res 4.0).
 
 ## Open / next
 
