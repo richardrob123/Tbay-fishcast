@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T16:42:21Z",
- "age_h": 4.7,
+ "built_utc": "2026-08-07T17:40:55Z",
+ "age_h": 5.7,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -95,7 +95,7 @@
    "label": "prime"
   }
  ],
- "combine": "thermal-niche \u2229 (thermal-front \u222a bathymetric-structure) \u2014 conjunction, no fitted weights",
+ "combine": "optimal-temperature \u2229 measured bottom-structure (absolute bars, no fitted weights)",
  "favor_calibrated": false,
  "n_leads": 6,
  "bias": {
@@ -417,7 +417,7 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.58,
    "low_confidence": false,
    "days": [
@@ -425,13 +425,13 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 30.0
+     "reach_ha": 37.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 12.8
+     "reach_ha": 14.2
     },
     {
      "label": "Sun Aug 9",
@@ -443,19 +443,19 @@
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 5.0
+     "reach_ha": 10.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 5.7
+     "reach_ha": 10.7
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 4.0
+     "reach_ha": 5.4
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -1002,33 +1002,33 @@
  "wind": [
   {
    "day": "Fri",
-   "favor": 0.02,
+   "favor": 0.03,
    "p": 0.0,
-   "peak_kn": 6
+   "peak_kn": 7
   },
   {
    "day": "Sat",
-   "favor": 0.12,
+   "favor": 0.11,
    "p": 0.0,
-   "peak_kn": 9
+   "peak_kn": 10
   },
   {
    "day": "Sun",
-   "favor": 0.03,
+   "favor": 0.02,
    "p": 0.0,
-   "peak_kn": 9
+   "peak_kn": 3
   },
   {
    "day": "Mon",
-   "favor": 0.05,
+   "favor": 0.04,
    "p": 0.0,
-   "peak_kn": 6
+   "peak_kn": 7
   },
   {
    "day": "Tue",
    "favor": 0.04,
    "p": 0.0,
-   "peak_kn": 5
+   "peak_kn": 11
   }
  ],
  "phase": {
@@ -1039,15 +1039,7 @@
    "active": false,
    "source": "observed:CYQT",
    "confidence": "high",
-   "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-   "since_end_h": 61.0,
-   "run": {
-    "start_utc": "2026-08-04T17:00:00Z",
-    "end_utc": "2026-08-04T23:00:00Z",
-    "duration_h": 6.0,
-    "peak_kn": 16.0,
-    "dir_deg": 271
-   }
+   "detail": "no sustained west-quadrant blow in the observed window"
   },
   "by_lead": {
    "0": {
@@ -1057,15 +1049,7 @@
     "active": false,
     "source": "observed:CYQT",
     "confidence": "high",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 61.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    },
    "24": {
     "phase": "neutral",
@@ -1074,15 +1058,7 @@
     "active": false,
     "source": "forecast:gfs025",
     "confidence": "med",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 85.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    },
    "48": {
     "phase": "neutral",
@@ -1091,15 +1067,7 @@
     "active": false,
     "source": "forecast:gfs025",
     "confidence": "med",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 109.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    },
    "72": {
     "phase": "neutral",
@@ -1108,15 +1076,7 @@
     "active": false,
     "source": "forecast:gfs025",
     "confidence": "low",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 133.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    },
    "96": {
     "phase": "neutral",
@@ -1125,15 +1085,7 @@
     "active": false,
     "source": "forecast:gfs025",
     "confidence": "low",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 157.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    },
    "120": {
     "phase": "neutral",
@@ -1142,15 +1094,7 @@
     "active": false,
     "source": "forecast:gfs025",
     "confidence": "low",
-    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
-    "since_end_h": 181.0,
-    "run": {
-     "start_utc": "2026-08-04T17:00:00Z",
-     "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 6.0,
-     "peak_kn": 16.0,
-     "dir_deg": 271
-    }
+    "detail": "no sustained west-quadrant blow in the observed window"
    }
   },
   "obs_station": "CYQT",

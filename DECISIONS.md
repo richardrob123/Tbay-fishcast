@@ -101,6 +101,25 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-029 — "Prime" must be ABSOLUTE, not best-of-scene; temperature stays primary.** Field
+  review of the live map (operator) surfaced two flaws. (1) The edge threshold that defined prime
+  was a per-scene PERCENTILE (top ~third of each stretch's gradient/slope), so ~a third of every
+  stretch was always flagged prime regardless of whether real structure existed — "best available
+  today", not "truly good". Replaced with an ABSOLUTE physical bar from the measured NONNA slope
+  distribution: a real drop-off/break is >=0.15 rise/run (~8-12% of reachable water). Now a flat,
+  featureless stretch yields little or no prime; prime concentrates on genuine breaks (city arc
+  prime fell to ~0-9% of shaded, staying high only where the geography really is steep-and-cold —
+  Silver Islet, and the low-confidence Little Trout Bay). (2) The modelled thermal-FRONT gradient
+  was DROPPED from the spatial edge: LSOFS is too coarse to resolve real fronts (Landsat couldn't
+  validate it, ADR-028) and it's largely redundant with depth structure, so it was over-calling
+  prime. The edge is now the directly-measured bottom structure only; the thermal/relaxation aspect
+  lives in the temperature grading and the phase banner. Tiers simplified and made temperature-first:
+  fair = in the preferred range (faint context wash), good = the OPTIMAL-temperature core, prime =
+  optimal temp AND a real measured drop-off. Fill opacities re-weighted so fair recedes (0.13) and
+  good/prime carry the signal. NOTE (honest limit, unchanged): in shallow enclosed basins (e.g. the
+  marina) LSOFS offshore-node profiles interpolate cold into shallow water, so "good/fair" can
+  over-cover there — a nearshore-temperature accuracy limit (ADR-019/028), not a tiering flaw.
+
 - **ADR-028 — Push accuracy to the no-logs limit: bathymetric structure, thermal-band provenance,
   seasonal regime, and an honest Landsat-front finding.** Asked to push accuracy as far as possible
   without field logs, we did four things. (1) **Bathymetric structure** added to the ranking:

@@ -265,23 +265,24 @@ def _bottom_temp_field(iso_fields, targets, depth):
 # than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
 TARGETS = (12.0, 10.0, 8.0)
 
-# Where-the-fish-ARE tiers, a data-driven CONJUNCTION of data signals (no fitted weights):
-#   thermal suitability (features/suitability.thermal_suitability, from published niche curves)
-#   ∩ EDGE, where edge = a strong thermal front (gradient of the modelled bottom-temp field)
-#     OR strong bathymetric structure (slope of the CHS NONNA soundings = drop-offs/breaks —
-#     directly measured, so higher-confidence than the modelled thermal front). Fish relate to
-#     both kinds of edge; either one, with optimal temperature, makes a spot prime.
-#   s1 fair  = in the preferred range
-#   s2 good  = in the optimal-temperature core, OR in range AND on an edge
-#   s3 prime = in the optimal core AND on an edge (hold + feed) — the best bet
-# Nested s3 ⊆ s2 ⊆ s1 so the UI shades light→dark. Both edge thresholds self-calibrate per scene
-# (top-tercile present), floored so flat water/shelf can't invent an edge. See FISH_BEHAVIOR_REVIEW.
+# Where-the-fish-ARE tiers. TEMPERATURE (published thermal-preference curves) is the primary
+# driver — a spot must be in the right band to shade at all — refined by a real physical EDGE:
+#   s1 fair  = in the preferred temperature range          (context — the water is the right temp)
+#   s2 good  = in the OPTIMAL-temperature core              (genuinely good temperature)
+#   s3 prime = optimal temperature AND on a real edge       (good temp + structure = truly prime)
+# where EDGE = a genuine bottom drop-off / break (the DIRECTLY-MEASURED CHS NONNA slope). We do
+# NOT use the modelled thermal-front gradient as the edge: the LSOFS field is too coarse to
+# resolve real fronts (Landsat couldn't validate it) and it's largely redundant with depth
+# structure, so it over-called prime. The thermal/relaxation aspect lives elsewhere — in the
+# temperature grading (fair/good) and in the upwelling-phase banner. The edge bar is ABSOLUTE
+# (below), NOT a per-scene percentile — so a flat, featureless stretch yields little or no prime,
+# and "prime" means truly good conditions, not best-available-today. Disjoint tiers (no overlap).
 SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
 OPTIMAL_SUIT = 0.7      # thermal_suitability at/above this = optimal-temperature core
 IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
-FRONT_PCTILE = 66       # a "strong" edge = value in the top third present in the scene
-MIN_FRONT_GRAD = 0.005  # °C/m floor (~0.5 °C/100 m) so flat water doesn't register a false front
-MIN_SLOPE = 0.02        # rise/run floor (~2 m/100 m) so a flat shelf doesn't register a false break
+# From the measured CHS NONNA slope distribution, a genuine nearshore drop-off/ledge is ~>=0.15
+# rise/run (~8-12% of reachable water — real breaks, not the shelf). Tier T4 physical bar.
+STRUCT_SLOPE_ABS = 0.15   # rise/run: a real bottom break / drop-off / ledge
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -393,29 +394,21 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         within = within & (d_own <= d_oth)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
-    # EDGE = thermal front OR bathymetric structure; each "strong" threshold self-calibrates
-    # to the scene (top tercile present) with a physical floor so flat water can't invent one.
-    grad = _su.thermal_front_gradient(bottom_c, res)         # °C/m, NaN at land-adjacent pixels
-    gvals = grad[within & np.isfinite(grad)]
-    gthr = max(float(np.percentile(gvals, FRONT_PCTILE)), MIN_FRONT_GRAD) if gvals.size else np.inf
-    front_strong = np.isfinite(grad) & (grad >= gthr)
+    # EDGE = a genuine bottom break/drop-off, by an ABSOLUTE physical bar (not a per-scene
+    # percentile) — so featureless water yields no edge and prime stays meaningful. Directly
+    # measured from the NONNA soundings (the reliable edge signal).
     slope = _su.bathymetric_structure(depth, res)            # rise/run, from NONNA soundings
-    svals = slope[within & np.isfinite(slope)]
-    sthr = max(float(np.percentile(svals, FRONT_PCTILE)), MIN_SLOPE) if svals.size else np.inf
-    struct_strong = np.isfinite(slope) & (slope >= sthr)
-    edge = front_strong | struct_strong                      # thermal break or drop-off/structure
+    edge = np.isfinite(slope) & (slope >= STRUCT_SLOPE_ABS)
 
     default_id = None
     for sp in species:
         suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
         suit = np.where(within, suit, 0.0)
-        fair = suit >= IN_RANGE_SUIT
-        core = suit >= OPTIMAL_SUIT
-        good = core | (fair & edge)
-        prime = core & edge                                  # hold + feed — the combined best bet
+        fair = suit >= IN_RANGE_SUIT                         # in the preferred temperature range
+        good = suit >= OPTIMAL_SUIT                          # in the optimal-temperature core
+        prime = good & edge                                  # optimal temp AND a real edge — truly prime
         # DISJOINT tiers: paint each pixel exactly once (outer fair ring, good ring, prime core)
-        # so semi-transparent fills don't COMPOUND into an opaque slab over enclosed basins —
-        # the map reads as a light graded wash you can see the water through, not a solid blob.
+        # so semi-transparent fills don't COMPOUND into an opaque slab — a light graded wash.
         tiers = {"s1": fair & ~good, "s2": good & ~prime, "s3": prime}
         emitted_any = False
         for tag, _label in SUIT_LEVELS:
@@ -643,7 +636,7 @@ def main(argv) -> int:
                      "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note}
                     for sp in cfg.species],
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
-        "combine": "thermal-niche ∩ (thermal-front ∪ bathymetric-structure) — conjunction, no fitted weights",
+        "combine": "optimal-temperature ∩ measured bottom-structure (absolute bars, no fitted weights)",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),

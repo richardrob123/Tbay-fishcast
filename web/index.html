@@ -112,14 +112,13 @@
   <div id="legend"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
-    <div class="more">Shading ranks <b>where the fish are</b> by combining two things the research
-      supports: the <b>optimal temperature</b> for the species (published thermal preferences) and
-      the <b>edge</b> — a <b>thermal break</b> (where the modelled bottom temperature changes
-      fastest) <b>or a bottom drop-off / structure</b> (steep slope in the CHS soundings, directly
-      measured). Fish hold and feed on these edges. The darkest <b>prime</b> zone is where both
-      line up (optimal temp on an edge); <b>good</b> is the optimal water or in-range water on an
-      edge; <b>fair</b> is the rest of the preferred range — all within a ~75&nbsp;m cast
-      (≤22&nbsp;m deep). It's a ranking, not a catch percentage: the temperature and the edge are
+    <div class="more"><b>Temperature drives it.</b> <b>fair</b> (faint) = water in the species'
+      preferred range; <b>good</b> = the <b>optimal</b>-temperature core. <b>prime</b> (darkest) adds
+      a real <b>edge</b> on top of optimal temp — a genuine <b>bottom drop-off / break</b> (steep
+      slope in the CHS soundings, directly measured). The edge bar is
+      absolute, so <b>flat, featureless water shows no prime even if the temperature is right</b> —
+      prime means truly good conditions, not just the best spot that day. All within a ~75&nbsp;m
+      cast (≤22&nbsp;m deep). It's a ranking, not a catch percentage: temperature and the edge are
       data, combined without invented weights; local calibration comes from logged trips. The
       banner up top is the <b>upwelling phase</b> — the timing layer:
       a west-quadrant blow first drives cold water to shore (<b>setup/peak</b> — a cold shock that
@@ -156,7 +155,7 @@ let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
 // DISJOINT (outer fair ring / good ring / prime core, no overlap), so these translucent fills
 // read as a light graded wash you can see the water through — not a compounded opaque slab.
 // A light→dark ramp keeps prime distinct. Not fused with phase — phase is the separate banner.
-const SUIT = [ {suf:'s1', op:0.28, col:'#7fe0cb'}, {suf:'s2', op:0.42, col:'#22b39a'}, {suf:'s3', op:0.58, col:'#0c6b4a'} ];
+const SUIT = [ {suf:'s1', op:0.13, col:'#7fe0cb'}, {suf:'s2', op:0.34, col:'#22b39a'}, {suf:'s3', op:0.62, col:'#0c6b4a'} ];
 const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
 function buildSpeciesChips(){
   const el = document.getElementById('species'); if(!el) return;
