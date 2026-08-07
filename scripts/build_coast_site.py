@@ -285,7 +285,7 @@ MIN_SLOPE = 0.02        # rise/run floor (~2 m/100 m) so a flat shelf doesn't re
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
-             targets=TARGETS, species=()):
+             targets=TARGETS, species=(), own_m=None, others_m=()):
     """Return (area_features, reach_px, line_features) for one lead, or (None, 0, []).
 
     Two honest signals, no false precision:
@@ -381,6 +381,16 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     iso_fields = {t: _iso_field(gx, gy, iso_pts, tvals[t]) for t in targets}
     water = np.isfinite(depth)
     within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
+    # TERRITORY CLIP: the coverage boxes overlap by design, so adjacent stretches would each
+    # draw the same shore — doubling into lumpy "blobs". Keep only the pixels this stretch owns
+    # (closer to its centre than to any other stretch's), so the stretches tile the shore instead
+    # of overlapping. Voronoi in mercatormetres; cheap, vectorised.
+    if own_m is not None and len(others_m):
+        d_own = (gx - own_m[0]) ** 2 + (gy - own_m[1]) ** 2
+        d_oth = np.full(gx.shape, np.inf)
+        for ox, oy in others_m:
+            d_oth = np.minimum(d_oth, (gx - ox) ** 2 + (gy - oy) ** 2)
+        within = within & (d_own <= d_oth)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
     # EDGE = thermal front OR bathymetric structure; each "strong" threshold self-calibrates
@@ -441,7 +451,8 @@ def main(argv) -> int:
 
     stretches_out = []
     lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
-    for sid, name, clat, clon, exposure in STRETCHES:
+    centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in STRETCHES]  # for the territory clip
+    for si, (sid, name, clat, clon, exposure) in enumerate(STRETCHES):
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
         except Exception as e:  # noqa: BLE001
@@ -496,7 +507,9 @@ def main(argv) -> int:
             area, reach_px, lines = _overlay(depth, dist, gx, gy, inbox, node_xy,
                                              cols, g_sst, bias, patch.bounds_3857, res,
                                              cfg.product, targets=cfg.band_temps,
-                                             species=cfg.species)
+                                             species=cfg.species,
+                                             own_m=centers_m[si],
+                                             others_m=[c for j, c in enumerate(centers_m) if j != si])
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,

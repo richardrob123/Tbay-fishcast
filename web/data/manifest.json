@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T15:52:43Z",
- "age_h": 3.9,
+ "built_utc": "2026-08-07T16:25:46Z",
+ "age_h": 4.4,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -283,37 +283,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 62.4
+     "reach_ha": 23.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 58.8
+     "reach_ha": 20.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 58.0
+     "reach_ha": 21.2
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 57.1
+     "reach_ha": 19.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 54.0
+     "reach_ha": 17.5
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 53.8
+     "reach_ha": 17.6
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -354,37 +354,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 74.5
+     "reach_ha": 62.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 70.5
+     "reach_ha": 60.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 51.9
+     "reach_ha": 49.7
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 61.7
+     "reach_ha": 54.7
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 61.9
+     "reach_ha": 54.6
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 52.7
+     "reach_ha": 49.5
     }
    ],
    "area": "data/areas/mckellar_harbour.geojson",
@@ -417,7 +417,7 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-06",
+   "anchor_day": "2026-08-05",
    "survey_cov": 0.58,
    "low_confidence": false,
    "days": [
@@ -425,37 +425,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 62.4
+     "reach_ha": 30.0
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 36.8
+     "reach_ha": 12.8
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 16.0
+     "reach_ha": 3.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 32.5
+     "reach_ha": 5.0
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 32.9
+     "reach_ha": 5.7
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 23.2
+     "reach_ha": 4.0
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -496,37 +496,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 21.2
+     "reach_ha": 3.3
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 2.6
+     "reach_ha": 0.3
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 1.0
+     "reach_ha": 0.2
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 1.8
+     "reach_ha": 0.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 1.8
+     "reach_ha": 0.3
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 1.3
+     "reach_ha": 0.3
     }
    ],
    "area": "data/areas/boulevard_current.geojson",
@@ -644,7 +644,7 @@
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 2.0
+     "reach_ha": 1.6
     },
     {
      "label": "Sun Aug 9",
@@ -668,7 +668,7 @@
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 10.1
+     "reach_ha": 8.9
     }
    ],
    "area": "data/areas/shipyard_mackenzie.geojson",
@@ -1042,11 +1042,11 @@
    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
    "since_end_h": 61.0,
    "run": {
-    "start_utc": "2026-08-04T16:00:00Z",
+    "start_utc": "2026-08-04T17:00:00Z",
     "end_utc": "2026-08-04T23:00:00Z",
-    "duration_h": 7.0,
+    "duration_h": 6.0,
     "peak_kn": 16.0,
-    "dir_deg": 273
+    "dir_deg": 271
    }
   },
   "by_lead": {
@@ -1060,11 +1060,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 61.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    },
    "24": {
@@ -1077,11 +1077,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 85.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    },
    "48": {
@@ -1094,11 +1094,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 109.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    },
    "72": {
@@ -1111,11 +1111,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 133.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    },
    "96": {
@@ -1128,11 +1128,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 157.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    },
    "120": {
@@ -1145,11 +1145,11 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 181.0,
     "run": {
-     "start_utc": "2026-08-04T16:00:00Z",
+     "start_utc": "2026-08-04T17:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 7.0,
+     "duration_h": 6.0,
      "peak_kn": 16.0,
-     "dir_deg": 273
+     "dir_deg": 271
     }
    }
   },

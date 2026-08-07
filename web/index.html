@@ -21,18 +21,26 @@
     -webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;
     box-shadow:0 6px 24px #0008}
   /* top header */
-  #top{top:10px;left:10px;right:10px;padding:11px 14px;display:flex;align-items:center;
-    gap:12px;flex-wrap:wrap}
+  #top{top:10px;left:10px;right:10px;padding:9px 13px;display:flex;align-items:center;
+    gap:9px;flex-wrap:wrap}
   #top h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.1px}
   #top h1 .fish{filter:saturate(1.2)}
   .age{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .age.stale{color:var(--warn);font-weight:650}
   .spacer{flex:1}
-  .species{display:flex;gap:6px;flex-wrap:wrap;width:100%;margin:2px 0 7px}
-  .spchip{font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;
-    background:var(--chip,#2a2f37);color:var(--ink);border:1px solid #ffffff22;line-height:1.1}
+  .species{display:flex;gap:6px;flex-wrap:wrap;width:100%;margin:1px 0 5px}
+  .spchip{font:inherit;font-size:12px;padding:3px 10px;border-radius:999px;cursor:pointer;
+    background:var(--chip,#2a2f37);color:var(--ink);border:1px solid #ffffff22;line-height:1.15}
   .spchip.on{background:#22b39a;color:#04120d;border-color:#22b39a;font-weight:650}
-  #legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center;flex-wrap:wrap;width:100%}
+  #legend{display:flex;gap:10px 14px;font-size:11.5px;color:var(--muted);align-items:center;flex-wrap:wrap;width:100%}
+  #legend .key{display:inline-flex;align-items:center;color:var(--ink);font-size:11.5px}
+  #legend .key i.sw{width:11px;height:11px;border-radius:2px;display:inline-block;margin:0 3px 0 8px}
+  #legend .key i.sw:first-child{margin-left:0}
+  #legend .sw.s1{background:#7fd8c4}
+  #legend .sw.s2{background:#22b39a}
+  #legend .sw.s3{background:#0c5c3f}
+  #legend .lmut{color:var(--muted)}
+  #legend .lwarn{color:#e0a53a;font-weight:600}
   #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
   #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:5px;opacity:.9}
   #legnote summary{cursor:pointer;list-style:none;line-height:1.3}
@@ -152,7 +160,7 @@ const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp']
 function buildSpeciesChips(){
   const el = document.getElementById('species'); if(!el) return;
   el.innerHTML = SPECIES.map(s =>
-    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${s.id}" title="${s.note||''}">${s.name}</button>`).join('');
+    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${s.id}" title="${s.name}${s.note?' — '+s.note:''}">${s.name.split(/[(\/]/)[0].trim()}</button>`).join('');
   el.querySelectorAll('.spchip').forEach(b => b.addEventListener('click', () => {
     curSp = SPECIES.find(x=>x.id===b.dataset.id);
     el.querySelectorAll('.spchip').forEach(x=>x.classList.toggle('on', x===b));
@@ -177,13 +185,11 @@ function renderLegend(){
   const el = document.getElementById('legend'); if(!el || !curSp) return;
   const weak = curSp.temp_cue === 'weak';
   const opt = curSp.optimal_c || curSp.range_c;
-  const cue = weak ? '⚠ temperature is a MINOR cue here — fish river mouths/plumes'
-                   : 'temperature predicts this species well';
+  // compact one-line key; the meaning of prime/good/fair lives in "how to read this"
   el.innerHTML =
-    `<span><span class="sw" style="background:#0c5c3f"></span>prime — optimal temp on an edge (front or drop-off)</span>`+
-    `<span><span class="sw" style="background:#22b39a;opacity:.62"></span>good — optimal ${opt[0]}–${opt[1]}°C, or range + edge</span>`+
-    `<span><span class="sw" style="background:#22b39a;opacity:.32"></span>fair — in range ${curSp.range_c[0]}–${curSp.range_c[1]}°C</span>`+
-    `<span style="color:${weak?'#c98a2b':'var(--muted)'}">${cue}</span>`;
+    `<span class="key"><i class="sw s3"></i>prime<i class="sw s2"></i>good<i class="sw s1"></i>fair</span>`+
+    `<span class="lmut">${opt[0]}–${opt[1]}°C core · cast the edge</span>`+
+    (weak ? `<span class="lwarn">⚠ weak temp cue — fish plumes</span>` : ``);
 }
 
 // upwelling-phase presentation — the fish-review headline: reward the RELAXATION, not the
