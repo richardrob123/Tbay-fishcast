@@ -100,3 +100,28 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   are data and the combination needs no weights, but the functional form (conjunction) and the
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
+
+- **ADR-028 — Push accuracy to the no-logs limit: bathymetric structure, thermal-band provenance,
+  seasonal regime, and an honest Landsat-front finding.** Asked to push accuracy as far as possible
+  without field logs, we did four things. (1) **Bathymetric structure** added to the ranking:
+  `suitability.bathymetric_structure` = the slope of the CHS NONNA soundings (drop-offs / breaks /
+  shoal edges), DIRECTLY MEASURED so higher-confidence than the modelled thermal front. The "edge"
+  in the fair/good/prime conjunction is now `thermal-front OR bathymetric-structure` — fish relate
+  to both, either one with optimal temperature makes a spot prime. Same self-calibrating threshold,
+  no fitted weights. (2) **Thermal-band provenance** upgraded T3→T2 (a background research pass
+  confirmed every `range_c`/`optimal_c` is defensible against the primary literature — no numeric
+  change needed); fixed a real mis-citation (the 10.1/12.5 °C age-0 figures are **Edsall & Cleland
+  2000**, not "McCauley & Tait"), added the caveat that adult 6–9.5 °C occupancy comes from a
+  subarctic-lake telemetry study (not Superior), and flagged that coaster brook-trout `optimal_c` is
+  a deliberately cold REALIZED band, not the physiological optimum. Not T1: the primary PDFs are
+  egress-blocked, so values came from abstracts/records — true T1 waits on pulling them to
+  `knowledge/`. (3) **Seasonal regime** (`features/season.py`): a context badge that states the map
+  is a SUMMER thermal/edge model and how the driver shifts (spring = plumes/structure, upwelling
+  matters least; fall = shoal staging), direction-only from the review, no fabricated spatial
+  params. (4) **Landsat front-validation — honest null.** Landsat C2-L2 surface temperature reads
+  ~20–42 °C over a ~5 °C June lake; its over-water absolute values are too unreliable to co-locate
+  against cold offshore nodes (confirms the script's own caveat). So the computed fronts are NOT
+  validated by Landsat here; the model's horizontal structure rests on the in-situ isotherm-depth /
+  forecast-lead gates instead, and the newly-added bathymetric edge is directly measured. Remaining
+  no-logs ceiling: the nearshore SUBSURFACE temperature bias (one offshore-buoy scalar + GLSEA
+  surface anchor; Landsat too sparse to fold in) and the cross-signal weighting (needs catch logs).

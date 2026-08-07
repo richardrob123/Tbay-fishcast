@@ -13,18 +13,22 @@ cliffs) and each traceable to a source:
     through a species' published thermal-preference curve. Data-backed by the fish-thermal
     literature (docs/FISH_BEHAVIOR_REVIEW.md, tier T3): 1.0 across the optimal core, tapering
     to 0 at the edges of the preferred range.
-  * thermal_front_gradient — the thermal edge / depth break, computed as the spatial gradient
-    of the SAME modeled bottom-temperature field. Data-derived (not a picked constant); fish
-    select thermal fronts and structure (telemetry). This is the "where they feed" signal.
+  * thermal_front_gradient — the thermal edge, computed as the spatial gradient of the SAME
+    modeled bottom-temperature field. Data-derived; fish select thermal fronts (telemetry).
+  * bathymetric_structure — the physical break / drop-off / shoal edge, the slope of the CHS
+    NONNA soundings. DIRECTLY MEASURED bathymetry, so higher-confidence than the modelled
+    front. Together with the thermal front these are the "where they feed / hold on structure"
+    edges — either kind counts.
   * upwelling_favorability — a CONTINUOUS response of upwelling strength to wind speed,
     replacing the arbitrary binary ≥13 kt cutoff. Physics-backed (Wedderburn control; Li et
     al. 2021 wind-vs-cooling r=-0.87). Its centre/width are CALIBRATED to observed
     wind↔nearshore-cooling where available (scripts/calibrate_upwelling.py), not picked.
 
-WHERE-THE-FISH-ARE combination (the build): thermal_suitability (where they hold) and
-thermal_front_gradient (where they feed) ARE combined — but by CONJUNCTION, which needs no
-invented weights: the prime zone is where a species is both in its optimal temperature AND on
-a strong thermal edge (the edge threshold self-calibrates to each scene). A weighted sum with
+WHERE-THE-FISH-ARE combination (the build): thermal_suitability (where they hold) and the two
+EDGE signals — thermal_front_gradient and bathymetric_structure (where they feed / hold on
+structure) — ARE combined, but by CONJUNCTION, which needs no invented weights: the prime zone
+is where a species is both in its optimal temperature AND on a strong edge (thermal front OR
+bathymetric break; each edge threshold self-calibrates to its scene). A weighted sum with
 fitted coefficients is a different thing and is NOT done here — that needs catch outcomes.
 
 The upwelling PHASE (features/upwelling_phase.py) stays a SEPARATE, physically-grounded
@@ -71,6 +75,21 @@ def thermal_front_gradient(bottom_c, res_m: float):
     """
     b = np.asarray(bottom_c, dtype=float)
     gy, gx = np.gradient(b, res_m)
+    return np.hypot(gx, gy)
+
+
+def bathymetric_structure(depth_m, res_m: float):
+    """Bathymetric structure strength: the bottom SLOPE magnitude |∇depth| (rise/run,
+    dimensionless). Where the bottom drops off fastest is a break / ledge / shoal edge —
+    the physical structure shore fish relate to independent of temperature (a rocky point,
+    a drop-off, the lip of a hump). Directly measured (CHS NONNA-10 soundings), so it is a
+    higher-confidence location signal than the modelled thermal front.
+
+    Steep = structure; a flat sand/mud shelf reads ~0. NaN off-water propagates one pixel in
+    (numpy gradient), keeping the shoreline rim from registering as false structure.
+    """
+    d = np.asarray(depth_m, dtype=float)
+    gy, gx = np.gradient(d, res_m)
     return np.hypot(gx, gy)
 
 

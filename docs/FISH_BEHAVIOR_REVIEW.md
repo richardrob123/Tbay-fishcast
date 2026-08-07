@@ -15,7 +15,7 @@ control, ~10 °C cooling, 0–120 h ≈ event lifetime). Two refinements and one
 | our value | literature | action |
 |---|---|---|
 | sweet spot 10–12 °C | adult lean lake trout occupy **6–9.5 °C** in summer; 10.1 °C is the age-0 preferendum | **shift "sweet spot" label to ~6–10 °C**; keep 12 °C as the OUTER margin, not the sweet spot |
-| growth optimum 12.5 °C | ~12.5 °C (McCauley & Tait) | keep — but it's a *growth* optimum for young fish, not where adults concentrate |
+| growth optimum 12.5 °C | ~12.5 °C (Edsall & Cleland 2000, age-0) | keep — but it's a *growth* optimum for young fish, not where adults concentrate |
 | chronic ceiling 16 °C | behavioral **avoidance ~15 °C** | **lower ceiling to ~15 °C** |
 | ≤8 °C strongest signal | matches fall 8–9 °C shallow window | keep |
 | seiche ~40 h | Superior **surface** seiche ~8–14 h; 40 h is likely internal/near-inertial relaxation | reconcile the label (not load-bearing) |
@@ -76,6 +76,10 @@ thermal niche **∩** thermal front (the spatial gradient of the modelled bottom
 drop-offs). Tiers: **fair** (in range) → **good** (optimal temp, or range+edge) → **prime**
 (optimal temp on an edge). Conjunction, so no fitted weights; the edge threshold self-calibrates
 per scene. This is the "reward the edge, not just the trough" recommendation, made spatial.
+**Shipped (ADR-028):** the "edge" is now thermal front **OR bathymetric structure** (slope of the
+NONNA soundings = drop-offs/breaks, directly measured); thermal bands upgraded to T2 with fixed
+citations (Edsall & Cleland 2000; subarctic-lake caveat); a **seasonal-regime** badge marks the map
+as a summer model. Landsat front-validation returned an honest null (over-water ST too unreliable).
 
 **Deliberately NOT done — the honest boundary.** We do **not** fuse temperature × phase × front ×
 structure into one "probability" with hand-picked weights: with no catch/field-session outcomes yet
@@ -94,11 +98,11 @@ where it can be fit and temporal-split validated.
    compute (setup vs relaxation) wired into the map score.
 3. **Species/regime layers** (larger): coaster-brook-trout regime, a warmwater/brown penalty,
    a river-plume-proximity term, and a fall-spawn regime. Sequence behind #1–2.
-4. **Pull GLFC Sp. Pub. 87-3 + McCauley & Tait** into `knowledge/` as T1/T2 citations (egress-
+4. **Pull GLFC Sp. Pub. 87-3 + Edsall & Cleland 2000 (NAJFM)** into `knowledge/` as T1 citations (egress-
    blocked here; fetch on an open machine).
 
 ## Sources
-Movement Ecology 2023 (adult nearshore telemetry); USGS McCauley & Tait (age-0 preferendum/growth);
+Movement Ecology 2023 (adult nearshore telemetry, doi 10.1186/s40462-023-00417-x — a SUBARCTIC lake, not Superior: transfer caveat); Edsall & Cleland 2000 NAJFM (age-0 preferendum ~10.1 C / growth optimum ~12.5 C — corrects an earlier mis-citation to "McCauley & Tait");
 GLFC Sp. Pub. 87-3 (temperature relationships); Li et al. 2021 JGR-Oceans (upwelling event physics,
 r=−0.87 wind-vs-cooling); Lakehead Nipigon Bay coaster thesis; MN TU / JS-Outdoors / Northern
 Ontario Travel / Great Lakes Angler (shore practice). Full URLs in the session research record.

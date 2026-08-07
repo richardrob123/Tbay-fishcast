@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T15:16:06Z",
- "age_h": 3.3,
+ "built_utc": "2026-08-07T15:52:43Z",
+ "age_h": 3.9,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -30,7 +30,7 @@
    "front_c": 12.0,
    "temp_cue": "strong",
    "default": true,
-   "note": "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C."
+   "note": "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C. Adult occupancy from a subarctic-lake study \u2014 transfer caveat."
   },
   {
    "id": "brook_trout",
@@ -46,7 +46,7 @@
    "front_c": 14.0,
    "temp_cue": "strong",
    "default": false,
-   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 the upwelling logic fits best here."
+   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 upwelling logic fits best here. Band is the realized cold niche, not the (warmer) growth optimum."
   },
   {
    "id": "salmon",
@@ -95,7 +95,7 @@
    "label": "prime"
   }
  ],
- "combine": "thermal-niche \u2229 thermal-front (conjunction, no fitted weights)",
+ "combine": "thermal-niche \u2229 (thermal-front \u222a bathymetric-structure) \u2014 conjunction, no fitted weights",
  "favor_calibrated": false,
  "n_leads": 6,
  "bias": {
@@ -772,7 +772,7 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.71,
    "low_confidence": false,
    "days": [
@@ -780,37 +780,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 44.1
+     "reach_ha": 53.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 43.5
+     "reach_ha": 52.8
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 43.7
+     "reach_ha": 53.4
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 46.8
+     "reach_ha": 55.2
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 34.1
+     "reach_ha": 40.3
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 44.4
+     "reach_ha": 49.8
     }
    ],
    "area": "data/areas/silver_islet.geojson",
@@ -1196,5 +1196,11 @@
     "steelhead"
    ]
   }
- ]
+ ],
+ "season": {
+  "season": "summer",
+  "label": "Summer (stratified)",
+  "upwelling": "primary",
+  "note": "The model's core regime: cold-reachability + the thermal/structure edge predict opportunity; reward the relaxation after a blow."
+ }
 }

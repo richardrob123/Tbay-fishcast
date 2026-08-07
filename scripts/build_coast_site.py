@@ -265,20 +265,23 @@ def _bottom_temp_field(iso_fields, targets, depth):
 # than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
 TARGETS = (12.0, 10.0, 8.0)
 
-# Where-the-fish-ARE tiers, a data-driven CONJUNCTION of two signals (no fitted weights):
+# Where-the-fish-ARE tiers, a data-driven CONJUNCTION of data signals (no fitted weights):
 #   thermal suitability (features/suitability.thermal_suitability, from published niche curves)
-#   × thermal-front strength (spatial gradient of the modelled bottom-temp field = edges/breaks).
+#   ∩ EDGE, where edge = a strong thermal front (gradient of the modelled bottom-temp field)
+#     OR strong bathymetric structure (slope of the CHS NONNA soundings = drop-offs/breaks —
+#     directly measured, so higher-confidence than the modelled thermal front). Fish relate to
+#     both kinds of edge; either one, with optimal temperature, makes a spot prime.
 #   s1 fair  = in the preferred range
-#   s2 good  = in the optimal-temperature core, OR in range AND on a strong thermal edge
-#   s3 prime = in the optimal core AND on a strong edge (hold + feed) — the best bet
-# Nested s3 ⊆ s2 ⊆ s1 so the UI shades light→dark. The edge threshold self-calibrates per scene
-# (top-tercile gradient present), floored so flat water can't invent a front. Tag names kept as
-# s1/s2/s3 for overlay compatibility. See docs/FISH_BEHAVIOR_REVIEW.md.
+#   s2 good  = in the optimal-temperature core, OR in range AND on an edge
+#   s3 prime = in the optimal core AND on an edge (hold + feed) — the best bet
+# Nested s3 ⊆ s2 ⊆ s1 so the UI shades light→dark. Both edge thresholds self-calibrate per scene
+# (top-tercile present), floored so flat water/shelf can't invent an edge. See FISH_BEHAVIOR_REVIEW.
 SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
 OPTIMAL_SUIT = 0.7      # thermal_suitability at/above this = optimal-temperature core
 IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
-FRONT_PCTILE = 66       # a "strong" edge = gradient in the top third present in the scene
+FRONT_PCTILE = 66       # a "strong" edge = value in the top third present in the scene
 MIN_FRONT_GRAD = 0.005  # °C/m floor (~0.5 °C/100 m) so flat water doesn't register a false front
+MIN_SLOPE = 0.02        # rise/run floor (~2 m/100 m) so a flat shelf doesn't register a false break
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -380,11 +383,17 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
-    # thermal-front strength (data-derived edge signal); "strong" self-calibrates to the scene
+    # EDGE = thermal front OR bathymetric structure; each "strong" threshold self-calibrates
+    # to the scene (top tercile present) with a physical floor so flat water can't invent one.
     grad = _su.thermal_front_gradient(bottom_c, res)         # °C/m, NaN at land-adjacent pixels
     gvals = grad[within & np.isfinite(grad)]
     gthr = max(float(np.percentile(gvals, FRONT_PCTILE)), MIN_FRONT_GRAD) if gvals.size else np.inf
     front_strong = np.isfinite(grad) & (grad >= gthr)
+    slope = _su.bathymetric_structure(depth, res)            # rise/run, from NONNA soundings
+    svals = slope[within & np.isfinite(slope)]
+    sthr = max(float(np.percentile(svals, FRONT_PCTILE)), MIN_SLOPE) if svals.size else np.inf
+    struct_strong = np.isfinite(slope) & (slope >= sthr)
+    edge = front_strong | struct_strong                      # thermal break or drop-off/structure
 
     default_id = None
     for sp in species:
@@ -392,8 +401,8 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         suit = np.where(within, suit, 0.0)
         fair = suit >= IN_RANGE_SUIT
         core = suit >= OPTIMAL_SUIT
-        good = core | (fair & front_strong)
-        prime = core & front_strong                          # hold + feed — the combined best bet
+        good = core | (fair & edge)
+        prime = core & edge                                  # hold + feed — the combined best bet
         tiers = {"s1": fair, "s2": good, "s3": prime}
         emitted_any = False
         for tag, _label in SUIT_LEVELS:
@@ -596,6 +605,12 @@ def main(argv) -> int:
     except Exception as e:  # noqa: BLE001
         print(f"phase unavailable: {str(e)[:60]}")
 
+    # seasonal regime context (research-backed direction; the zones are a SUMMER model)
+    from tbay_fishcast.features import season as _season
+    reg = _season.regime(issue)
+    season_block = {"season": reg.season, "label": reg.label,
+                    "upwelling": reg.upwelling, "note": reg.note}
+
     now = datetime.now(timezone.utc)
     age_h = (now - datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)).total_seconds() / 3600
     manifest = {
@@ -612,13 +627,13 @@ def main(argv) -> int:
                      "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note}
                     for sp in cfg.species],
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
-        "combine": "thermal-niche ∩ thermal-front (conjunction, no fitted weights)",
+        "combine": "thermal-niche ∩ (thermal-front ∪ bathymetric-structure) — conjunction, no fitted weights",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},
         "stretches": stretches_out, "stations": stations, "wind": wind,
-        "phase": phase, "markers": RIVER_MOUTHS,
+        "phase": phase, "markers": RIVER_MOUTHS, "season": season_block,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
     print(f"wrote {OUT/'manifest.json'} — {len(stretches_out)} stretches, {len(stations)} stations, "

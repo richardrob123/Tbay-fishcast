@@ -60,6 +60,17 @@ def test_thermal_front_gradient_finds_edges():
     assert np.nanmax(g2) < np.nanmax(g)
 
 
+def test_bathymetric_structure_finds_dropoffs():
+    # flat shallow shelf then a drop-off to deep: slope ~0 on the flats, large at the drop
+    depth = np.array([[3., 3., 3., 3., 12., 20., 20., 20.]] * 5)
+    s = su.bathymetric_structure(depth, res_m=10.0)
+    assert s[2, 0] == pytest.approx(0.0, abs=1e-9)          # flat shallow shelf
+    assert s[2, 6] == pytest.approx(0.0, abs=1e-9)          # flat deep flat
+    assert s[2, 4] > 0.1                                     # the drop-off registers as structure
+    # a uniformly flat bottom has no structure anywhere
+    assert np.allclose(su.bathymetric_structure(np.full((4, 4), 8.0), 10.0), 0.0)
+
+
 def test_ensemble_favorability_graded_vs_binary():
     # west wind at 10 kt for a whole day, one member: binary prob (>=13) = 0, favorability > 0
     time = [f"2026-08-07T{h:02d}:00" for h in range(24)]

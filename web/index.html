@@ -98,6 +98,7 @@
 <div class="card" id="top">
   <h1><span class="fish">🎣</span> Thunder Bay shore-fishing forecast</h1>
   <span class="age" id="age"></span>
+  <span class="age" id="season" style="cursor:help"></span>
   <span class="spacer"></span>
   <div id="species" class="species"></div>
   <div id="legend"></div>
@@ -105,8 +106,9 @@
     <summary>how to read this · ⓘ</summary>
     <div class="more">Shading ranks <b>where the fish are</b> by combining two things the research
       supports: the <b>optimal temperature</b> for the species (published thermal preferences) and
-      the <b>thermal edge / drop-off</b> (computed from how fast the modelled bottom temperature
-      changes — fish hold and feed on these breaks). The darkest <b>prime</b> zone is where both
+      the <b>edge</b> — a <b>thermal break</b> (where the modelled bottom temperature changes
+      fastest) <b>or a bottom drop-off / structure</b> (steep slope in the CHS soundings, directly
+      measured). Fish hold and feed on these edges. The darkest <b>prime</b> zone is where both
       line up (optimal temp on an edge); <b>good</b> is the optimal water or in-range water on an
       edge; <b>fair</b> is the rest of the preferred range — all within a ~75&nbsp;m cast
       (≤22&nbsp;m deep). It's a ranking, not a catch percentage: the temperature and the edge are
@@ -178,7 +180,7 @@ function renderLegend(){
   const cue = weak ? '⚠ temperature is a MINOR cue here — fish river mouths/plumes'
                    : 'temperature predicts this species well';
   el.innerHTML =
-    `<span><span class="sw" style="background:#0c5c3f"></span>prime — optimal temp on a thermal edge</span>`+
+    `<span><span class="sw" style="background:#0c5c3f"></span>prime — optimal temp on an edge (front or drop-off)</span>`+
     `<span><span class="sw" style="background:#22b39a;opacity:.62"></span>good — optimal ${opt[0]}–${opt[1]}°C, or range + edge</span>`+
     `<span><span class="sw" style="background:#22b39a;opacity:.32"></span>fair — in range ${curSp.range_c[0]}–${curSp.range_c[1]}°C</span>`+
     `<span style="color:${weak?'#c98a2b':'var(--muted)'}">${cue}</span>`;
@@ -323,6 +325,15 @@ map.on('load', async () => {
   }
   renderAge();
   setInterval(renderAge, 60e3);
+
+  // seasonal-regime badge — the map is a SUMMER model; flag when the season shifts what drives catch
+  const se = document.getElementById('season');
+  if(man.season){
+    const s = man.season, primary = s.upwelling === 'primary';
+    se.textContent = '· ' + s.label + (primary ? '' : ' ⚠');
+    se.title = s.note + (primary ? '' : '\n(the map is a summer thermal/edge model — weight it less this season)');
+    se.style.color = primary ? '' : 'var(--warn)';
+  }
 
   // ticks from the first stretch's day labels
   const days = man.stretches[0].days;
