@@ -493,6 +493,27 @@ def main(argv) -> int:
     issue = _resolve_issue(cfg, issue)     # fall back if today's t12z isn't posted yet
     OUT.mkdir(parents=True, exist_ok=True)
 
+    # SAFETY-CRITICAL (ADR-007 / CLAUDE rule 4): EVERY recommendation surface — stretches,
+    # stations, river-mouth markers — passes through the regs gate before it is emitted, so the
+    # product is structurally INCAPABLE of drawing closed/prohibited water, not merely by human
+    # curation of the lists (the Kakabeka-pin failure mode). Closures are name-based hard/seasonal
+    # today; a geometric clip is Phase 2. Every drop is LOUD.
+    from tbay_fishcast.scoring.regs_gate import RegsGate
+    _regs = RegsGate.load()
+    _viol = _regs.validate()
+    if _viol:
+        # Phase 0: the seed regs aren't all T1 yet, so validate() has known violations. Surface
+        # the go-live blocker LOUDLY but don't fail the dev build — flipping this to a hard block
+        # (sys.exit) is the ADR-007 go-live gate, tracked separately.
+        print(f"⚠ regs validate(): {len(_viol)} provenance violation(s) — GO-LIVE BLOCKER (not build): "
+              + "; ".join(_viol))
+    def _regs_ok(nm):
+        if _regs.is_prohibited(nm, issue):
+            print(f"⚠ REGS GATE: dropping prohibited water {nm!r} from recommendations (issue {issue})")
+            return False
+        return True
+    stretches_in = [s for s in STRETCHES if _regs_ok(s[1])]   # s[1] = display name
+
     central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
     bias = (central, lo, hi, n)
     if bias_src != "live":
@@ -500,11 +521,11 @@ def main(argv) -> int:
 
     stretches_out = []
     lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
-    centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in STRETCHES]  # for the territory clip
+    centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in stretches_in]  # for the territory clip
     ns_delta, ns_n = _nearshore_delta()   # measured shore-minus-GLSEA surface warm-delta
     if ns_delta > 0:
         print(f"nearshore surface delta +{ns_delta:.2f} C applied to anchor (Landsat n={ns_n})")
-    for si, (sid, name, clat, clon, exposure) in enumerate(STRETCHES):
+    for si, (sid, name, clat, clon, exposure) in enumerate(stretches_in):
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
         except Exception as e:  # noqa: BLE001
@@ -622,6 +643,8 @@ def main(argv) -> int:
     # per-station verdicts (reuse the per-spot forecast)
     stations = []
     for s in cfg.shore_stations:
+        if not _regs_ok(s.name):        # regs gate on the station recommendation surface
+            continue
         pts, wins, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue, (central, lo, hi, n))
         if not pts:
             continue
@@ -717,7 +740,8 @@ def main(argv) -> int:
                  "n": n, "source": bias_src},
         "forecast_error": fc_err,   # MEASURED isotherm-depth MAE + lead-trend verdict (or None)
         "stretches": stretches_out, "stations": stations, "wind": wind,
-        "phase": phase, "markers": RIVER_MOUTHS, "season": season_block,
+        "phase": phase, "markers": [m for m in RIVER_MOUTHS if _regs_ok(m["name"])],
+        "season": season_block,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
     print(f"wrote {OUT/'manifest.json'} — {len(stretches_out)} stretches, {len(stations)} stations, "

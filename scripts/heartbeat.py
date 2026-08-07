@@ -98,9 +98,17 @@ def main(argv) -> int:
     central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
     bias = (central, lo, hi, n)
 
+    # SAFETY (ADR-007 / rule 4): the alert never names closed/prohibited water. Same gate as
+    # the coast site — a station on a hard/seasonal closure is dropped before it's scored.
+    from tbay_fishcast.scoring.regs_gate import RegsGate
+    _regs = RegsGate.load()
+
     prev = _load_state()
     lines, state, transitions = [], {}, []
     for s in cfg.shore_stations:
+        if _regs.is_prohibited(s.name, issue):
+            print(f"⚠ REGS GATE: skipping prohibited station {s.name!r} (issue {issue})")
+            continue
         points, windows, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue, bias)
         if points is None:
             lines.append(f"• {s.name}: no bathymetry ({meta['bathy']})")
