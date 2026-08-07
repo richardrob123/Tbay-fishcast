@@ -186,24 +186,37 @@ function applyLayers(){
 // Fill opacity, honesty-aware. For a WEAK-cue species (salmon/steelhead) the model itself says
 // temperature barely predicts location, so we do NOT draw a confident "prime" for them — the
 // thermal tiers fade to faint context and the river-mouth plume markers carry the signal.
-// Forecast leads also fade with lead: a +4-day zone must not read as certain as today's.
+// NOTE: we deliberately do NOT fade the thermal tiers by forecast lead. The MEASURED
+// isotherm-depth error (manifest.forecast_error, from data/forecast_gate_log.csv) shows NO
+// lead trend over 24–120 h — the LSOFS thermal-field position is about as accurate at day 5 as
+// day 1 — so a growing-with-lead opacity decay would be a fabricated heuristic the data
+// contradicts (rule 6). Timing uncertainty (will the blow arrive as forecast?) is real and
+// lead-dependent, and it lives in the phase banner, which decays on its own.
 function paintFills(){
   if(!MAN || !curSp) return;
   const o = (+document.getElementById('op').value)/100;
   const weak = curSp.temp_cue === 'weak';
-  const lead = MAN.stretches[0] ? MAN.stretches[0].days[Math.min(cur, MAN.stretches[0].days.length-1)].lead : 0;
-  const leadFade = lead <= 0 ? 1.0 : Math.max(0.45, 1 - lead/240);   // ~1 at 0h -> ~0.5 at 120h
   MAN.stretches.forEach((s,k) => {
     SUIT.forEach(z => {
       const id = 'arfill'+k+'_'+z.suf;
       if(!map.getLayer(id)) return;
-      let op = o * z.op * leadFade;
+      let op = o * z.op;
       if(weak) op = (z.suf==='s3') ? 0 : op*0.5;   // no prime for plume-driven species; fade the rest
       map.setPaintProperty(id, 'fill-opacity', op);
     });
     const ln = 'arln'+k;
-    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', weak ? 0 : o*0.7*leadFade);
+    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', weak ? 0 : o*0.7);
   });
+}
+// MEASURED thermal-field position uncertainty, as a compact honest chip. From the accumulated
+// gate (manifest.forecast_error) — a real ±metres, with its small-sample caveat on hover. Not a
+// fabricated band. Empty string if the analysis hasn't been run.
+function fieldBandChip(){
+  const fe = MAN && MAN.forecast_error;
+  if(!fe || !fe.pooled_mae_m) return '';
+  const trend = fe.lead_trend_detected ? 'grows with lead' : 'flat across leads';
+  const cav = (fe.note||'') + `\n(n=${fe.n}, ${fe.n_effective_chains} moving-obs chain(s) — provisional)`;
+  return `<span class="lmut" title="${cav.replace(/"/g,'&quot;')}">· thermal field ±${fe.pooled_mae_m} m depth (measured, ${trend})</span>`;
 }
 function renderLegend(){
   const el = document.getElementById('legend'); if(!el || !curSp) return;
@@ -216,11 +229,13 @@ function renderLegend(){
     el.innerHTML =
       `<span class="key"><i class="sw s2"></i>good<i class="sw s1"></i>fair</span>`+
       `<span class="lmut">${opt[0]}–${opt[1]}°C water · but temp weakly predicts these fish</span>`+
-      `<span class="lwarn">⚠ weak temp cue — work river mouths &amp; warm plumes, not the shading</span>`;
+      `<span class="lwarn">⚠ weak temp cue — work river mouths &amp; warm plumes, not the shading</span>`+
+      fieldBandChip();
   } else {
     el.innerHTML =
       `<span class="key"><i class="sw s3"></i>prime<i class="sw s2"></i>good<i class="sw s1"></i>fair</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C core · cast the edge</span>`;
+      `<span class="lmut">${opt[0]}–${opt[1]}°C core · cast the edge</span>`+
+      fieldBandChip();
   }
 }
 

@@ -128,6 +128,25 @@ def _nearshore_delta():
     return sum(deltas) / len(deltas), len(deltas)
 
 
+FORECAST_ERR = Path(__file__).resolve().parents[1] / "data" / "calib" / "forecast_lead_error.json"
+
+
+def _load_forecast_error():
+    """MEASURED thermal-forecast error (isotherm-depth MAE) from the accumulated gate, or None.
+
+    scripts/analyze_forecast_error.py writes the pooled + per-lead MAE and a lead-trend verdict
+    from data/forecast_gate_log.csv. The map uses this to state the thermal-field position
+    uncertainty HONESTLY — a measured ±metres, not a fabricated growing-with-lead fade. Returns
+    the dict or None if the analysis hasn't been run (then the UI shows no numeric band)."""
+    try:
+        d = json.loads(FORECAST_ERR.read_text())
+    except (OSError, ValueError):
+        return None
+    if not d.get("n"):
+        return None
+    return d
+
+
 def _load_favor_calib():
     """Fitted upwelling-favorability params if a real calibration exists, else None (prior).
 
@@ -631,6 +650,11 @@ def main(argv) -> int:
     wind = []
     ens_w = None
     favor_calib = _load_favor_calib()
+    fc_err = _load_forecast_error()   # measured thermal-field position uncertainty (± m), or None
+    if fc_err:
+        print(f"forecast error: {fc_err['pooled_mae_m']} m MAE, lead-trend="
+              f"{fc_err['lead_trend_detected']} (n={fc_err['n']}, "
+              f"{fc_err['n_effective_chains']} moving-obs chains)")
     try:
         from tbay_fishcast.features import upwelling
         from tbay_fishcast.features.wind import in_sector
@@ -693,6 +717,7 @@ def main(argv) -> int:
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},
+        "forecast_error": fc_err,   # MEASURED isotherm-depth MAE + lead-trend verdict (or None)
         "stretches": stretches_out, "stations": stations, "wind": wind,
         "phase": phase, "markers": RIVER_MOUTHS, "season": season_block,
     }

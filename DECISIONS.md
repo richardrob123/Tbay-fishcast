@@ -101,6 +101,27 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-031 — Uncertainty is MEASURED, not fabricated: kill the lead-fade heuristic; weak-cue honesty.**
+  Continuing the Round-4 sweep toward a real data-driven product (not a pretty map):
+  (1) **Weak-cue species (salmon/steelhead, `temp_cue: weak`) no longer get a confident "prime".**
+  The model's own stance is that temperature barely locates these plume/season-driven fish, so the
+  UI hides the prime tier + its outline for them and fades the fair/good context to faint, pointing
+  the angler at river mouths and warm plumes instead (paintFills/renderLegend, DOM-stub tested).
+  Drawing a crisp "prime" where we've said temperature doesn't predict is exactly the false
+  precision rule 13 forbids. (2) **The forecast-lead uncertainty is now the MEASURED number, and
+  the fabricated one is deleted.** A brief UI experiment faded far-lead thermal zones on a made-up
+  `1 − lead/240` decay. `scripts/analyze_forecast_error.py` checked that against the accumulated
+  gate (data/forecast_gate_log.csv → data/calib/forecast_lead_error.json): pooled isotherm-depth
+  MAE 1.79 m with **NO detectable lead trend** over 24–120 h (OLS slope +0.0007 m/h). So the fade
+  was wrong — the LSOFS thermal-field position is about as accurate at day 5 as day 1 — and it is
+  removed. The map now states the measured ±1.79 m directly (with its n=25 / 0-moving-obs caveat),
+  and lead-dependent TIMING uncertainty stays where it's real: the phase banner. (3) **Frozen
+  water-mask lookup is content-addressable** (ADR-020 hardening): the mask key was md5 of the
+  mm-rounded WCS-snapped bounds, so sub-metre server drift silently reverted to live Overpass; a
+  5 m tolerance content match now resolves the committed mask through that drift. This is the
+  discipline the end goal needs: prefer a measured number with an honest small-sample caveat over a
+  plausible-looking heuristic, and delete heuristics the data contradicts (rules 5/6/13).
+
 - **ADR-030 — Audit Round 4: data-derive the thresholds, per-species depth, honest degradation.**
   A four-lane audit (docs/AUDIT_ROUND4.md) drove a sweep to replace judgment with evidence.
   (1) **Per-species hold depth** (stations.yaml `min_depth_m`/`max_depth_m`): the shallow/marina

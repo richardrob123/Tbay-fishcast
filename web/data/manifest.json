@@ -1176,5 +1176,47 @@
   "label": "Summer (stratified)",
   "upwelling": "primary",
   "note": "The model's core regime: cold-reachability + the thermal/structure edge predict opportunity; reward the relaxation after a blow."
+ },
+ "forecast_error": {
+  "source": "data/forecast_gate_log.csv",
+  "n": 25,
+  "chains": [
+   "45216",
+   "llo1"
+  ],
+  "chains_with_moving_obs": [],
+  "n_effective_chains": 0,
+  "pooled_mae_m": 1.789,
+  "pooled_p90_m": 3.84,
+  "per_lead": {
+   "24": {
+    "n": 5,
+    "mae_m": 1.762,
+    "p90_m": 4.61
+   },
+   "48": {
+    "n": 5,
+    "mae_m": 1.498,
+    "p90_m": 3.5
+   },
+   "72": {
+    "n": 5,
+    "mae_m": 2.23,
+    "p90_m": 4.55
+   },
+   "96": {
+    "n": 5,
+    "mae_m": 1.724,
+    "p90_m": 2.8
+   },
+   "120": {
+    "n": 5,
+    "mae_m": 1.732,
+    "p90_m": 3.84
+   }
+  },
+  "lead_slope_m_per_h": 0.00069,
+  "lead_trend_detected": false,
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.789 m over leads 24-120 h. Lead trend NOT detected (OLS slope +0.0007 m/h; per-lead means span 0.73 m). CAVEAT: n=25, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
  }
 }
