@@ -18,6 +18,14 @@ in this repo). Confirmed live against candidate `models=` values:
 Default is `gfs025`: NOAA GFS ensemble (GEFS), 0.25 deg, reliably available, good
 member count (31) without ECMWF's timeout risk.
 
+`gfs025` over `icon_seamless` is EVIDENCE-BACKED, not just availability: scripts/
+validate_wind_model.py scored both against ERA5 over the over-lake point (35 d). ICON's finer
+grid gave marginally better OVERALL MAE (2.01 vs 2.14 kn) BUT under-predicted the upwelling-
+favorable WEST-quadrant wind by ~2.2 kn (favorable bias -2.21 vs GFS -0.50) and was slightly
+worse on favorable-sector MAE — i.e. it would MISS west-blow upwelling events, the exact signal
+this product exists for. "Finer = better" was refuted for the metric that counts; see
+data/calib/wind_model_eval.json. Re-run the validator before revisiting this default.
+
 Response `hourly` columns are flat: `wind_speed_10m` / `wind_direction_10m` (the
 unsuffixed control member) plus `wind_speed_10m_memberNN` / `wind_direction_10m_memberNN`
 for NN = 01..N. `fetch_ensemble_wind` groups these into one dict per member.

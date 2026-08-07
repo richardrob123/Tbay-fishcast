@@ -1,0 +1,39 @@
+{
+  "point": [
+    48.42,
+    -89.22
+  ],
+  "window": {
+    "start": "2026-06-30",
+    "end": "2026-08-04",
+    "days": 35
+  },
+  "reference": "ERA5 reanalysis (archive-api) \u2014 independent reference, NOT ground truth",
+  "favorable_sector_deg": [
+    200.0,
+    320.0
+  ],
+  "material_gain_bar": 0.1,
+  "incumbent": "gfs_seamless",
+  "scores": {
+    "gfs_seamless": {
+      "n_hours": 864,
+      "n_favorable_hours": 351,
+      "mae_kn": 2.143,
+      "bias_kn": 0.145,
+      "favorable_mae_kn": 2.499,
+      "favorable_bias_kn": -0.499
+    },
+    "icon_seamless": {
+      "n_hours": 864,
+      "n_favorable_hours": 351,
+      "mae_kn": 2.009,
+      "bias_kn": -1.4,
+      "favorable_mae_kn": 2.596,
+      "favorable_bias_kn": -2.207
+    }
+  },
+  "recommended_model": "gfs_seamless",
+  "verdict": "keep gfs_seamless: best candidate icon_seamless only -4% (< 10% bar) on favorable-sector MAE",
+  "note": "Candidates scored on upwelling-favorable (west-quadrant) wind-speed error vs ERA5. A switch is recommended only on a material favorable-sector gain; a null result keeps the reliably-available GFS (rule 6: don't swap a heartbeat input on a hunch). ERA5 is a reanalysis reference; the true over-lake test is the NDBC buoy wind, deferred to a live wind gate."
+}
