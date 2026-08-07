@@ -25,11 +25,11 @@ How the forecast the map ships degrades with lead time. Same far-chain caveats.
 
 | lead | n | corrected MAE | raw MAE |
 |---|---|---|---|
-| +24 h | 1 | 4.61 m | 7.80 m |
-| +48 h | 1 | 3.50 m | 6.09 m |
-| +72 h | 1 | 3.45 m | 6.22 m |
-| +96 h | 1 | 2.74 m | 7.39 m |
-| +120 h | 1 | 3.84 m | 7.31 m |
+| +24 h | 5 | 1.76 m | 3.23 m |
+| +48 h | 5 | 1.50 m | 2.79 m |
+| +72 h | 5 | 2.23 m | 3.56 m |
+| +96 h | 5 | 1.72 m | 3.56 m |
+| +120 h | 5 | 1.73 m | 2.99 m |
 
 (Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent uncertainty band (ADR-021) activates once these per-lead n are respectable — the widening is read from this measured error, never hand-picked.
 
