@@ -279,8 +279,14 @@ function setDay(i){
   });
   const d0 = man.stretches[0].days[i];
   document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');
-  const totHa = man.stretches.reduce((a,s)=> a + (s.days[Math.min(i,s.days.length-1)].reach_ha||0), 0);
-  document.getElementById('halab').textContent = totHa.toFixed(0)+' ha reachable';
+  // headline total counts only well-surveyed stretches — a sparse-survey box (e.g. Little
+  // Trout Bay, ~14% NONNA) interpolates its cold band over mostly-unsurveyed water and can
+  // report a large but poorly-constrained area, which would inflate the number misleadingly.
+  const haOf = s => s.days[Math.min(i,s.days.length-1)].reach_ha||0;
+  const totHa = man.stretches.filter(s=>!s.low_confidence).reduce((a,s)=>a+haOf(s),0);
+  const nLow = man.stretches.filter(s=>s.low_confidence).length;
+  document.getElementById('halab').textContent =
+    totHa.toFixed(0)+' ha reachable' + (nLow?` (+${nLow} sparse-survey area${nLow>1?'s':''}, indicative)`:'');
   const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
   document.getElementById('wlab').innerHTML = w ? `upwelling wind: <b>${Math.round(w.p*100)}%</b> of ens. members` : '';
   document.querySelectorAll('#ticks span').forEach(sp =>

@@ -53,15 +53,21 @@ PX = 1400
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
 _R = 6378137.0
 
-# Shore stretches spanning the developed Thunder Bay arc (SW Kam mouth -> NE
-# MacKenzie/Silver), overlapping ~8.4 km boxes. The 3 infill boxes (McKellar,
-# Boulevard, Shipyard) close the gaps for continuous coverage; centers/exposure chosen
-# from a NONNA-coverage probe. Beyond this arc the outer bay is unsurveyed (Sturgeon
-# Bay ~0% NONNA) or the deliberately-excluded warmwater embayment. A stretch with no
-# NONNA water or no LSOFS nodes is still skipped gracefully at build time.
-# exposure: qualitative fetch to W-quadrant upwelling wind — 'high' open shore (most
-# reliable), 'med', 'low' sheltered harbour (the physics is least calibrated there).
+# Shore stretches along the NW Lake Superior shore. Overlapping ~8.4 km boxes; centers and
+# exposure chosen from a live NONNA-coverage probe (a box with <3 % surveyed water or no LSOFS
+# nodes is skipped gracefully at build time). Three groups:
+#   * SW extension (Cloud Bay -> Chippewa): open cold shore south of the city toward, but not
+#     reaching, Little Trout Bay — LTB itself is UNCHARTED in NONNA (0-1 % soundings; see
+#     docs/COVERAGE.md) so it can't be depth-mapped yet.
+#   * the developed city arc (Kam mouth -> MacKenzie/Silver): continuous, 3 infill boxes.
+#   * NE detached cluster (Silver Islet / Sibley): the Sleeping Giant peninsula's open E shore,
+#     ~40 km E across Black Bay (unsurveyed) so not continuous with the arc. Access/regs for
+#     Sleeping Giant PP are the operator's to verify (ADR-007 handled off-system per the owner).
+# exposure: qualitative fetch to W-quadrant upwelling wind — 'high' open shore (most reliable),
+# 'med', 'low' sheltered harbour (the physics is least calibrated there).
 STRETCHES = [
+    ("little_trout_bay", "Little Trout Bay / Cloud Bay", 48.073, -89.451, "low"),
+    ("chippewa", "Chippewa / Sturgeon River shore", 48.334, -89.212, "med"),
     ("kam_mission", "Kam mouth / Mission Island", 48.395, -89.240, "low"),
     ("mckellar_harbour", "McKellar / north harbour", 48.420, -89.212, "low"),
     ("marina_mcvicar", "Marina Park / McVicar", 48.442, -89.190, "med"),
@@ -69,7 +75,14 @@ STRETCHES = [
     ("current_barepoint", "Current River / Trowbridge shore", 48.487, -89.095, "high"),
     ("shipyard_mackenzie", "Shipyard / MacKenzie approach", 48.505, -89.025, "med"),
     ("mackenzie_silver", "MacKenzie Point / Silver Harbour", 48.516, -88.962, "high"),
+    ("silver_islet", "Silver Islet / Sleeping Giant tip", 48.322, -88.812, "high"),
 ]
+
+# Stretches whose reachable-cold area is INDICATIVE ONLY — sparse survey + few LSOFS nodes +
+# far from validation. Their overlay still draws (flagged) but they are excluded from the
+# headline "ha reachable" total so a large, poorly-constrained number can't mislead. Curated,
+# not a coverage threshold (the verified city arc sits at low whole-box coverage but maps well).
+LOW_CONFIDENCE = {"little_trout_bay"}
 
 OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 
@@ -345,9 +358,19 @@ def main(argv) -> int:
             json.dumps({"type": "FeatureCollection", "features": line_feats}))
         (OUT / "areas" / f"{sid}.geojson").write_text(
             json.dumps({"type": "FeatureCollection", "features": area_feats}))
+        # survey_cov = fraction of the box with real CHS soundings (informational). NOTE: a low
+        # whole-box fraction does NOT by itself mean a bad map — the verified city stretches sit
+        # at 0.16–0.19 yet map correctly, because the NEARSHORE (where casting happens) is
+        # surveyed even when the offshore half of the box isn't. So low_confidence is set
+        # EXPLICITLY (LOW_CONFIDENCE below) for stretches that are genuinely unreliable —
+        # currently only Little Trout Bay: sparse soundings + few LSOFS nodes + a sheltered bay
+        # far from any validation, which together produce a large but poorly-constrained cold
+        # area (~138 ha vs 7–80 ha for verified stretches). Flagged, not hidden.
         stretches_out.append({"id": sid, "name": name, "corners": corners,
                               "center": [clat, clon], "res_m": round(res, 1),
-                              "exposure": exposure, "anchor_day": anchor_day, "days": days,
+                              "exposure": exposure, "anchor_day": anchor_day,
+                              "survey_cov": round(float(patch.coverage_frac), 2),
+                              "low_confidence": sid in LOW_CONFIDENCE, "days": days,
                               "area": f"data/areas/{sid}.geojson",
                               "lines": f"data/lines/{sid}.geojson"})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
