@@ -19,6 +19,20 @@ Scored day×chain rows: **3**
 
 **Read:** the correction beats raw LSOFS pooled (2.12 m vs 4.01 m). Skill is the audit's demotion test (ADR-006): a correction that can't beat raw gets benched.
 
+## Forecast skill by lead (12 C isotherm, forecast vs obs — ADR-021)
+
+How the forecast the map ships degrades with lead time. Same far-chain caveats.
+
+| lead | n | corrected MAE | raw MAE |
+|---|---|---|---|
+| +24 h | 1 | 4.61 m | 7.80 m |
+| +48 h | 1 | 3.50 m | 6.09 m |
+| +72 h | 1 | 3.45 m | 6.22 m |
+| +96 h | 1 | 2.74 m | 7.39 m |
+| +120 h | 1 | 3.84 m | 7.31 m |
+
+(Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent uncertainty band (ADR-021) activates once these per-lead n are respectable — the widening is read from this measured error, never hand-picked.
+
 ## Nearshore anchor (Landsat 30 m shore − GLSEA offshore, same-day)
 
 n=3 clear scenes · shore-warm **+2.35 °C** (range +1.73…+2.76). GLSEA (1 km) cannot resolve this nearshore warming; too few scenes to fold into the anchor yet (see OVERNIGHT_ITERATION ADR-020).
