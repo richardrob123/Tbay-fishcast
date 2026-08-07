@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-06",
  "issued_utc": "2026-08-06T12:00:00Z",
- "built_utc": "2026-08-07T01:08:51Z",
- "age_h": 13.1,
+ "built_utc": "2026-08-07T01:44:23Z",
+ "age_h": 13.7,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -46,7 +46,7 @@
     48.395,
     -89.24
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "low",
    "anchor_day": "2026-08-05",
    "days": [
@@ -54,37 +54,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 58.1
+     "reach_ha": 58.6
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 70.2
+     "reach_ha": 70.9
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 57.9
+     "reach_ha": 58.4
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 56.3
+     "reach_ha": 57.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 57.5
+     "reach_ha": 58.2
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 55.7
+     "reach_ha": 55.8
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -115,7 +115,7 @@
     48.42,
     -89.212
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "low",
    "anchor_day": "2026-08-05",
    "days": [
@@ -123,37 +123,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 67.8
+     "reach_ha": 70.2
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 68.4
+     "reach_ha": 70.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 55.8
+     "reach_ha": 57.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 49.1
+     "reach_ha": 49.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 62.8
+     "reach_ha": 64.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 60.7
+     "reach_ha": 62.2
     }
    ],
    "area": "data/areas/mckellar_harbour.geojson",
@@ -164,19 +164,19 @@
    "name": "Marina Park / McVicar",
    "corners": [
     [
-     -89.22766384744591,
+     -89.22766384744594,
      48.46707382998472
     ],
     [
-     -89.15234633336574,
+     -89.15234633336576,
      48.46707382998472
     ],
     [
-     -89.15234633336574,
+     -89.15234633336576,
      48.41705356704788
     ],
     [
-     -89.22766384744591,
+     -89.22766384744594,
      48.41705356704788
     ]
    ],
@@ -184,7 +184,7 @@
     48.442,
     -89.19
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "med",
    "anchor_day": "2026-08-05",
    "days": [
@@ -192,19 +192,19 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 64.4
+     "reach_ha": 63.6
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 63.5
+     "reach_ha": 62.8
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 45.1
+     "reach_ha": 45.8
     },
     {
      "label": "Sun Aug 9",
@@ -216,13 +216,13 @@
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 56.3
+     "reach_ha": 55.8
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 55.3
+     "reach_ha": 54.9
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -253,7 +253,7 @@
     48.468,
     -89.148
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "med",
    "anchor_day": "2026-08-05",
    "days": [
@@ -261,37 +261,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 23.1
+     "reach_ha": 20.6
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 21.9
+     "reach_ha": 19.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 16.8
+     "reach_ha": 14.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 16.3
+     "reach_ha": 14.4
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 19.6
+     "reach_ha": 17.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 21.3
+     "reach_ha": 18.5
     }
    ],
    "area": "data/areas/boulevard_current.geojson",
@@ -322,7 +322,7 @@
     48.487,
     -89.095
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "high",
    "anchor_day": "2026-08-05",
    "days": [
@@ -330,13 +330,13 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 4.9
+     "reach_ha": 5.2
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 3.6
+     "reach_ha": 3.8
     },
     {
      "label": "Sat Aug 8",
@@ -348,7 +348,7 @@
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 2.0
+     "reach_ha": 2.1
     },
     {
      "label": "Mon Aug 10",
@@ -360,7 +360,7 @@
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 2.2
+     "reach_ha": 2.3
     }
    ],
    "area": "data/areas/current_barepoint.geojson",
@@ -391,7 +391,7 @@
     48.505,
     -89.025
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "med",
    "anchor_day": "2026-08-05",
    "days": [
@@ -399,37 +399,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 20.3
+     "reach_ha": 21.5
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 19.6
+     "reach_ha": 21.0
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.0
+     "reach_ha": 9.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 17.6
+     "reach_ha": 18.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 16.3
+     "reach_ha": 17.8
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 16.7
+     "reach_ha": 18.3
     }
    ],
    "area": "data/areas/shipyard_mackenzie.geojson",
@@ -440,19 +440,19 @@
    "name": "MacKenzie Point / Silver Harbour",
    "corners": [
     [
-     -88.99965251210982,
+     -88.99965251210985,
      48.54093155571086
     ],
     [
-     -88.92433499802965,
+     -88.92433499802966,
      48.54093155571086
     ],
     [
-     -88.92433499802965,
+     -88.92433499802966,
      48.490984102295755
     ],
     [
-     -88.99965251210982,
+     -88.99965251210985,
      48.490984102295755
     ]
    ],
@@ -460,7 +460,7 @@
     48.516,
     -88.962
    ],
-   "res_m": 7.3,
+   "res_m": 4.0,
    "exposure": "high",
    "anchor_day": "2026-08-05",
    "days": [
@@ -468,37 +468,37 @@
      "label": "Thu Aug 6",
      "lead": 0,
      "valid_utc": "2026-08-06T12:00:00Z",
-     "reach_ha": 18.8
+     "reach_ha": 19.9
     },
     {
      "label": "Fri Aug 7",
      "lead": 24,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 15.9
+     "reach_ha": 16.8
     },
     {
      "label": "Sat Aug 8",
      "lead": 48,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 14.2
+     "reach_ha": 15.3
     },
     {
      "label": "Sun Aug 9",
      "lead": 72,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 16.9
+     "reach_ha": 17.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 96,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 17.5
+     "reach_ha": 18.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 120,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 18.9
+     "reach_ha": 20.0
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",

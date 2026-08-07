@@ -44,7 +44,12 @@ from tbay_fishcast.ingest.lsofs_extract import extract_native_columns, valid_tim
 from tbay_fishcast.ingest.lsofs_paths import LsofsFile, candidate_urls  # noqa: E402
 
 HALF_M = 4200.0
-PX = 760
+# ~4 m/px ground. ROOT CAUSE of "no cold water off the point" (user-caught): at the old
+# ~7 m/px the coarse grid smeared a small point's shallow rocky shelf into the pixels just
+# offshore, so that water read ~0-1 m deep (below the ~3 m isotherm) and failed the cold
+# test — erasing the within-cast cold band right off the tip. At ~4 m/px the true ~3-4 m
+# depth resolves and the point's cold water shows. Costs a slower build; correctness wins.
+PX = 1400
 LEADS = [("n", 6, 0)] + [("f", h, h) for h in (24, 48, 72, 96, 120)]
 _R = 6378137.0
 
@@ -165,33 +170,34 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     if len(iso_pts) < 3:
         return None, 0.0, []
     iso_pts = np.array(iso_pts)
-    kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m}
+    # min_reach_px small + min_area small: the old speckle those filters guarded against
+    # came from the no-data-apron heuristic, which the authoritative water mask removed —
+    # so a genuine within-cast cold wedge off a NARROW point is no longer wrongly clipped
+    # (user-caught: solid green missing right off Silver tip).
+    kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m, "min_reach_px": 4}
+    MIN_AREA = 120.0
     area_feats, lines = [], []
     reach_px_primary = 0.0
     t12_rings = []
-    t12_reach = None
     for t in TARGETS:
         iso = _iso_field(gx, gy, iso_pts, tvals[t])
         _cold, reachable = cold_reachable(depth, iso, dist, **kw)
-        rings_list = reachable_area_features(reachable, bounds_3857, res)
+        rings_list = reachable_area_features(reachable, bounds_3857, res, min_area_m2=MIN_AREA)
         if t == prod.target_c:
             reach_px_primary = float(reachable.sum())
             t12_rings = rings_list
-            t12_reach = reachable
         for rings in rings_list:
             area_feats.append((f"t{int(t)}", rings))
-    # "Just past a standard cast": cold water at fishable depth between one and two casts
-    # out (a long cast, or a short wade onto the shelf then a cast — how you actually fish
-    # a point). Shown FAINT so a point reveals its cold edge instead of reading empty,
-    # while staying honest that it is beyond a standard cast. Off Silver point this is the
-    # broad ~12-14 m cold shelf just outside 75 m (user-caught: "the cold water is close").
-    if t12_reach is not None:
-        iso12 = _iso_field(gx, gy, iso_pts, tvals[prod.target_c])
-        _c, reach_far = cold_reachable(depth, iso12, dist, cast_m=2.0 * prod.cast_m,
-                                       max_reach_depth_m=prod.max_reach_depth_m)
-        far_only = reach_far & ~t12_reach
-        for rings in reachable_area_features(far_only, bounds_3857, res):
-            area_feats.append(("t12far", rings))
+    # "Just past a standard cast": cold water at fishable depth in the 75-150 m RING (a long
+    # cast, or a short wade onto the shelf then a cast). Defined strictly by DISTANCE so it
+    # can NEVER include within-cast water — the previous version subtracted the filtered
+    # within-cast mask, so a narrow point's clipped wedge wrongly showed as "past a cast"
+    # right at the tip (user-caught). Shown FAINT so a point reveals its cold edge.
+    iso12 = _iso_field(gx, gy, iso_pts, tvals[prod.target_c])
+    cold12 = np.isfinite(depth) & (depth >= iso12) & (depth <= prod.max_reach_depth_m)
+    far_ring = cold12 & (dist > prod.cast_m) & (dist <= 2.0 * prod.cast_m)
+    for rings in reachable_area_features(far_ring, bounds_3857, res, min_area_m2=MIN_AREA):
+        area_feats.append(("t12far", rings))
     # The red line is the BOUNDARY of the reachable-cold (12 C) zone — so it bounds the
     # green exactly, by construction. (Previously an independent depth==iso contour, which
     # was force-hugged to the shore and diverged from the fills near points — user-caught.)
