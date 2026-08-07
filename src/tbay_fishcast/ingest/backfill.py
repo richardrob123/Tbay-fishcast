@@ -11,6 +11,7 @@ report. Callers pass an explicit date range; there is no silent clamping.
 """
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date
 
@@ -45,10 +46,34 @@ def station_node_map(cfg: Config) -> dict[str, int]:
     return {s.id: int(s.lsofs_node) for s in cfg.stations if s.has_lsofs}
 
 
-def _open_bytes(url: str):
-    """Fetch one URL's bytes and open in-memory (netCDF4)."""
+# Bounded in-process cache of fetched file bytes, keyed by URL. LSOFS files are immutable
+# once posted (a given day/cycle/hour never changes), so caching by URL is always correct.
+# The coast build opens the SAME ~6 lead files once per stretch — with 7 stretches that was
+# 42 network fetches of 6 files; as we add stretches it grew linearly. Caching the bytes cuts
+# it to one fetch per distinct file regardless of stretch count (the key efficiency lever for
+# expanding coverage). Bounded (LRU) so long backfill loops over many distinct days can't grow
+# the cache without limit — those touch each file once anyway, so eviction costs nothing.
+_BYTES_CACHE: "OrderedDict[str, bytes]" = OrderedDict()
+_BYTES_CACHE_MAX = 8   # ~6 coast lead files + a couple of archive fallbacks; ~40 MB each
+
+
+def _cat_bytes(url: str) -> bytes:
+    hit = _BYTES_CACHE.get(url)
+    if hit is not None:
+        _BYTES_CACHE.move_to_end(url)
+        return hit
     fs = fsspec.filesystem("https", block_size=_FSSPEC_BLOCK)
-    return nc.Dataset("inmem", mode="r", memory=fs.cat_file(url))
+    data = fs.cat_file(url)
+    _BYTES_CACHE[url] = data
+    _BYTES_CACHE.move_to_end(url)
+    while len(_BYTES_CACHE) > _BYTES_CACHE_MAX:
+        _BYTES_CACHE.popitem(last=False)
+    return data
+
+
+def _open_bytes(url: str):
+    """Open one URL in-memory (netCDF4), reusing cached bytes if already fetched."""
+    return nc.Dataset("inmem", mode="r", memory=_cat_bytes(url))
 
 
 def _open_first(urls: list[str]):
