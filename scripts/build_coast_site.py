@@ -376,6 +376,31 @@ STRENGTH_STRONG = 2.06    # p95
 STRENGTH_TOP = 3.68       # p99 — exceptional structure (the best breaks)
 
 
+def _species_tiers(bottom_c, strength, within, depth, sp, prod):
+    """Pure, testable core of the per-species render: apply the DEPTH gate, grade TEMPERATURE into
+    the cited bands (fair=range, good=optimal plateau), then split the optimal zone by CONTINUOUS
+    structure STRENGTH into the data-derived glow bands. Returns (disjoint tiers dict, fair mask).
+
+    Kept a standalone function so the depth gate (adult lakers out of <4 m — the marina over-cover
+    fix) and the strength banding can be unit-tested without the full LSOFS/geometry pipeline."""
+    import numpy as _np
+    from tbay_fishcast.features import suitability as _su
+    lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
+    hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
+    within_sp = within & (depth >= lo_d) & (depth <= hi_d)     # per-species depth band from shore
+    suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
+    suit = _np.where(within_sp, suit, 0.0)
+    fair = suit > IN_RANGE_SUIT                                # inside the preferred range (range_c)
+    good = suit >= OPTIMAL_PLATEAU                             # the optimal-core plateau (optimal_c)
+    g_break = good & (strength >= STRENGTH_BREAK)             # a real break (regional p90)
+    g_strong = good & (strength >= STRENGTH_STRONG)           # strong structure (p95)
+    g_top = good & (strength >= STRENGTH_TOP)                 # exceptional — the best breaks (p99)
+    # DISJOINT tiers (each pixel painted once): temperature base (s1/s2) + 3 structure-glow bands.
+    tiers = {"s1": fair & ~good, "s2": good & ~g_break,
+             "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
+    return tiers, fair
+
+
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
              targets=(), species=(), own_m=None, others_m=()):
     """Return (area_features, reach_px) for one lead, or (None, 0.0).
@@ -496,24 +521,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
 
     default_id = None
     for sp in species:
-        # per-species DEPTH gate: the species only holds within its depth band from shore
-        # (adult lakers not in <4 m; coasters shallow) — independent of temperature.
-        lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
-        hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
-        within_sp = within & (depth >= lo_d) & (depth <= hi_d)
-        suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
-        suit = np.where(within_sp, suit, 0.0)
-        fair = suit > IN_RANGE_SUIT                          # inside the preferred range (range_c)
-        good = suit >= OPTIMAL_PLATEAU                       # the optimal-core plateau (optimal_c)
-        # continuous structure GLOW within the optimal zone, at data-derived strength bands
-        g_break = good & (strength >= STRENGTH_BREAK)        # a real break (regional p90)
-        g_strong = good & (strength >= STRENGTH_STRONG)      # strong structure (p95)
-        g_top = good & (strength >= STRENGTH_TOP)            # exceptional — the best breaks (p99)
-        # DISJOINT tiers (each pixel painted once): temperature base (s1/s2) + 3 structure-glow
-        # bands (s3<s4<s5) so semi-transparent fills don't compound and the strongest breaks stand
-        # out as a bright core rather than a uniform "prime" slab.
-        tiers = {"s1": fair & ~good, "s2": good & ~g_break,
-                 "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
+        tiers, fair = _species_tiers(bottom_c, strength, within, depth, sp, prod)
         # WEAK-CUE species (salmon/steelhead) are plume/season driven — temperature AND structure
         # barely locate them — so the DATA does not emit the confident structure glow for them
         # (honesty in the artifact, not just the UI hiding it; a non-web consumer sees the truth).

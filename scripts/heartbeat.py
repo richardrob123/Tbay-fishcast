@@ -124,6 +124,11 @@ def main(argv) -> int:
         # band honesty in the brief: solid open only when the whole bias band agrees
         qual = ("" if points[0].reachable_certain or not now_reach
                 else " (edge of band — uncertain)")
+        # LOUD on a missing surface anchor (validation #11): without GLSEA the surface bias drops
+        # to 0 and the isotherm can read too shallow — the coast map flags this per stretch, so the
+        # brief must too rather than presenting a weakened correction as normal (rule 5).
+        if meta.get("surf_sst") is None:
+            qual += " ⚠ no surface anchor (GLSEA missing — correction weakened)"
         verdict = summarize(points, windows) + qual
         flag = "🎣" if now_reach else "—"
         lines.append(f"{flag} {s.name}: {verdict}")
