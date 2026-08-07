@@ -103,12 +103,15 @@
   <div id="legend"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
-    <div class="more">Shading grades the <b>bottom temperature</b> against where the selected species
-      concentrates: the darkest core is its <b>optimal</b> band, the lighter fill the rest of its
-      <b>preferred range</b>, all within a ~75&nbsp;m cast (≤22&nbsp;m deep). Ranges are published
-      thermal preferences. The bold edge is the <b>thermal front</b> — the temperature break where
-      cold upwelled water meets warmer water and baitfish gather; that edge is where fish feed. The
-      banner up top is the <b>upwelling phase</b>:
+    <div class="more">Shading ranks <b>where the fish are</b> by combining two things the research
+      supports: the <b>optimal temperature</b> for the species (published thermal preferences) and
+      the <b>thermal edge / drop-off</b> (computed from how fast the modelled bottom temperature
+      changes — fish hold and feed on these breaks). The darkest <b>prime</b> zone is where both
+      line up (optimal temp on an edge); <b>good</b> is the optimal water or in-range water on an
+      edge; <b>fair</b> is the rest of the preferred range — all within a ~75&nbsp;m cast
+      (≤22&nbsp;m deep). It's a ranking, not a catch percentage: the temperature and the edge are
+      data, combined without invented weights; local calibration comes from logged trips. The
+      banner up top is the <b>upwelling phase</b> — the timing layer:
       a west-quadrant blow first drives cold water to shore (<b>setup/peak</b> — a cold shock that
       slows the bite), then as it <b>relaxes</b> the front sharpens and the bite turns on — that
       relaxation is the prime window. Day&nbsp;0 uses <b>observed</b> wind (Thunder Bay airport);
@@ -175,9 +178,9 @@ function renderLegend(){
   const cue = weak ? '⚠ temperature is a MINOR cue here — fish river mouths/plumes'
                    : 'temperature predicts this species well';
   el.innerHTML =
-    `<span><span class="sw" style="background:#0c5c3f"></span>optimal ${opt[0]}–${opt[1]}°C</span>`+
-    `<span><span class="sw" style="background:#22b39a;opacity:.5"></span>in range ${curSp.range_c[0]}–${curSp.range_c[1]}°C</span>`+
-    `<span><span class="sw" style="background:#0f5132;height:3px;border-radius:0"></span>front — cast the edge</span>`+
+    `<span><span class="sw" style="background:#0c5c3f"></span>prime — optimal temp on a thermal edge</span>`+
+    `<span><span class="sw" style="background:#22b39a;opacity:.62"></span>good — optimal ${opt[0]}–${opt[1]}°C, or range + edge</span>`+
+    `<span><span class="sw" style="background:#22b39a;opacity:.32"></span>fair — in range ${curSp.range_c[0]}–${curSp.range_c[1]}°C</span>`+
     `<span style="color:${weak?'#c98a2b':'var(--muted)'}">${cue}</span>`;
 }
 

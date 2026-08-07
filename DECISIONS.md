@@ -81,3 +81,22 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   would be exactly the guessing the operator (and CLAUDE rules 6–8) forbid. Each signal is shown
   distinctly and honestly; the weighting is deferred to when the pre-registered field logs let it be
   fit and temporal-split validated.
+
+- **ADR-027 — "Where the fish are" = thermal niche ∩ thermal front, combined by CONJUNCTION (no
+  fitted weights).** The operator wanted the zones actually combined into one "where the fish are"
+  ranking, as accurately as possible, but still without guessing. Resolution: fish LOCATION (not
+  catch) is driven by two signals we can supply from data, and they combine without inventing
+  relative weights by using a conjunction (a resource-selection form) rather than a weighted sum.
+  (1) thermal niche — `suitability.thermal_suitability`, published preference curves. (2) thermal
+  front / edge / drop-off — `suitability.thermal_front_gradient`, the spatial gradient of the
+  modelled bottom-temperature field itself (data-derived; fish select thermal edges and structure,
+  telemetry). The overlay emits three ranked tiers per species: **fair** (in the preferred range),
+  **good** (optimal-temperature core, OR in range AND on a strong edge), **prime** (optimal core
+  AND on a strong edge — hold + feed). The "strong edge" threshold SELF-CALIBRATES to each scene
+  (top-tercile gradient present, floored so flat water can't fake a front) — no picked magnitude.
+  The upwelling PHASE stays a SEPARATE timing layer (banner), not multiplied into the spatial field,
+  because its magnitude effect on the bite is a catch-outcome question with no data yet. Honest
+  ceiling, stated in the UI: this is a data-driven RANKING, not a catch percentage — the two inputs
+  are data and the combination needs no weights, but the functional form (conjunction) and the
+  strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
+  That final calibration is the field-log job (demotion rule as backstop).

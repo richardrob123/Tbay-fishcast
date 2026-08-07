@@ -12,17 +12,26 @@ cliffs) and each traceable to a source:
   * thermal_suitability — grades ONE variable (modeled bias-corrected bottom temperature)
     through a species' published thermal-preference curve. Data-backed by the fish-thermal
     literature (docs/FISH_BEHAVIOR_REVIEW.md, tier T3): 1.0 across the optimal core, tapering
-    to 0 at the edges of the preferred range. This is the map's graded zones.
+    to 0 at the edges of the preferred range.
+  * thermal_front_gradient — the thermal edge / depth break, computed as the spatial gradient
+    of the SAME modeled bottom-temperature field. Data-derived (not a picked constant); fish
+    select thermal fronts and structure (telemetry). This is the "where they feed" signal.
   * upwelling_favorability — a CONTINUOUS response of upwelling strength to wind speed,
     replacing the arbitrary binary ≥13 kt cutoff. Physics-backed (Wedderburn control; Li et
-    al. 2021 wind-vs-cooling r=-0.87). Its centre/width are CALIBRATED to our own observed
-    wind↔nearshore-cooling record where available (scripts/calibrate_upwelling.py), not picked.
+    al. 2021 wind-vs-cooling r=-0.87). Its centre/width are CALIBRATED to observed
+    wind↔nearshore-cooling where available (scripts/calibrate_upwelling.py), not picked.
+
+WHERE-THE-FISH-ARE combination (the build): thermal_suitability (where they hold) and
+thermal_front_gradient (where they feed) ARE combined — but by CONJUNCTION, which needs no
+invented weights: the prime zone is where a species is both in its optimal temperature AND on
+a strong thermal edge (the edge threshold self-calibrates to each scene). A weighted sum with
+fitted coefficients is a different thing and is NOT done here — that needs catch outcomes.
 
 The upwelling PHASE (features/upwelling_phase.py) stays a SEPARATE, physically-grounded
-temporal signal — not multiplied into the spatial score, because how strongly a phase moves
-the actual bite is a catch-outcome question we have no data to answer yet. The fusion of these
-signals into one probability is deferred to when the pre-registered field-session logs exist,
-so it can be FIT and temporal-split validated instead of guessed (CLAUDE rule 7).
+TIMING signal — not multiplied into the spatial where-they-are field, because how strongly a
+phase moves the bite is a catch-outcome question we have no data to answer yet. That weighting
+is deferred to when the pre-registered field-session logs exist, so it can be FIT and
+temporal-split validated instead of guessed (CLAUDE rule 7).
 
 Pure functions, no I/O, no LLM (ADR-001, CLAUDE rule 2).
 """
@@ -49,6 +58,20 @@ def upwelling_favorability(speed_kn, s50: float = FAVOR_S50_KN,
     """
     x = (np.asarray(speed_kn, dtype=float) - s50) / width
     return 1.0 / (1.0 + np.exp(-x))
+
+
+def thermal_front_gradient(bottom_c, res_m: float):
+    """Thermal-front strength: the spatial gradient magnitude |∇T| of the bottom-temperature
+    field, in °C per metre. Where bottom temperature changes fastest is a thermal edge / depth
+    break — the structure fish hold on and feed along (telemetry: salmonids select thermal
+    fronts). Derived from the modelled field itself (data), not a picked constant.
+
+    NaN off-water propagates one pixel into the water edge (numpy gradient), which conveniently
+    keeps the shoreline rim from registering as a false front. Returns NaN where not computable.
+    """
+    b = np.asarray(bottom_c, dtype=float)
+    gy, gx = np.gradient(b, res_m)
+    return np.hypot(gx, gy)
 
 
 def thermal_suitability(bottom_c, range_c, optimal_c=None):

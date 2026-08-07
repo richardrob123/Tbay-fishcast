@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T14:40:20Z",
- "age_h": 2.7,
+ "built_utc": "2026-08-07T15:16:06Z",
+ "age_h": 3.3,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -84,17 +84,18 @@
  "suit_levels": [
   {
    "tag": "s1",
-   "level": 0.15
+   "label": "fair"
   },
   {
    "tag": "s2",
-   "level": 0.5
+   "label": "good"
   },
   {
    "tag": "s3",
-   "level": 0.85
+   "label": "prime"
   }
  ],
+ "combine": "thermal-niche \u2229 thermal-front (conjunction, no fitted weights)",
  "favor_calibrated": false,
  "n_leads": 6,
  "bias": {
@@ -141,6 +142,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 138.0
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 138.1
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 138.1
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 138.0
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 134.3
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 134.9
     }
    ],
    "area": "data/areas/little_trout_bay.geojson",
@@ -182,6 +213,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 15.6
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 9.4
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 7.4
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 4.9
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 3.5
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 3.9
     }
    ],
    "area": "data/areas/chippewa.geojson",
@@ -223,6 +284,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 62.4
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 58.8
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 58.0
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 57.1
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 54.0
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 53.8
     }
    ],
    "area": "data/areas/kam_mission.geojson",
@@ -264,6 +355,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 74.5
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 70.5
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 51.9
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 61.7
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 61.9
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 52.7
     }
    ],
    "area": "data/areas/mckellar_harbour.geojson",
@@ -305,6 +426,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 62.4
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 36.8
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 16.0
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 32.5
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 32.9
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 23.2
     }
    ],
    "area": "data/areas/marina_mcvicar.geojson",
@@ -346,6 +497,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 21.2
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 2.6
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 1.0
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 1.8
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 1.8
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 1.3
     }
    ],
    "area": "data/areas/boulevard_current.geojson",
@@ -387,6 +568,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 0.4
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 0.1
     }
    ],
    "area": "data/areas/current_barepoint.geojson",
@@ -419,7 +630,7 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.19,
    "low_confidence": false,
    "days": [
@@ -427,7 +638,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 4.7
+     "reach_ha": 5.3
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 2.0
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 2.9
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 5.7
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 3.7
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 10.1
     }
    ],
    "area": "data/areas/shipyard_mackenzie.geojson",
@@ -469,6 +710,36 @@
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
      "reach_ha": 6.8
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 8.8
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 9.1
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 8.1
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 9.7
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 9.5
     }
    ],
    "area": "data/areas/mackenzie_silver.geojson",
@@ -501,7 +772,7 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-06",
+   "anchor_day": "2026-08-05",
    "survey_cov": 0.71,
    "low_confidence": false,
    "days": [
@@ -509,7 +780,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 53.9
+     "reach_ha": 44.1
+    },
+    {
+     "label": "Sat Aug 8",
+     "lead": 24,
+     "valid_utc": "2026-08-08T12:00:00Z",
+     "reach_ha": 43.5
+    },
+    {
+     "label": "Sun Aug 9",
+     "lead": 48,
+     "valid_utc": "2026-08-09T12:00:00Z",
+     "reach_ha": 43.7
+    },
+    {
+     "label": "Mon Aug 10",
+     "lead": 72,
+     "valid_utc": "2026-08-10T12:00:00Z",
+     "reach_ha": 46.8
+    },
+    {
+     "label": "Tue Aug 11",
+     "lead": 96,
+     "valid_utc": "2026-08-11T12:00:00Z",
+     "reach_ha": 34.1
+    },
+    {
+     "label": "Wed Aug 12",
+     "lead": 120,
+     "valid_utc": "2026-08-12T12:00:00Z",
+     "reach_ha": 44.4
     }
    ],
    "area": "data/areas/silver_islet.geojson",
@@ -524,13 +825,53 @@
    "lon": -88.9746,
    "now": true,
    "now_certain": true,
-   "verdict": "open now and still open at +0 h",
+   "verdict": "open now and still open at +120 h",
    "surf_sst": 17.3,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
      "iso": 4.0,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sat",
+     "lead": 24,
+     "iso": 4.3,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 48,
+     "iso": 3.9,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 72,
+     "iso": 4.1,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 96,
+     "iso": 4.0,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Wed",
+     "lead": 120,
+     "iso": 4.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -544,7 +885,7 @@
    "lon": -88.94336,
    "now": true,
    "now_certain": false,
-   "verdict": "open now and still open at +0 h (edge of band \u2014 uncertain)",
+   "verdict": "open now and still open at +120 h (edge of band \u2014 uncertain)",
    "surf_sst": 17.5,
    "traj": [
     {
@@ -553,6 +894,46 @@
      "iso": 4.5,
      "reach": true,
      "certain": false,
+     "possible": true
+    },
+    {
+     "label": "Sat",
+     "lead": 24,
+     "iso": 4.8,
+     "reach": true,
+     "certain": false,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 48,
+     "iso": 4.7,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 72,
+     "iso": 4.3,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 96,
+     "iso": 3.9,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Wed",
+     "lead": 120,
+     "iso": 3.5,
+     "reach": true,
+     "certain": true,
      "possible": true
     }
    ]
@@ -564,13 +945,53 @@
    "lon": -89.21356,
    "now": true,
    "now_certain": true,
-   "verdict": "open now and still open at +0 h",
-   "surf_sst": 16.6,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 15.4,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 1.5,
+     "iso": 1.3,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sat",
+     "lead": 24,
+     "iso": 1.1,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 48,
+     "iso": 3.4,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 72,
+     "iso": 1.2,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 96,
+     "iso": 1.2,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Wed",
+     "lead": 120,
+     "iso": 2.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -621,11 +1042,11 @@
    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
    "since_end_h": 61.0,
    "run": {
-    "start_utc": "2026-08-04T15:00:00Z",
+    "start_utc": "2026-08-04T16:00:00Z",
     "end_utc": "2026-08-04T23:00:00Z",
-    "duration_h": 8.0,
+    "duration_h": 7.0,
     "peak_kn": 16.0,
-    "dir_deg": 272
+    "dir_deg": 273
    }
   },
   "by_lead": {
@@ -639,11 +1060,96 @@
     "detail": "last sustained blow has fully relaxed (> 48 h ago)",
     "since_end_h": 61.0,
     "run": {
-     "start_utc": "2026-08-04T15:00:00Z",
+     "start_utc": "2026-08-04T16:00:00Z",
      "end_utc": "2026-08-04T23:00:00Z",
-     "duration_h": 8.0,
+     "duration_h": 7.0,
      "peak_kn": 16.0,
-     "dir_deg": 272
+     "dir_deg": 273
+    }
+   },
+   "24": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "med",
+    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
+    "since_end_h": 85.0,
+    "run": {
+     "start_utc": "2026-08-04T16:00:00Z",
+     "end_utc": "2026-08-04T23:00:00Z",
+     "duration_h": 7.0,
+     "peak_kn": 16.0,
+     "dir_deg": 273
+    }
+   },
+   "48": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "med",
+    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
+    "since_end_h": 109.0,
+    "run": {
+     "start_utc": "2026-08-04T16:00:00Z",
+     "end_utc": "2026-08-04T23:00:00Z",
+     "duration_h": 7.0,
+     "peak_kn": 16.0,
+     "dir_deg": 273
+    }
+   },
+   "72": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "low",
+    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
+    "since_end_h": 133.0,
+    "run": {
+     "start_utc": "2026-08-04T16:00:00Z",
+     "end_utc": "2026-08-04T23:00:00Z",
+     "duration_h": 7.0,
+     "peak_kn": 16.0,
+     "dir_deg": 273
+    }
+   },
+   "96": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "low",
+    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
+    "since_end_h": 157.0,
+    "run": {
+     "start_utc": "2026-08-04T16:00:00Z",
+     "end_utc": "2026-08-04T23:00:00Z",
+     "duration_h": 7.0,
+     "peak_kn": 16.0,
+     "dir_deg": 273
+    }
+   },
+   "120": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "low",
+    "detail": "last sustained blow has fully relaxed (> 48 h ago)",
+    "since_end_h": 181.0,
+    "run": {
+     "start_utc": "2026-08-04T16:00:00Z",
+     "end_utc": "2026-08-04T23:00:00Z",
+     "duration_h": 7.0,
+     "peak_kn": 16.0,
+     "dir_deg": 273
     }
    }
   },

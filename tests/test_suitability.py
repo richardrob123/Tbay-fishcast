@@ -47,6 +47,19 @@ def test_thermal_suitability_array_and_nan():
     assert out[0] == 0.0 and out[1] == 1.0 and out[2] == pytest.approx(0.0) and out[3] == 0.0
 
 
+def test_thermal_front_gradient_finds_edges():
+    # a field with a sharp step in the middle -> high gradient at the step, ~0 on the flats
+    field = np.array([[6., 6., 6., 12., 12., 12.]] * 6)
+    g = su.thermal_front_gradient(field, res_m=10.0)
+    # the interior flat columns have ~0 gradient; the step column has a large gradient
+    assert g[3, 0] == pytest.approx(0.0, abs=1e-9)          # flat interior
+    assert g[3, 3] > g[3, 0]                                 # at/near the step it's larger
+    assert np.nanmax(g) == pytest.approx((12. - 6.) / (2 * 10.0), rel=0.3)  # ~Δ/Δx scale
+    # units are per-metre: same step over 100 m spacing gives 10x smaller gradient
+    g2 = su.thermal_front_gradient(field, res_m=100.0)
+    assert np.nanmax(g2) < np.nanmax(g)
+
+
 def test_ensemble_favorability_graded_vs_binary():
     # west wind at 10 kt for a whole day, one member: binary prob (>=13) = 0, favorability > 0
     time = [f"2026-08-07T{h:02d}:00" for h in range(24)]

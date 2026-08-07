@@ -71,6 +71,11 @@ structure markers (Kaministiquia, Current, Neebing–McIntyre).
 temp inverted from the isotherm stack, graded through each species' preference curve → nested
 zones, optimal core inside the range); the binary upwelling threshold is replaced by a
 **continuous** favorability (logistic across the Wedderburn range).
+**Shipped (ADR-027):** the zones now COMBINE two data signals into a "where the fish are" ranking —
+thermal niche **∩** thermal front (the spatial gradient of the modelled bottom-temp field = edges/
+drop-offs). Tiers: **fair** (in range) → **good** (optimal temp, or range+edge) → **prime**
+(optimal temp on an edge). Conjunction, so no fitted weights; the edge threshold self-calibrates
+per scene. This is the "reward the edge, not just the trough" recommendation, made spatial.
 
 **Deliberately NOT done — the honest boundary.** We do **not** fuse temperature × phase × front ×
 structure into one "probability" with hand-picked weights: with no catch/field-session outcomes yet

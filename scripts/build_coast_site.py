@@ -265,10 +265,20 @@ def _bottom_temp_field(iso_fields, targets, depth):
 # than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
 TARGETS = (12.0, 10.0, 8.0)
 
-# Graded thermal-suitability contour levels (features/suitability.thermal_suitability, 0..1):
-# s1 = the whole preferred range (total zone), s2 = good, s3 = the optimal concentration core.
-# Nested (s3 ⊆ s2 ⊆ s1) so the UI shades light→dark and the sweet spot reads inside the band.
-SUIT_LEVELS = [("s1", 0.15), ("s2", 0.5), ("s3", 0.85)]
+# Where-the-fish-ARE tiers, a data-driven CONJUNCTION of two signals (no fitted weights):
+#   thermal suitability (features/suitability.thermal_suitability, from published niche curves)
+#   × thermal-front strength (spatial gradient of the modelled bottom-temp field = edges/breaks).
+#   s1 fair  = in the preferred range
+#   s2 good  = in the optimal-temperature core, OR in range AND on a strong thermal edge
+#   s3 prime = in the optimal core AND on a strong edge (hold + feed) — the best bet
+# Nested s3 ⊆ s2 ⊆ s1 so the UI shades light→dark. The edge threshold self-calibrates per scene
+# (top-tercile gradient present), floored so flat water can't invent a front. Tag names kept as
+# s1/s2/s3 for overlay compatibility. See docs/FISH_BEHAVIOR_REVIEW.md.
+SUIT_LEVELS = [("s1", "fair"), ("s2", "good"), ("s3", "prime")]
+OPTIMAL_SUIT = 0.7      # thermal_suitability at/above this = optimal-temperature core
+IN_RANGE_SUIT = 0.15    # at/above this = within the preferred range
+FRONT_PCTILE = 66       # a "strong" edge = gradient in the top third present in the scene
+MIN_FRONT_GRAD = 0.005  # °C/m floor (~0.5 °C/100 m) so flat water doesn't register a false front
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -370,20 +380,31 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
     bottom_c = _bottom_temp_field(iso_fields, targets, depth)
 
+    # thermal-front strength (data-derived edge signal); "strong" self-calibrates to the scene
+    grad = _su.thermal_front_gradient(bottom_c, res)         # °C/m, NaN at land-adjacent pixels
+    gvals = grad[within & np.isfinite(grad)]
+    gthr = max(float(np.percentile(gvals, FRONT_PCTILE)), MIN_FRONT_GRAD) if gvals.size else np.inf
+    front_strong = np.isfinite(grad) & (grad >= gthr)
+
     default_id = None
     for sp in species:
         suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
         suit = np.where(within, suit, 0.0)
+        fair = suit >= IN_RANGE_SUIT
+        core = suit >= OPTIMAL_SUIT
+        good = core | (fair & front_strong)
+        prime = core & front_strong                          # hold + feed — the combined best bet
+        tiers = {"s1": fair, "s2": good, "s3": prime}
         emitted_any = False
-        for tag, lvl in SUIT_LEVELS:
-            mask = suit >= lvl
+        for tag, _label in SUIT_LEVELS:
+            mask = tiers[tag]
             if mask.any():
                 _emit(_shape(mask), f"sp:{sp.id}:{tag}")
                 emitted_any = True
         if not emitted_any:
             continue
         if sp.default or (default_id is None and sp is species[0]):
-            reach_px_primary = float((suit >= SUIT_LEVELS[0][1]).sum())  # total-zone area
+            reach_px_primary = float(fair.sum())             # total-zone (in-range) area
             default_id = sp.id
     # keep a (possibly empty) lines file so the manifest reference stays valid
     return area_feats, reach_px_primary, lines
@@ -590,7 +611,8 @@ def main(argv) -> int:
                      "optimal_c": list(sp.optimal), "front_c": sp.front_c,
                      "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note}
                     for sp in cfg.species],
-        "suit_levels": [{"tag": t, "level": lv} for t, lv in SUIT_LEVELS],
+        "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
+        "combine": "thermal-niche ∩ thermal-front (conjunction, no fitted weights)",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
