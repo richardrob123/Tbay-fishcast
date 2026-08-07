@@ -101,6 +101,18 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-032 — Wind model chosen by test, not by "finer = better" (a null result that prevented a regression).**
+  Before switching the upwelling-driving wind from GFS 0.25° to the finer icon_seamless (2.2–7 km),
+  scripts/validate_wind_model.py scored each candidate's ARCHIVED FORECAST against ERA5 at the
+  over-lake point (35 d), on the metric the product depends on: upwelling-favorable west-quadrant
+  wind SPEED. ICON won on OVERALL MAE (2.01 vs 2.14 kn) but carried a ~2.2 kn cold bias in the
+  favorable sector (−2.21 vs GFS −0.50) and was slightly worse on favorable-sector MAE — it would
+  systematically UNDER-call the west blow, the single worst failure for an upwelling forecast. So
+  the default stays `gfs025`, now evidence-backed (data/calib/wind_model_eval.json), and the
+  rationale is pinned in wind_forecast.py so it isn't re-litigated on the "finer" intuition. The
+  true over-lake test is the NDBC buoy wind (a live wind gate), deferred. This is the discipline
+  rules 6/8 buy: a plausible upgrade, tested and refused because the data said it would hurt.
+
 - **ADR-031 — Uncertainty is MEASURED, not fabricated: kill the lead-fade heuristic; weak-cue honesty.**
   Continuing the Round-4 sweep toward a real data-driven product (not a pretty map):
   (1) **Weak-cue species (salmon/steelhead, `temp_cue: weak`) no longer get a confident "prime".**

@@ -103,6 +103,37 @@ varying comparison; the rest is a pinned sensor floor.
   gated); currently enforced only by human curation of the STRETCHES list (ADR-007, by design) —
   consider an in-code regs clip for the map too. *(robustness #7)*
 
+## Round-4 execution status (2026-08-07)
+
+Done, data-backed, tested, pushed:
+- **A1/A2** warm+cold isotherm targets + honest extrapolation (marina over-cover). *(ADR-029)*
+- **A3** per-species min/max hold depth (adult lakers out of <4 m flats). *(ADR-030)*
+- **A4** per-stretch health flags (degraded shore / stale anchor) → manifest + badge. *(ADR-030)*
+- **A5** lead uncertainty done RIGHT: the fabricated `1−lead/240` fade is DELETED; measured
+  isotherm-depth MAE (1.79 m, NO lead trend over 24–120 h) is shown instead, regenerated each
+  run. Timing uncertainty stays in the phase banner. *(ADR-031, analyze_forecast_error.py)*
+- **A6** honest scorecard (n_effective, floor-pinned chains excluded). *(ADR-030)*
+- **A7** phase forecast-tail threshold (13 kn over-lake). *(ADR-030)*
+- **A8** frozen-mask lookup is content-addressable → the sub-metre WCS-drift silent-refetch is
+  gone; loud only on a genuinely uncovered patch. *(watermask.py, +regression test)*
+- **B3** shoal-top / point-tip relief term, pooled-p90 bar. *(ADR-030)*
+- **B4** weak-cue species honesty: no confident "prime" where temperature doesn't predict. *(ADR-031)*
+- **B6** wind model: TESTED icon vs GFS vs ERA5 → keep GFS (icon misses the west blow). *(ADR-032)*
+- Dead 12 °C-front uncertainty ribbon deleted; docstring now matches what's drawn.
+
+Deferred WITH REASON (not silently dropped):
+- **B1** GLOS 0–12 m profiles into live bias — GLOS ERDDAP is HTTP-000 unreachable from this env.
+- **B2** depth-resolved bias — at the data ceiling (3 shallow sensors, none <6 m); over-fitting a
+  depth slope on 3 points would flatter, not measure. Revisit when a Thunder Bay logger exists.
+- **B5** river-plume proximity FIELD — a distance-decay needs a plume length-scale we cannot yet
+  measure (no plume obs); fabricating one is exactly the made-up heuristic to avoid. The mouths
+  stay honest POINT markers; the field waits for plume observations or a wind-advection model.
+- **B7** nearshore inter-site ±~1 °C band — the measured forecast MAE already carries the realized
+  error at the reference chains; a separate un-measured nearshore term waits on a local logger.
+- Cold-side laker taper — REJECTED as an accuracy regression: the A2 cold clamp already shades
+  upwelled cold water as suitable laker habitat, and lakers have no cold avoidance in-range, so a
+  taper would wrongly zero the best post-upwelling water. Recorded rather than applied.
+
 ## What is already solid (keep)
 
 No truth-leak in the forecast gate (issue-time GLSEA anchor); temporal-split discipline; loud
