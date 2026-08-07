@@ -10,6 +10,7 @@ dist/
 # logs tracked: they ARE the standing accuracy record the daily Action appends to.
 data/*
 !data/gate_log.csv
+!data/forecast_gate_log.csv
 !data/nearshore_anchor.csv
 !data/field_sessions.csv
 # frozen water masks ARE committed: the static shoreline must be deterministic across

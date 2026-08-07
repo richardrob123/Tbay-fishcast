@@ -39,6 +39,16 @@ from pathlib import Path
 import numpy as np
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Retry rotates through these — a sibling instance often answers when the main one is
+# rate-limiting. Extra hosts are kept commented because this environment's egress proxy only
+# reaches overpass-api.de (the public mirrors return connection-refused here, verified
+# 2026-08-07); rotating onto an unreachable host just burns a retry. Re-add if a mirror
+# becomes reachable.
+OVERPASS_ENDPOINTS = [
+    OVERPASS_URL,
+    # "https://overpass.kumi.systems/api/interpreter",   # unreachable via this proxy
+    # "https://overpass.private.coffee/api/interpreter",  # unreachable via this proxy
+]
 _ROOT = Path(__file__).resolve().parents[3]
 _CACHE_DIR = _ROOT / "data" / "watermask_cache"
 # FROZEN masks are COMMITTED (unlike _CACHE_DIR, which is gitignored). The Lake Superior
@@ -129,17 +139,38 @@ def _cache_put(key: str, obj) -> None:
         pass
 
 
-def _overpass(query: str, *, timeout: float, cache_key: str, retries: int = 2):
+_MIN_OVERPASS_INTERVAL = 1.1   # s between requests — pace steadily so the public instance
+_last_overpass = [0.0]         # never sees a burst and never rate-limits us (freezing many
+                               # is_in probes back-to-back otherwise triggers 429s that the
+                               # hammer-then-back-off loop made worse). One-time freeze cost.
+
+
+def _pace_overpass():
+    import time as _t
+    dt = _MIN_OVERPASS_INTERVAL - (_t.monotonic() - _last_overpass[0])
+    if dt > 0:
+        _t.sleep(dt)
+    _last_overpass[0] = _t.monotonic()
+
+
+def _overpass(query: str, *, timeout: float, cache_key: str, retries: int = 4):
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
     last = None
+    # Rotate mirrors AND back off exponentially: a non-JSON body is almost always an Overpass
+    # rate-limit/overload page (HTTP 429/504), which freezing many is_in probes triggers in
+    # bursts. Longer waits + a second host let a batch freeze of new stretches finish instead
+    # of skipping the stretch (which silently drops coverage). Once frozen+committed, builds
+    # never call Overpass at all, so this cost is one-time.
     for attempt in range(retries + 1):
         raw = b""
+        endpoint = OVERPASS_ENDPOINTS[attempt % len(OVERPASS_ENDPOINTS)]
+        _pace_overpass()
         try:
             proc = subprocess.run(
                 ["curl", "-sS", "-m", str(int(timeout)),
-                 "--data-urlencode", f"data={query}", OVERPASS_URL],
+                 "--data-urlencode", f"data={query}", endpoint],
                 capture_output=True, timeout=timeout + 10)
             raw = proc.stdout
             if not raw:
@@ -154,7 +185,7 @@ def _overpass(query: str, *, timeout: float, cache_key: str, retries: int = 2):
         except Exception as e:  # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
         if attempt < retries:
-            time.sleep(1.5 * (attempt + 1))
+            time.sleep(min(2.0 * (2 ** attempt), 12.0))   # 2,4,8,12s (pacing already avoids most 429s)
     raise WaterMaskError(f"Overpass request failed ({cache_key}): {last}")
 
 

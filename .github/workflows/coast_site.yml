@@ -81,6 +81,10 @@ jobs:
         id: anchor
         continue-on-error: true
         run: python scripts/accumulate_anchor.py
+      - name: Accumulate the forecast-lead gate (ADR-021)
+        id: fcstgate
+        continue-on-error: true
+        run: python scripts/accumulate_forecast_gate.py
       - name: Commit the observation logs back to the branch
         id: datacommit
         continue-on-error: true
@@ -90,7 +94,11 @@ jobs:
           git config user.name "coast-site bot"
           # regenerate the honest back-test scorecard from the freshly-appended logs
           python scripts/accuracy_scorecard.py || true
-          git add data/gate_log.csv data/nearshore_anchor.csv docs/ACCURACY_SCORECARD.md
+          # add only files that exist — forecast_gate_log.csv is absent until the forecast gate
+          # first produces rows (e.g. GLOS down), and a bare `git add` on it would fail under set -e.
+          for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv docs/ACCURACY_SCORECARD.md; do
+            [ -f "$f" ] && git add "$f"
+          done
           if git diff --staged --quiet; then
             echo "no new observations to commit"; exit 0
           fi
@@ -118,11 +126,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.datacommit.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} data-commit:${{ steps.datacommit.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then

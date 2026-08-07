@@ -49,3 +49,17 @@ def test_absent_rows_excluded():
 def test_pooled_is_n_weighted():
     stats = {"A": {"n": 3, "corr_mae": 2.0}, "B": {"n": 1, "corr_mae": 6.0}}
     assert abs(sc.pooled(stats, "corr_mae") - (2.0 * 3 + 6.0 * 1) / 4) < 1e-9
+
+
+def _frow(lead, obs, raw, err):
+    return {"valid_date": "2026-08-05", "chain": "X", "lead_h": str(lead), "issue_date": "",
+            "obs_iso_m": str(obs), "fcst_raw_iso_m": str(raw), "fcst_corr_iso_m": "",
+            "abs_err_m": str(err), "bias_source": "live", "glsea_anchor": "ok", "retrieved_utc": ""}
+
+
+def test_per_lead_stats_groups_by_lead():
+    rows = [_frow(24, 8.0, 12.0, 1.0), _frow(24, 4.0, 6.0, 3.0), _frow(120, 5.0, 11.0, 5.0)]
+    s = sc.per_lead_stats(rows)
+    assert s[24]["n"] == 2 and abs(s[24]["corr_mae"] - 2.0) < 1e-9      # (1+3)/2
+    assert abs(s[24]["raw_mae"] - 3.0) < 1e-9                            # (|12-8|+|6-4|)/2 = (4+2)/2
+    assert s[120]["n"] == 1 and abs(s[120]["corr_mae"] - 5.0) < 1e-9

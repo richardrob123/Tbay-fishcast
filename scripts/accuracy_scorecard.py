@@ -49,6 +49,35 @@ def load_gate():
         return list(csv.DictReader(f))
 
 
+FCST = ROOT / "data" / "forecast_gate_log.csv"
+
+
+def per_lead_stats(rows):
+    """{lead_h: {n, corr_mae, raw_mae}} from the forecast-lead gate — how skill decays with lead."""
+    by_lead: dict[int, list[dict]] = {}
+    for r in rows:
+        try:
+            L = int(r["lead_h"])
+        except (KeyError, ValueError):
+            continue
+        if _f(r.get("abs_err_m")) is not None:
+            by_lead.setdefault(L, []).append(r)
+    out = {}
+    for L, rs in by_lead.items():
+        corr = [_f(r["abs_err_m"]) for r in rs]
+        raw = [abs(_f(r["fcst_raw_iso_m"]) - _f(r["obs_iso_m"]))
+               for r in rs if _f(r["fcst_raw_iso_m"]) is not None and _f(r["obs_iso_m"]) is not None]
+        out[L] = {"n": len(rs), "corr_mae": _mae(corr), "raw_mae": _mae(raw)}
+    return out
+
+
+def load_forecast():
+    if not FCST.exists():
+        return []
+    with FCST.open() as f:
+        return list(csv.DictReader(f))
+
+
 def per_chain_stats(rows):
     """{chain: {n, raw_mae, corr_mae, frozen_mae, skill, persistence_mae, obs_constant}}."""
     by_chain: dict[str, list[dict]] = {}
@@ -108,7 +137,7 @@ def _fmt(x, u="", nd=2):
     return f"{x:.{nd}f}{u}" if x is not None else "—"
 
 
-def render(stats, anchor) -> str:
+def render(stats, anchor, lead_stats=None) -> str:
     L = ["# Accuracy scorecard (auto-generated — do not hand-edit)",
          "",
          "Honest, un-tuned back-test of the standing observation logs. Grows as the daily gate",
@@ -136,6 +165,16 @@ def render(stats, anchor) -> str:
           f"pooled ({_fmt(p_corr,' m')} vs {_fmt(p_raw,' m')}). "
           "Skill is the audit's demotion test (ADR-006): a correction that can't beat raw gets benched.",
           ""]
+    if lead_stats:
+        L += ["## Forecast skill by lead (12 C isotherm, forecast vs obs — ADR-021)", "",
+              "How the forecast the map ships degrades with lead time. Same far-chain caveats.", "",
+              "| lead | n | corrected MAE | raw MAE |", "|---|---|---|---|"]
+        for Lh in sorted(lead_stats):
+            s = lead_stats[Lh]
+            L.append(f"| +{Lh} h | {s['n']} | {_fmt(s['corr_mae'],' m')} | {_fmt(s['raw_mae'],' m')} |")
+        L += ["", "(Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent "
+              "uncertainty band (ADR-021) activates once these per-lead n are respectable — the "
+              "widening is read from this measured error, never hand-picked.", ""]
     if anchor:
         L += ["## Nearshore anchor (Landsat 30 m shore − GLSEA offshore, same-day)", "",
               f"n={anchor['n']} clear scenes · shore-warm **{anchor['mean']:+.2f} °C** "
@@ -149,8 +188,9 @@ def main(argv) -> int:
     rows = load_gate()
     stats = per_chain_stats(rows)
     anchor = anchor_summary()
+    lead_stats = per_lead_stats(load_forecast())
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(render(stats, anchor))
+    OUT.write_text(render(stats, anchor, lead_stats))
     p_raw, p_corr = pooled(stats, "raw_mae"), pooled(stats, "corr_mae")
     n_tot = sum(s["n"] for s in stats.values())
     print(f"scorecard: {n_tot} scored rows · pooled corrected MAE {_fmt(p_corr,' m')} "
