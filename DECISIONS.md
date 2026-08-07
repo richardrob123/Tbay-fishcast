@@ -101,6 +101,25 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-034 — Consolidate the already-fetched data into live independent cross-checks (+ two honest non-actions).**
+  The validation inventory found several sources fetched but under-used. Two are now wired as
+  accumulating cross-checks (offline of the 4x heartbeat, like the isotherm gate): (1) the **GLERL
+  mooring climatology** — the one committed multi-year in-situ Superior profile, previously read by
+  nothing but a unit test — now cross-checks the LSOFS offshore stratification each day
+  (check_offshore_climatology.py → data/offshore_check_log.csv); first run corroborated the model
+  (offshore mixed-layer 11.42 vs climatology 11.54 °C). (2) A **live over-lake wind gate** — the
+  "true over-lake test" ADR-032 deferred — compares the GFS forecast to the REAL observed NDBC buoy
+  wind (new stdmet parser) in the upwelling-favorable west quadrant (accumulate_wind_gate.py →
+  data/wind_gate_log.csv); first run: ~2.3 kn MAE, GFS over-predicts the W-quadrant ~1 kn. The
+  Landsat nearshore delta also now reaches the station pins (ADR — the shared nearshore module).
+  **Two things were deliberately NOT done, recorded so they aren't re-attempted:** (a) *tapering the
+  nearshore +2.35 °C delta for small n* — the delta is MEASURED and directionally certain (the
+  nearshore IS warmer); shrinking it toward zero would re-introduce the exact cold bias it fixes, so
+  it stays applied and clearly labelled n=3 rather than under-corrected. (b) *ERA5-FLake as a second
+  bias envelope* — deferred: it is redundant with the mooring cross-check for the independent-opinion
+  need, and CDS is queued/flaky and needs key management in CI; not worth a fragile dependency now.
+  GLOS remains HTTP-000 (depth-gate scorecard route via UMD LLO CSVs is the open path).
+
 - **ADR-033 — Hybrid render: cited discrete TEMPERATURE bands × CONTINUOUS measured-structure glow.**
   The fair/good/prime tiering rested on two unsourced picks (OPTIMAL_SUIT=0.7, IN_RANGE_SUIT=0.15)
   and a binary structure gate (edge > regional p90), which painted 40–48 % of genuinely-rocky
