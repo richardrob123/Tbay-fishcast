@@ -42,22 +42,26 @@ product:
 # the BOTTOM temperature is WITHIN a species' preferred range and reachable within a cast, and
 # draws the FRONT (the warm-edge isotherm = the thermal break where fish actually feed) as the
 # prime mark. Not "colder=better" — that was wrong for warmer-preferring species. The UI filter
-# swaps species. range_c=[cold,warm] °C; front_c is the warm edge (the feeding front). temp_cue:
-# 'strong' = cold-adapted, temperature predicts well; 'weak' = migratory/plume-driven, temperature
-# is a minor cue (fish river mouths). Ranges are on a 2 C grid so each isotherm is computed once.
+# swaps species. range_c=[cold,warm] °C is the TOTAL zone (light fill); optimal_c=[cold,warm] is
+# the tighter CORE where the species concentrates (darker fill inside the total). front_c is the
+# warm edge (the feeding front). temp_cue: 'strong' = cold-adapted, temperature predicts well;
+# 'weak' = migratory/plume-driven, temperature is a minor cue (fish river mouths). All endpoints
+# sit on a 2 C grid so each isotherm depth is computed exactly once (build efficiency).
 # Behavioural values (T3) — refine vs GLFC Sp.Pub.87-3 / McCauley & Tait when pulled to knowledge/.
 species:
   - id: lake_trout
     name: "Lake trout"
     range_c: [6, 12]          # adult lean 6-9.5 C summer, edge of comfort ~12
+    optimal_c: [6, 10]        # adults concentrate 6-9.5 C; 10.1 C age-0 preferendum — the core
     front_c: 12
     temp_cue: strong
     default: true
     tier: T3
-    note: "Lean (nearshore) form. Prime along the ~12 C front; avoids ~15 C."
+    note: "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C."
   - id: brook_trout
     name: "Brook trout (coaster)"
     range_c: [8, 14]          # cold nearshore; retreats when nearshore > ~18-20 C
+    optimal_c: [8, 12]        # coasters hold in the coldest nearshore water available
     front_c: 14
     temp_cue: strong
     tier: T3
@@ -65,6 +69,7 @@ species:
   - id: salmon
     name: "Salmon (chinook/coho)"
     range_c: [10, 14]         # chinook 7-14.5 C, coho 11.7-14.5 C
+    optimal_c: [12, 14]       # concentration nearer the warm edge of the range
     front_c: 14
     temp_cue: weak
     tier: T3
@@ -72,6 +77,7 @@ species:
   - id: steelhead
     name: "Steelhead / rainbow"
     range_c: [12, 16]         # lake phase 14-17 C
+    optimal_c: [14, 16]       # lake-phase concentration 14-17 C
     front_c: 16
     temp_cue: weak
     tier: T3

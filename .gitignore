@@ -13,6 +13,10 @@ data/*
 !data/forecast_gate_log.csv
 !data/nearshore_anchor.csv
 !data/field_sessions.csv
+# the upwelling-favorability calibration record IS committed — small, auditable provenance
+# (fitted params, or a logged null result) that the build reads to decide prior-vs-fitted.
+!data/calib/
+!data/calib/upwelling_favorability.json
 # frozen water masks ARE committed: the static shoreline must be deterministic across
 # builds, not re-fetched live from Overpass every run (CLAUDE.md rule #1).
 !data/watermask_frozen/

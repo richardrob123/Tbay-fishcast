@@ -46,6 +46,18 @@
   .daylab .ha{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
   .daylab .wind{margin-left:auto;font-size:12px;color:var(--muted)}
   .daylab .wind b{color:var(--accent);font-variant-numeric:tabular-nums}
+  /* upwelling-phase banner (the prime-window signal) */
+  #phase{display:none;align-items:center;gap:10px;margin-bottom:11px;padding:8px 11px;
+    border-radius:10px;background:#0d141dcc;border:1px solid var(--line);border-left:4px solid var(--muted)}
+  #phase .ic{font-size:18px;line-height:1;flex:none}
+  #phase .txt{flex:1;min-width:0}
+  #phase .lab{font-size:13px;font-weight:650;line-height:1.2}
+  #phase .det{font-size:11px;color:var(--muted);margin-top:1.5px;line-height:1.3}
+  #phase .src{font-size:10px;color:var(--muted);opacity:.85;white-space:nowrap;text-align:right;flex:none}
+  .rvpop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0b0f14}
+  .rvpop b{font-size:13.5px}
+  .rvpop .sp{margin-top:5px;font-size:11px;color:#2f6b46;font-weight:650}
+  .rvpop .nt{margin-top:3px;font-size:12px;color:#333}
   input[type=range]{width:100%;accent-color:var(--accent);height:26px}
   .ticks{display:flex;justify-content:space-between;margin-top:2px;font-size:10.5px;color:var(--muted)}
   .ticks span{flex:1;text-align:center}
@@ -91,18 +103,24 @@
   <div id="legend"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
-    <div class="more">Shaded where the <b>bottom temperature is within the selected species' preferred
-      range</b> and reachable within a ~75&nbsp;m cast (≤22&nbsp;m deep). The bold edge is the
-      <b>thermal front</b> — the temperature break where cold upwelled water meets warmer water and
-      baitfish gather; that edge is where fish feed, especially as an upwelling <b>relaxes</b> (a
-      fresh cold blast first slows the bite). Edges are uncertain ~100–300&nbsp;m — treat them as
-      fuzzy. Temperature is one cue: <b>river mouths, points, break walls, and dawn/dusk</b> matter
-      too, and for salmon/steelhead the plume/season drives more than temperature. Forecasts
+    <div class="more">Shading grades the <b>bottom temperature</b> against where the selected species
+      concentrates: the darkest core is its <b>optimal</b> band, the lighter fill the rest of its
+      <b>preferred range</b>, all within a ~75&nbsp;m cast (≤22&nbsp;m deep). Ranges are published
+      thermal preferences. The bold edge is the <b>thermal front</b> — the temperature break where
+      cold upwelled water meets warmer water and baitfish gather; that edge is where fish feed. The
+      banner up top is the <b>upwelling phase</b>:
+      a west-quadrant blow first drives cold water to shore (<b>setup/peak</b> — a cold shock that
+      slows the bite), then as it <b>relaxes</b> the front sharpens and the bite turns on — that
+      relaxation is the prime window. Day&nbsp;0 uses <b>observed</b> wind (Thunder Bay airport);
+      later days use the forecast. Edges are uncertain ~100–300&nbsp;m — treat them as fuzzy. Blue
+      teardrops are <b>river mouths</b> (plume + forage) — they rival temperature for shore catch,
+      and for salmon/steelhead the plume/season drives more than temperature. Forecasts
       <b>water, not fish</b> — check Ontario regs before fishing.</div>
   </details>
 </div>
 
 <div class="card" id="ctl" style="display:none">
+  <div id="phase"></div>
   <div class="daylab">
     <span class="d" id="dlab">—</span>
     <span class="ha" id="halab"></span>
@@ -118,11 +136,14 @@
 
 <script>
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC";
+const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC · Wind CYQT METAR/GEFS";
 
 let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
-// species-band filter: features carry temp='sp:<id>'
-const SF = (l,id) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id]];
+// graded suitability zones: features carry temp='sp:<id>:s1|s2|s3' (s1 total range -> s3
+// optimal core). Three fills of the one hue, opacities that COMPOUND where nested so the
+// sweet spot reads darkest. Not fused with phase — phase is the separate banner.
+const SUIT = [ {suf:'s1', op:0.16}, {suf:'s2', op:0.24}, {suf:'s3', op:0.34} ];
+const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
 function buildSpeciesChips(){
   const el = document.getElementById('species'); if(!el) return;
   el.innerHTML = SPECIES.map(s =>
@@ -138,21 +159,62 @@ function applyLayers(){
   MAN.stretches.forEach((s,k) => {
     if(!s.area) return;
     const day = s.days[Math.min(cur, s.days.length-1)];
-    const f = SF(day.lead, curSp.id);
-    map.getLayer('arfill'+k) && map.setFilter('arfill'+k, f);
-    map.getLayer('arln'+k)   && map.setFilter('arln'+k, f);
+    SUIT.forEach(z => {
+      const id = 'arfill'+k+'_'+z.suf;
+      map.getLayer(id) && map.setFilter(id, SF(day.lead, curSp.id, z.suf));
+    });
+    map.getLayer('arln'+k) && map.setFilter('arln'+k, SF(day.lead, curSp.id, 's1'));
   });
   renderLegend();
+  updateMarkers();
 }
 function renderLegend(){
   const el = document.getElementById('legend'); if(!el || !curSp) return;
   const weak = curSp.temp_cue === 'weak';
+  const opt = curSp.optimal_c || curSp.range_c;
   const cue = weak ? '⚠ temperature is a MINOR cue here — fish river mouths/plumes'
                    : 'temperature predicts this species well';
   el.innerHTML =
-    `<span><span class="sw" style="background:#22b39a"></span>${curSp.range_c[0]}–${curSp.range_c[1]}°C reachable</span>`+
-    `<span><span class="sw" style="background:#0f5132;height:3px;border-radius:0"></span>thermal front — cast the edge</span>`+
+    `<span><span class="sw" style="background:#0c5c3f"></span>optimal ${opt[0]}–${opt[1]}°C</span>`+
+    `<span><span class="sw" style="background:#22b39a;opacity:.5"></span>in range ${curSp.range_c[0]}–${curSp.range_c[1]}°C</span>`+
+    `<span><span class="sw" style="background:#0f5132;height:3px;border-radius:0"></span>front — cast the edge</span>`+
     `<span style="color:${weak?'#c98a2b':'var(--muted)'}">${cue}</span>`;
+}
+
+// upwelling-phase presentation — the fish-review headline: reward the RELAXATION, not the
+// cold trough. Keyed to the phase string from features/upwelling_phase.py.
+const PHASE_META = {
+  relaxation: {ic:'🎯', lab:'Relaxation — prime bite window', col:'#39d353'},
+  peak:       {ic:'❄️', lab:'Peak upwelling — cold shock, bite often off', col:'#4aa3ff'},
+  setup:      {ic:'🌬️', lab:'Upwelling building — bite may slow', col:'#ffb020'},
+  neutral:    {ic:'•',  lab:'Neutral — no active upwelling; fish the front', col:'#9aa4ae'},
+  unknown:    {ic:'•',  lab:'Wind unavailable', col:'#9aa4ae'},
+};
+function renderPhase(lead){
+  const box = document.getElementById('phase');
+  const ph = MAN && MAN.phase && MAN.phase.by_lead ? MAN.phase.by_lead[String(lead)] : null;
+  if(!ph){ box.style.display='none'; return; }
+  const m = PHASE_META[ph.phase] || PHASE_META.unknown;
+  box.style.display = 'flex';
+  box.style.borderLeftColor = m.col;
+  const obs = (ph.source||'').startsWith('observed');
+  const srcName = obs ? ((MAN.phase.obs_station||'obs')+' obs') : 'forecast';
+  const conf = ph.confidence ? ph.confidence[0].toUpperCase()+ph.confidence.slice(1) : '';
+  box.innerHTML =
+    `<span class="ic">${m.ic}</span>`+
+    `<span class="txt"><div class="lab" style="color:${m.col}">${m.lab}</div>`+
+    `<div class="det">${ph.detail||''}</div></span>`+
+    `<span class="src">${obs?'🛰 ':''}${srcName}${conf?'<br>'+conf+' conf.':''}</span>`;
+}
+
+let MARKERS = [];
+function updateMarkers(){
+  if(!curSp) return;
+  MARKERS.forEach(o => {
+    const rel = (o.m.species||[]).includes(curSp.id);
+    o.el.style.opacity = rel ? '1' : '0.42';
+    o.el.style.zIndex = rel ? '2' : '1';
+  });
 }
 
 function fail(msg){
@@ -196,17 +258,20 @@ map.on('load', async () => {
   // one crisp FRONT outline per stretch; the outline is the thermal edge where fish feed. The
   // species chips + day slider just re-target the filter. See docs/FISH_BEHAVIOR_REVIEW.md.
   SPECIES = (man.species && man.species.length) ? man.species
-    : [{id:'lake_trout',name:'Lake trout',range_c:[6,12],front_c:12,temp_cue:'strong',default:true}];
+    : [{id:'lake_trout',name:'Lake trout',range_c:[6,12],optimal_c:[6,10],front_c:12,temp_cue:'strong',default:true}];
   curSp = SPECIES.find(s=>s.default) || SPECIES[0];
   const bounds = new maplibregl.LngLatBounds();
   man.stretches.forEach((s, i) => {
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
-      map.addLayer({ id:'arfill'+i, type:'fill', source:'ar'+i, filter:SF(lead0, curSp.id),
-        paint:{ 'fill-color':'#22b39a', 'fill-opacity':0.30 } });
-      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:SF(lead0, curSp.id),
+      SUIT.forEach(z => {                       // light total range -> dark optimal core
+        map.addLayer({ id:'arfill'+i+'_'+z.suf, type:'fill', source:'ar'+i,
+          filter:SF(lead0, curSp.id, z.suf),
+          paint:{ 'fill-color':'#22b39a', 'fill-opacity':z.op } });
+      });
+      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:SF(lead0, curSp.id, 's1'),
         layout:{ 'line-join':'round' },
-        paint:{ 'line-color':'#0f5132', 'line-width':1.6, 'line-opacity':0.85 } });
+        paint:{ 'line-color':'#0f5132', 'line-width':1.4, 'line-opacity':0.8 } });
     }
     s.corners.forEach(c => bounds.extend(c));
   });
@@ -222,6 +287,20 @@ map.on('load', async () => {
     const pop = new maplibregl.Popup({offset:14, closeButton:false}).setHTML(stationHTML(st));
     new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
   });
+
+  // river-mouth structure markers — plume/forage that rivals temperature for shore catch,
+  // decisive for the weak-cue species (docs/FISH_BEHAVIOR_REVIEW.md). Teardrop pins, dimmed
+  // when the selected species doesn't stage there.
+  (man.markers||[]).forEach(m => {
+    const el = document.createElement('div');
+    el.style.cssText = 'width:15px;height:15px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);'+
+      'background:#2f80ed;border:2px solid #eaf3ff;box-shadow:0 0 0 1.5px #0009;cursor:pointer;'+
+      'transition:opacity .15s';
+    const pop = new maplibregl.Popup({offset:16, closeButton:false}).setHTML(markerHTML(m));
+    new maplibregl.Marker({element:el, anchor:'bottom'}).setLngLat([m.lon, m.lat]).setPopup(pop).addTo(map);
+    MARKERS.push({el, m});
+  });
+  updateMarkers();
 
   // age banner — computed CLIENT-SIDE from issued_utc so a dead daily build cannot
   // display a frozen age forever (the baked age_h is only the build-time value)
@@ -252,8 +331,11 @@ map.on('load', async () => {
   document.getElementById('op').addEventListener('input', e => {
     const o = +e.target.value/100;
     man.stretches.forEach((s,i)=>{
-      map.getLayer('arfill'+i) && map.setPaintProperty('arfill'+i,'fill-opacity', o*0.30);
-      map.getLayer('arln'+i)   && map.setPaintProperty('arln'+i,'line-opacity', o*0.85);
+      SUIT.forEach(z => {
+        const id = 'arfill'+i+'_'+z.suf;
+        map.getLayer(id) && map.setPaintProperty(id,'fill-opacity', o*z.op);
+      });
+      map.getLayer('arln'+i) && map.setPaintProperty('arln'+i,'line-opacity', o*0.8);
     });
   });
   document.getElementById('play').addEventListener('click', togglePlay);
@@ -273,6 +355,16 @@ function stationHTML(st){
     `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div></div>`;
 }
 
+function markerHTML(m){
+  const names = (m.species||[]).map(id => {
+    const s = SPECIES.find(x=>x.id===id); return s ? s.name : id;
+  });
+  return `<div class="rvpop"><b>${m.name}</b>`+
+    `<div class="nt">${m.note||''}</div>`+
+    (names.length?`<div class="sp">stages: ${names.join(' · ')}</div>`:'')+
+    `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · position approximate (field-verify)</div></div>`;
+}
+
 function localLabel(d){
   // each frame is an INSTANT (one model valid time), not a whole day — label it with
   // the local clock time so "Thu" doesn't imply an all-day state (conditions shift
@@ -290,6 +382,7 @@ function setDay(i){
   const man = MAN;
   applyLayers();                       // re-target the species bands to this day's lead
   const d0 = man.stretches[0].days[i];
+  renderPhase(d0.lead);                 // upwelling phase for this day's lead
   document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');
   // headline total counts only well-surveyed stretches — a sparse-survey box (e.g. Little
   // Trout Bay, ~14% NONNA) interpolates its cold band over mostly-unsurveyed water and can
@@ -299,8 +392,16 @@ function setDay(i){
   const nLow = man.stretches.filter(s=>s.low_confidence).length;
   document.getElementById('halab').textContent =
     totHa.toFixed(0)+' ha reachable' + (nLow?` (+${nLow} sparse-survey area${nLow>1?'s':''}, indicative)`:'');
+  // continuous upwelling-favorability (graded response to wind strength), with context so a
+  // low reading is never a bare, alarming "0%" — light wind simply can't upwell.
   const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
-  document.getElementById('wlab').innerHTML = w ? `upwelling wind: <b>${Math.round(w.p*100)}%</b> of ens. members` : '';
+  let wl = '';
+  if(w){
+    const fav = Math.round((w.favor!=null?w.favor:w.p||0)*100);
+    if(fav >= 8) wl = `upwelling-favorable wind: <b>${fav}%</b>`;
+    else wl = `<span style="opacity:.85">light wind — no upwelling blow${w.peak_kn?` (W&nbsp;≤${w.peak_kn}&nbsp;kt)`:''}</span>`;
+  }
+  document.getElementById('wlab').innerHTML = wl;
   document.querySelectorAll('#ticks span').forEach(sp =>
     sp.classList.toggle('on', +sp.dataset.i === i));
   document.getElementById('t').value = i;

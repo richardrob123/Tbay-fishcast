@@ -60,13 +60,25 @@ species.
 - **Fall:** lake trout stage on rocky shoals to spawn at 8–11 °C surface, cooling/photoperiod-
   driven; upwelling secondary. Best shore window of the year — deserves its own regime.
 
-## Status (ADR-024)
+## Status (ADR-024 → ADR-026)
 
-**Shipped:** species-aware **preferred-range** map (bottom-temp within `range_c`, reachable within
-a cast) with the warm-edge **front** as the prime mark; species chips; salmon/steelhead flagged
-weak-cue. This replaces the "colder = better" single band.
-**Next increment (not yet shipped):** upwelling-**phase** indicator from **observed** recent winds
-(relaxation = prime), and **river-mouth** structure markers.
+**Shipped (ADR-024):** species-aware **preferred-range** map with the warm-edge **front** as the
+prime mark; species chips; salmon/steelhead flagged weak-cue. Replaced "colder = better".
+**Shipped (ADR-025):** upwelling-**phase** banner (setup/peak/relaxation/neutral) — day 0 from
+**observed** Thunder Bay airport wind (METAR), forecast leads from the ensemble; **river-mouth**
+structure markers (Kaministiquia, Current, Neebing–McIntyre).
+**Shipped (ADR-026):** the flat range fill is now a **graded** thermal-suitability field (bottom-
+temp inverted from the isotherm stack, graded through each species' preference curve → nested
+zones, optimal core inside the range); the binary upwelling threshold is replaced by a
+**continuous** favorability (logistic across the Wedderburn range).
+
+**Deliberately NOT done — the honest boundary.** We do **not** fuse temperature × phase × front ×
+structure into one "probability" with hand-picked weights: with no catch/field-session outcomes yet
+there is nothing to fit them against, and a guessed composite is exactly what CLAUDE rules 6–8
+forbid. We even tried to calibrate just the wind→cooling response from NDBC buoy history — it did
+not discriminate (offshore buoys miss the coastal-upwelling signal; `data/calib/`), so that curve
+stays a labelled physics prior. The multi-signal weighting waits on the pre-registered field logs,
+where it can be fit and temporal-split validated.
 
 ## Original proposed changes
 

@@ -44,3 +44,40 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   shipped): an upwelling-PHASE indicator driven by OBSERVED recent winds (setup/peak/relaxing — the
   relaxation phase is the prime bite), and river-mouth structure markers. lake_trout stays the
   default and best-calibrated.
+
+- **ADR-025 — Upwelling-PHASE indicator from OBSERVED wind + river-mouth markers.** The map showed
+  *where* cold water is, never *when* in the upwelling cycle we sit — yet the fish review's biggest
+  correction is that a fresh upwelling suppresses the bite (cold shock) and the RELAXATION after it
+  is the prime window. A new deterministic classifier (`features/upwelling_phase.py`) reads a wind
+  series and labels setup / peak / relaxation / neutral from the most recent sustained west-quadrant
+  blow (run detection with grace for anemometer flicker; timescales from CLAUDE physics — setup
+  ≈10 h, restratification ≈40 h). Day 0 is driven by OBSERVED wind — Thunder Bay airport METAR,
+  `ingest/metar.py` (the operator's requirement that the "past couple days" conditioning today be
+  actual data, not our own forecast fed back in); forecast leads stitch the observed tail to the
+  ensemble control. The manifest carries a per-lead `phase` block; the UI shows it as a banner that
+  updates with the day slider. River mouths (Kaministiquia, Current, Neebing–McIntyre) are added as
+  structure markers (plume/forage rival temperature for shore catch, decisive for the weak-cue
+  species), dimmed when the selected species doesn't stage there. Airport wind under-reads over-lake
+  speed, so the observed threshold sits at ~10 kt (documented, tier T4).
+
+- **ADR-026 — Graded per-species suitability (one variable, literature curve) + CONTINUOUS
+  upwelling response — and an explicit refusal to fuse signals without data.** Two changes and one
+  deliberate non-change. (1) The flat in/out range fill is replaced by a GRADED thermal-suitability
+  field: the isotherm-depth stack is inverted to a bottom-temperature field, then graded through
+  each species' published preference curve (`features/suitability.thermal_suitability`) — 1.0 across
+  the optimal core, tapering to 0 at the range edges — and emitted as three nested contours (s1
+  total range → s3 optimal core) so the sweet spot reads inside the habitable band. `optimal_c` per
+  species added to `stations.yaml` (tier T3). (2) The binary "≥13 kt sustained or nothing" upwelling
+  wind readout (which collapsed persistent moderate west wind to a bare, misleading 0 %) is replaced
+  by a CONTINUOUS favorability (`suitability.upwelling_favorability`, logistic across the Wedderburn
+  range) surfaced as `ensemble_favorability`; a 0 reading now always carries its context (peak
+  favorable wind). We attempted to CALIBRATE that response to observed data (`calibrate_upwelling.py`
+  fits P(surface cooling | favorable wind) from NDBC buoy history) — and it FAILED to discriminate
+  (offshore western-Superior buoys don't show the coastal-upwelling signal; AUC≈0.5, corr slightly
+  negative), so the curve stays a labelled physics prior and the null result is recorded to
+  `data/calib/upwelling_favorability.json`, not hidden. (3) The NON-change: we deliberately do NOT
+  fuse temperature × phase × front × structure into a single "probability" with hand-picked weights.
+  Without catch/field-session outcomes there is nothing to fit those weights against, so a composite
+  would be exactly the guessing the operator (and CLAUDE rules 6–8) forbid. Each signal is shown
+  distinctly and honestly; the weighting is deferred to when the pre-registered field logs let it be
+  fit and temporal-split validated.

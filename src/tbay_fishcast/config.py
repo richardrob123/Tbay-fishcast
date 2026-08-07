@@ -94,9 +94,11 @@ class ProductConfig:
 class Species:
     """A target species and its PREFERRED-RANGE thermal model (stations.yaml `species:`).
     range_c=(cold, warm) °C: the map shades where the bottom is within this range and reachable
-    within a cast. front_c is the warm-edge isotherm (the thermal break where fish feed) drawn as
-    the prime mark. temp_cue 'strong'|'weak' flags how predictive temperature is for this species.
-    See docs/FISH_BEHAVIOR_REVIEW.md."""
+    within a cast (the TOTAL zone, light fill). optimal_c=(cold, warm) is the tighter core where
+    the species actually concentrates (adult lean lake trout 6-9.5 °C, not the 12 °C margin) —
+    drawn as a darker OPTIMAL zone inside the total. front_c is the warm-edge isotherm (the
+    thermal break where fish feed) drawn as the prime mark. temp_cue 'strong'|'weak' flags how
+    predictive temperature is. See docs/FISH_BEHAVIOR_REVIEW.md."""
     id: str
     name: str
     range_c: tuple[float, float]
@@ -105,10 +107,17 @@ class Species:
     default: bool = False
     tier: str = "T3"
     note: str = ""
+    optimal_c: tuple[float, float] | None = None
+
+    @property
+    def optimal(self) -> tuple[float, float]:
+        """The concentration core — falls back to the full range if none is declared."""
+        return self.optimal_c if self.optimal_c is not None else self.range_c
 
 
 def _default_species() -> tuple[Species, ...]:
-    return (Species("lake_trout", "Lake trout", (6.0, 12.0), 12.0, "strong", default=True),)
+    return (Species("lake_trout", "Lake trout", (6.0, 12.0), 12.0, "strong", default=True,
+                    optimal_c=(6.0, 10.0)),)
 
 
 @dataclass(frozen=True)
@@ -128,11 +137,12 @@ class Config:
 
     @property
     def band_temps(self) -> tuple[float, ...]:
-        """All distinct isotherm temperatures needed across species (range endpoints + fronts),
-        warmest first — the map computes each isotherm-depth field once and reuses it."""
+        """All distinct isotherm temperatures needed across species (range + optimal endpoints
+        + fronts), warmest first — the map computes each isotherm-depth field once and reuses it."""
         temps = set()
         for sp in self.species:
             temps.update(sp.range_c)
+            temps.update(sp.optimal)
             temps.add(sp.front_c)
         return tuple(sorted(temps, reverse=True))
 
@@ -199,7 +209,9 @@ def load_config(path: Path | str = STATIONS_YAML) -> Config:
                 front_c=float(s.get("front_c", s["range_c"][1])),
                 temp_cue=s.get("temp_cue", "strong"),
                 default=bool(s.get("default", False)),
-                tier=s.get("tier", "T3"), note=s.get("note", ""))
+                tier=s.get("tier", "T3"), note=s.get("note", ""),
+                optimal_c=((float(s["optimal_c"][0]), float(s["optimal_c"][1]))
+                           if s.get("optimal_c") else None))
         for s in sp_raw
     ) or _default_species()
     return Config(lsofs=lsofs, temporal_split=temporal_split, stations=stations,

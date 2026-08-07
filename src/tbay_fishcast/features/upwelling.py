@@ -110,6 +110,44 @@ def upwelling_probability(time, members, **kw) -> dict[date, float]:
     return {d: counts.get(d, 0) / n_members for d in sorted(all_days)}
 
 
+def ensemble_favorability(time, members, *, sector=FAVORABLE_SECTOR,
+                          s50=None, width=None) -> dict[date, float]:
+    """Per-day CONTINUOUS upwelling-favorability (0..1), the graded companion to
+    `upwelling_probability`'s binary fraction.
+
+    For each hour, favorability = (direction in `sector`) × logistic(speed) — a smooth
+    response to wind strength (features/suitability.upwelling_favorability), so a persistent
+    moderate west wind reads as moderate, not the flat 0 a hard ≥13 kt cutoff produces. The
+    day's value is the mean hourly favorability, averaged across ensemble members. Returns
+    every calendar day in `time` (0.0 where nothing favorable), never silently dropped.
+    """
+    from . import suitability
+
+    kw = {}
+    if s50 is not None:
+        kw["s50"] = s50
+    if width is not None:
+        kw["width"] = width
+
+    all_days = {_naive(x).date() for x in time}
+    if not members:
+        return {d: 0.0 for d in sorted(all_days)}
+    t = [_naive(x) for x in time]
+    acc: dict[date, float] = {d: 0.0 for d in all_days}
+    for m in members:
+        v = np.asarray(m["speed_kn"], dtype=float)
+        d = np.asarray(m["dir_deg"], dtype=float)
+        fav = in_sector(d, sector).astype(float) * suitability.upwelling_favorability(v, **kw)
+        for x, f in zip(t, fav):
+            acc[x.date()] = acc.get(x.date(), 0.0) + float(f)
+    # normalise: mean over members and over that day's hour-count
+    counts: dict[date, int] = {}
+    for x in t:
+        counts[x.date()] = counts.get(x.date(), 0) + 1
+    n_mem = len(members)
+    return {d: acc.get(d, 0.0) / (n_mem * counts.get(d, 1)) for d in sorted(all_days)}
+
+
 def _naive(x) -> datetime:
     """Normalize a time value (datetime or ISO string, tz-aware or naive) to a
     naive datetime for calendar-day bucketing and hour-gap arithmetic."""

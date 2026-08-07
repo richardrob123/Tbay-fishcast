@@ -84,7 +84,101 @@ STRETCHES = [
 # not a coverage threshold (the verified city arc sits at low whole-box coverage but maps well).
 LOW_CONFIDENCE = {"little_trout_bay"}
 
+# River-mouth structure markers (docs/FISH_BEHAVIOR_REVIEW.md: river mouths, plumes and
+# forage rival or exceed TEMPERATURE for actual shore catch — decisive for the weak-cue
+# species, salmon/steelhead, which stage on tributary plumes). Points, not scored layers:
+# the map draws them so the angler weighs structure alongside the thermal bands. Positions
+# are map-derived mouth locations (tier T4, field_verify: replace with field GPS before any
+# access claim). `species` = the species each mouth most helps (drives the popup copy).
+RIVER_MOUTHS = [
+    {"id": "kam", "name": "Kaministiquia R. mouth", "lat": 48.383, "lon": -89.246,
+     "note": "Delta channels + warm plume — prime chinook/coho staging (late summer–fall). "
+             "Temperature is a minor cue here; fish the plume edge and current seams.",
+     "species": ["salmon", "steelhead"]},
+    {"id": "current", "name": "Current R. mouth", "lat": 48.455, "lon": -89.185,
+     "note": "North-shore plume below Boulevard Lake — steelhead/salmon staging; lake trout "
+             "hold where the plume meets the cold shelf.",
+     "species": ["steelhead", "salmon", "lake_trout"]},
+    {"id": "neebing", "name": "Neebing–McIntyre Floodway mouth", "lat": 48.373, "lon": -89.237,
+     "note": "Mission Marsh outlet — plume + forage; secondary structure to the Kam delta.",
+     "species": ["salmon", "steelhead"]},
+]
+
 OUT = Path(__file__).resolve().parents[1] / "web" / "data"
+FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
+
+
+def _load_favor_calib():
+    """Fitted upwelling-favorability params if a real calibration exists, else None (prior).
+
+    scripts/calibrate_upwelling.py writes {calibrated: bool, s50_kn, width_kn, ...}. When it
+    could not fit a discriminating response from observed data it writes calibrated:false — we
+    then fall back to the physics prior in suitability.py, and say so (CLAUDE rule 5)."""
+    try:
+        d = json.loads(FAVOR_CALIB.read_text())
+    except (OSError, ValueError):
+        return None
+    if not d.get("calibrated"):
+        print(f"upwelling-favorability: prior in use (calib {d.get('reason','absent')})")
+        return None
+    return d
+
+
+def _build_phase(lead_valid, ens):
+    """Regional upwelling-PHASE timeline for the manifest, or None if no wind is reachable.
+
+    The nowcast (lead 0) is classified from OBSERVED wind (CYQT METAR) — the operator's
+    requirement that the "past couple days" conditioning day 0 be actual data, not our own
+    forecast fed back in. Forecast leads are classified from the observed tail STITCHED to
+    the ensemble control member, so a blow that begins in the observed past and runs into
+    the forecast is seen whole. Relaxation after a west-quadrant blow is the prime window
+    (docs/FISH_BEHAVIOR_REVIEW.md). Pure classification over already-fetched series (ADR-001).
+    """
+    from tbay_fishcast.features import upwelling_phase as up
+    from tbay_fishcast.ingest import metar
+
+    obs = None
+    try:
+        obs = metar.fetch_recent_wind(hours=72)
+    except Exception as e:  # noqa: BLE001
+        print(f"observed wind (METAR) unavailable: {str(e)[:50]}")
+
+    o_t = [o.time for o in obs] if obs else []
+    o_d = [o.dir_deg for o in obs] if obs else []
+    o_s = [o.speed_kn for o in obs] if obs else []
+    cutoff = o_t[-1] if o_t else None
+
+    st_t, st_d, st_s = list(o_t), list(o_d), list(o_s)
+    if ens and ens.get("members"):
+        ctrl = ens["members"][0]
+        for i, ts in enumerate(ens.get("time", [])):
+            t = up._utc(ts)
+            if cutoff is None or t > cutoff:
+                st_t.append(t)
+                st_d.append(ctrl["dir_deg"][i])
+                st_s.append(ctrl["speed_kn"][i])
+    if not st_t:
+        return None
+
+    thr = up.OBSERVED_THRESHOLD_KN
+    obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=thr) if o_t else []
+    all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=thr)
+
+    by_lead = {}
+    for lead, valid in sorted(lead_valid.items()):
+        if lead == 0 and obs:
+            ph = up.classify_at(obs_runs, valid, source=f"observed:{metar.CYQT}",
+                                confidence="high" if len(o_t) >= 24 else "med")
+        else:
+            src = "forecast:gfs025" if not (lead == 0 and obs) else f"observed:{metar.CYQT}"
+            ph = up.classify_at(all_runs, valid, source=src,
+                                confidence="med" if lead <= 48 else "low")
+        by_lead[str(lead)] = ph.as_dict()
+
+    return {"now": by_lead.get("0"), "by_lead": by_lead,
+            "obs_station": metar.CYQT if obs else None,
+            "obs_available": bool(obs),
+            "threshold_kn": thr, "sector_deg": list(up.FAVORABLE_SECTOR)}
 
 
 def _merc_to_ll(x, y):
@@ -137,12 +231,44 @@ def _iso_field(gx, gy, iso_pts, vals):
     return iso
 
 
+def _bottom_temp_field(iso_fields, targets, depth):
+    """Invert the stack of isotherm-DEPTH fields into a bottom-TEMPERATURE field.
+
+    Each iso_fields[T] is the depth (m) of the T °C isotherm (999 sentinel = the column never
+    reaches T °C, i.e. that isotherm is deeper than any bottom). Isotherm depth decreases as
+    temperature rises, so for a pixel bottom depth d the bottom temperature is a piecewise-
+    linear interpolation of T against those depths: warmer than the shallowest isotherm above
+    it, colder than the deepest below it. Reuses the fields already computed for the bands, so
+    the graded thermal suitability costs no extra model reads. Returns NaN off-water.
+    """
+    T = sorted(targets, reverse=True)                       # warm -> cold
+    D = [np.where(iso_fields[t] >= 900, np.nan, iso_fields[t]) for t in T]  # sentinel -> NaN
+    b = np.full(depth.shape, np.nan, dtype=float)
+    for k in range(len(T) - 1):
+        dh, dl = D[k], D[k + 1]                              # dh (warm, shallow) <= dl (cold, deep)
+        valid = np.isfinite(dh) & np.isfinite(dl) & (dl > dh)
+        m = valid & (depth >= dh) & (depth <= dl) & np.isnan(b)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            frac = np.where(valid & (dl > dh), (depth - dh) / (dl - dh), 0.0)
+        b = np.where(m, T[k] + (T[k + 1] - T[k]) * frac, b)
+    # clamp: shallower than the warmest isotherm -> warmer than warmest T; deeper than the
+    # coldest -> colder than coldest T (bounded to the modelled range, no extrapolation).
+    b = np.where(np.isnan(b) & np.isfinite(D[0]) & (depth < D[0]), T[0], b)
+    b = np.where(np.isnan(b) & np.isfinite(D[-1]) & (depth > D[-1]), T[-1], b)
+    return b
+
+
 # Thermal-habitat targets (°C). Optimal-thermal-habitat mapping for lake trout: the
 # preferendum is ~10 °C (USGS), peak growth ~12.5 °C, comfortable band ~4–12 °C, chronic
 # ceiling ~16 °C. So 12 = outer edge of comfort (the ceiling), 10 = the optimum/sweet
 # spot, 8 = deep cold (marks the strongest upwelling). NOT "colder is better" — colder
 # than the preferendum is deep-cold structure, not more optimal. TARGETS[0] is primary.
 TARGETS = (12.0, 10.0, 8.0)
+
+# Graded thermal-suitability contour levels (features/suitability.thermal_suitability, 0..1):
+# s1 = the whole preferred range (total zone), s2 = good, s3 = the optimal concentration core.
+# Nested (s3 ⊆ s2 ⊆ s1) so the UI shades light→dark and the sweet spot reads inside the band.
+SUIT_LEVELS = [("s1", 0.15), ("s2", 0.5), ("s3", 0.85)]
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -228,26 +354,36 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             rings += [[list(c) for c in r.coords] for r in gg.interiors]
             area_feats.append((tag, rings))
 
-    # PREFERRED-RANGE model (docs/FISH_BEHAVIOR_REVIEW.md): for each species, shade water whose
-    # BOTTOM temperature is within [cold, warm] and reachable within a cast — a depth annulus
-    # between two isotherms, not "colder = better". The isotherm-DEPTH field for each temperature
-    # is computed once and reused across species. The UI outlines each range band; that outline is
-    # the thermal FRONT / feeding edge (the prime mark), so no separate line geometry is emitted.
+    # GRADED SUITABILITY model (docs/FISH_BEHAVIOR_REVIEW.md): rather than a flat in/out band,
+    # grade each reachable pixel by how close its BOTTOM temperature is to where the species
+    # concentrates — 1.0 across the optimal core, tapering to 0 at the edges of the preferred
+    # range (features/suitability.thermal_suitability, from published thermal preferences). We
+    # invert the isotherm-depth stack into a bottom-temperature field ONCE, then emit three
+    # nested contours per species (s1 total range -> s3 optimal core) so the angler sees the
+    # sweet spot inside the habitable zone. This grades ONE measured variable through a
+    # literature curve — it is NOT an arbitrary fusion of temperature with phase/front/structure
+    # (that weighting needs catch data to fit; deferred, see suitability.py). The upwelling
+    # PHASE is a separate, honestly-labelled temporal signal (manifest 'phase'), not baked in.
+    from tbay_fishcast.features import suitability as _su
     iso_fields = {t: _iso_field(gx, gy, iso_pts, tvals[t]) for t in targets}
     water = np.isfinite(depth)
     within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
+    bottom_c = _bottom_temp_field(iso_fields, targets, depth)
+
     default_id = None
     for sp in species:
-        cold_c, warm_c = sp.range_c
-        iso_warm = iso_fields.get(warm_c)      # shallow isotherm = warm edge of the range
-        iso_cold = iso_fields.get(cold_c)      # deeper isotherm = cold edge
-        if iso_warm is None or iso_cold is None:
+        suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
+        suit = np.where(within, suit, 0.0)
+        emitted_any = False
+        for tag, lvl in SUIT_LEVELS:
+            mask = suit >= lvl
+            if mask.any():
+                _emit(_shape(mask), f"sp:{sp.id}:{tag}")
+                emitted_any = True
+        if not emitted_any:
             continue
-        # bottom in [cold, warm]  <=>  iso_depth(warm) <= depth <= iso_depth(cold)
-        rng = within & (depth >= iso_warm) & (depth <= iso_cold)
-        _emit(_shape(rng), "sp:" + sp.id)
         if sp.default or (default_id is None and sp is species[0]):
-            reach_px_primary = float(rng.sum())
+            reach_px_primary = float((suit >= SUIT_LEVELS[0][1]).sum())  # total-zone area
             default_id = sp.id
     # keep a (possibly empty) lines file so the manifest reference stays valid
     return area_feats, reach_px_primary, lines
@@ -274,6 +410,7 @@ def main(argv) -> int:
         print("⚠ live buoy bias unavailable — frozen prior in use (degraded mode)")
 
     stretches_out = []
+    lead_valid: dict[int, str] = {}   # region-wide lead -> valid_utc (all stretches share the cycle)
     for sid, name, clat, clon, exposure in STRETCHES:
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
@@ -347,6 +484,8 @@ def main(argv) -> int:
                                    "geometry": {"type": "LineString", "coordinates": coords}})
         if not days:
             print(f"skip {sid}: no frames"); continue
+        if not lead_valid:
+            lead_valid = {int(d["lead"]): d["valid_utc"] for d in days}
         (OUT / "lines").mkdir(exist_ok=True)
         (OUT / "areas").mkdir(exist_ok=True)
         (OUT / "lines" / f"{sid}.geojson").write_text(
@@ -395,16 +534,46 @@ def main(argv) -> int:
                                       if meta.get("surf_sst") is not None else None),
                          "traj": traj})
 
-    # ensemble upwelling-wind probability per day
+    # ensemble upwelling-wind signal per day. The headline is the CONTINUOUS favorability
+    # (features/upwelling.ensemble_favorability) — a graded response to wind strength, so a
+    # persistent moderate west wind reads as moderate, not the flat 0 a hard ≥13 kt cutoff
+    # gives. We keep the binary member-fraction too (how many members clear a sustained blow)
+    # and the day's peak favorable wind, so a low number always carries its context.
     wind = []
+    ens_w = None
+    favor_calib = _load_favor_calib()
     try:
         from tbay_fishcast.features import upwelling
+        from tbay_fishcast.features.wind import in_sector
         from tbay_fishcast.ingest import wind_forecast
-        w = wind_forecast.fetch_ensemble_wind(forecast_days=5)
-        prob = upwelling.upwelling_probability(w["time"], w["members"])
-        wind = [{"day": f"{d:%a}", "p": round(prob[d], 2)} for d in sorted(prob)]
+        ens_w = wind_forecast.fetch_ensemble_wind(forecast_days=5)
+        prob = upwelling.upwelling_probability(ens_w["time"], ens_w["members"])
+        _fk = {"s50": favor_calib["s50_kn"], "width": favor_calib["width_kn"]} if favor_calib else {}
+        favor = upwelling.ensemble_favorability(ens_w["time"], ens_w["members"], **_fk)
+        # per-day peak favorable-sector wind from the control member (context for a 0 reading)
+        from tbay_fishcast.features.upwelling import _naive
+        ctrl = ens_w["members"][0]
+        ct = [_naive(x) for x in ens_w["time"]]
+        cs = np.array(ctrl["speed_kn"], dtype=float)
+        cd = np.array(ctrl["dir_deg"], dtype=float)
+        cfav = in_sector(cd)
+        peak = {}
+        for x, s, f in zip(ct, cs, cfav):
+            if f:
+                peak[x.date()] = max(peak.get(x.date(), 0.0), float(s))
+        wind = [{"day": f"{d:%a}", "favor": round(favor[d], 2), "p": round(prob[d], 2),
+                 "peak_kn": round(peak.get(d, 0.0))} for d in sorted(favor)]
     except Exception as e:  # noqa: BLE001
         print(f"wind ensemble unavailable: {str(e)[:50]}")
+
+    # upwelling-PHASE (observed day 0 + forecast outlook) — reward the relaxation, not the trough
+    phase = None
+    try:
+        phase = _build_phase(lead_valid, ens_w)
+        if phase and phase.get("now"):
+            print(f"phase now: {phase['now']['phase']} ({phase['now'].get('detail','')})")
+    except Exception as e:  # noqa: BLE001
+        print(f"phase unavailable: {str(e)[:60]}")
 
     now = datetime.now(timezone.utc)
     age_h = (now - datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)).total_seconds() / 3600
@@ -418,12 +587,16 @@ def main(argv) -> int:
         "max_reach_depth_m": cfg.product.max_reach_depth_m,
         "targets_c": list(cfg.band_temps),  # every isotherm shaded (union across species)
         "species": [{"id": sp.id, "name": sp.name, "range_c": list(sp.range_c),
-                     "front_c": sp.front_c, "temp_cue": sp.temp_cue,
-                     "default": sp.default, "note": sp.note} for sp in cfg.species],
+                     "optimal_c": list(sp.optimal), "front_c": sp.front_c,
+                     "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note}
+                    for sp in cfg.species],
+        "suit_levels": [{"tag": t, "level": lv} for t, lv in SUIT_LEVELS],
+        "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},
         "stretches": stretches_out, "stations": stations, "wind": wind,
+        "phase": phase, "markers": RIVER_MOUTHS,
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
     print(f"wrote {OUT/'manifest.json'} — {len(stretches_out)} stretches, {len(stations)} stations, "

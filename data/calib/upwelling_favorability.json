@@ -1,0 +1,19 @@
+{
+ "calibrated": false,
+ "reason": "fit_rejected(auc=0.485,s50=425.4,width=271.5)",
+ "n_windows": 259,
+ "n_cooling_events": 46,
+ "buoys": [
+  "45027",
+  "45028"
+ ],
+ "years": [
+  2024,
+  2025
+ ],
+ "source": "NDBC stdmet historical (wind + surface WTMP)",
+ "retrieved_utc": "2026-08-07T14:32:13Z",
+ "prior_s50_kn": null,
+ "prior_width_kn": null,
+ "note": "Offshore western-Superior buoys do NOT show the coastal-upwelling wind\u2192cooling response (surface WTMP corr with favorable wind speed ~0 / slightly negative) \u2014 coastal upwelling is a NEARSHORE phenomenon these deep-water buoys miss. The favorability curve therefore stays the physics prior (Wedderburn ~12-17 kt; Li et al. 2021 r=-0.87). A nearshore logger or a GLSEA north-shore-pixel analysis is the calibration path; documented gap (docs/SUBSURFACE_SOURCES.md)."
+}
