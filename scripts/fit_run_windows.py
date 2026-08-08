@@ -38,14 +38,19 @@ def main(argv) -> int:
               f"(>={frw.MIN_REPORTS} dated reports across >={frw.MIN_YEARS} years) — "
               "authored windows stand unchanged")
     for fid, f in sorted(fits.items()):
+        tag = "APPLIED" if f["applied"] else "candidate (below apply bar)"
         print(f"  {fid:22s} {f['authored_start']}..{f['authored_end']} -> "
               f"{f['start']}..{f['end']}  (n={f['n']}, years={f['n_years']}, "
-              f"shift {f['shift_days']:+d} d)")
+              f"shift {f['shift_days']:+d} d)  [{tag}]")
     if dry:
         return 0
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    applied = {k: v for k, v in fits.items() if v["applied"]}
+    candidates = {k: v for k, v in fits.items() if not v["applied"]}
     OUT.write_text(json.dumps({
-        "windows": fits,
+        "windows": applied,          # ONLY these are consumed by run_calendar
+        "candidates": candidates,    # computed, visible, deliberately NOT shipped yet
+        "apply_min_reports": frw.APPLY_MIN_REPORTS, "apply_min_years": frw.APPLY_MIN_YEARS,
         "min_reports": frw.MIN_REPORTS, "min_years": frw.MIN_YEARS,
         "tol_days": frw.TOL_DAYS, "percentiles": [frw.LO_PCT, frw.HI_PCT],
         "definition": ("Run windows fitted from the LOCAL observation ledger: percentiles of "

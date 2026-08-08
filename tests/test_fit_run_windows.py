@@ -100,3 +100,19 @@ def test_calendar_uses_fitted_window_when_present(tmp_path, monkeypatch):
         assert run["tier"] == "DATA(local reports)"
     finally:
         rc._load_entries.cache_clear()
+
+
+def test_two_stage_bar_computes_but_does_not_ship_thin_fits():
+    """A fit between the compute bar and the APPLY bar must be visible but not shipped.
+    Origin: the first live run proposed a 20-day fall-steelhead shift on 12 photo sightings."""
+    dates = []
+    for yr in (2021, 2022, 2023, 2024, 2025):          # 5 years x 3 = 15 reports
+        dates += [f"{yr}-09-05", f"{yr}-09-10", f"{yr}-09-15"]
+    f = frw.fit_entry(CHINOOK_ENTRY, _rows("chinook", dates))
+    assert f is not None and f["n"] == 15
+    assert f["applied"] is False, "15 reports must not ship a window change"
+    # clearing the apply bar flips it
+    for yr in (2021, 2022, 2023, 2024, 2025):
+        dates += [f"{yr}-09-02", f"{yr}-09-12"]        # -> 25 reports over 5 years
+    f2 = frw.fit_entry(CHINOOK_ENTRY, _rows("chinook", dates))
+    assert f2["n"] == 25 and f2["applied"] is True

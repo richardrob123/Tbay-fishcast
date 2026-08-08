@@ -22,7 +22,10 @@ _ROOT = Path(__file__).resolve().parents[3]
 LEDGER = _ROOT / "knowledge" / "observations" / "observations.jsonl"
 CONFIRMATIONS = _ROOT / "knowledge" / "observations" / "confirmations.json"
 
-KINDS = {"catch", "run_status", "stocking", "trap_count", "derby_result"}
+# "sighting" = a fish OBSERVED and evidenced (photo-verified citizen science) without a claim
+# that it was angled. Kept distinct from "catch" so the back test can weight them differently:
+# a catch implies successful angling at that spot; a sighting only implies the fish was there.
+KINDS = {"catch", "sighting", "run_status", "stocking", "trap_count", "derby_result"}
 # regs/closure/access claims are NOT a kind on purpose: legality is never research-ingested
 # (rule 4 — T1 or field-verified only, via human review).
 SPECIES = {"lake_trout", "brook_trout", "chinook", "coho", "pink", "steelhead",
@@ -170,7 +173,7 @@ def confirmations(as_of: date, window_days: int = 7, path: Path = LEDGER) -> dic
     Only day-precision catch/run_status rows with a resolved place and confidence >= 0.5 count."""
     out: dict = {}
     for r in load(path):
-        if r.get("kind") not in ("catch", "run_status"):
+        if r.get("kind") not in ("catch", "sighting", "run_status"):
             continue
         if r.get("date_precision", "day") not in ("day", "week"):
             continue

@@ -145,13 +145,14 @@ agency:
 media:
   tooling_note: "WebFetch blocks most domains here; mine via Bash/curl with browser UA. Wayback SNAPSHOT content (web.archive.org + CDX) TLS-resets through this container's proxy - all snapshot mining must run CI-side; the availability API works locally. Verified 2026-08-08."
   usable:
-    - name: Thunder Bay Fishing Message Board
-      url: "https://fishingboard.thunderbayfishing.com/ (Invision; index.php?/forum/2-general-fishing/&page=N)"
-      content: "THE regional catch/run corpus: 93,203 posts 2006-2026 continuous (459 topic pages) + Fly & Spey 1,329; guest-readable bodies with machine-readable ISO timestamps; run threads name McIntyre/Kam/McVicar/Black Sturgeon"
-      access: "plain HTML; robots.txt empty; rate-limit 1 req/2s"
-      tier: T3
+    - name: Thunder Bay Fishing Message Board - RSS FEED ONLY
+      url: "https://fishingboard.thunderbayfishing.com/index.php?/forum/2-general-fishing.xml/"
+      content: "guest-readable RSS carrying FULL first-post text via CDATA - but only the current ~25 latest topics. No historical depth; value is FORWARD-GOING daily collection of local catch/run reports"
+      access: "plain RSS, no auth; poll daily"
+      tier: T4
       priority: 1
-      slices: ["tbf_forum:titles_all_459_pages", "tbf_forum:bodies_run_ice_derby_topics_<year> for 2006-2026", "tbf_forum:fly_spey_all"]
+      slices: ["tbf_rss:daily_poll (ongoing, not a backfill)"]
+      notes: "the board's TOPIC PAGES are auth-walled (see dead_ends); the RSS is the only guest-readable body text and it is legitimately public"
     - name: TBNewsWatch RSS archive index
       url: "https://www.tbnewswatch.com/rss?page=N (200 + paginates whole archive; last page ~5736, ~143k items to ~2004)"
       content: "titles/pubDates/descriptions incl. derby stories (2022: ~125 salmon weighed, 9.8 lb winner); article BODIES 403 from container (Cloudflare) - fetch bodies CI-side; robots.txt is Allow:/ so the 403 is technical, not ToS"
@@ -185,6 +186,7 @@ media:
       priority: 3
       slices: ["tbsa:wayback_pre2019 (CI)"]
   dead_ends:
+    - {name: Thunder Bay Fishing Message Board (topic pages), reason: "AUTH-WALLED: topic bodies return HTTP 403 'You are viewing as a guest. Please create an account.' (IPS4 app-level, not a WAF) for ALL eras - independently confirmed by two agents 2026-08-09. Listing pages are guest-readable but expose only titles/dates, which cannot supply the schema's required verbatim quote. Rule 12 forbids auth-walled scraping EVEN WITH credentials; the only legitimate path is explicit permission from the site owner (operator action). The 2026-08-08 sweep's 'guest-readable full post bodies' claim was WRONG - it verified listing pages only"}
     - {name: Thunder Bay Chronicle-Journal, reason: "robots.txt explicitly disallows ClaudeBot/Claude-Web/anthropic-ai site-wide -> rule 12 do-not-mine, despite verified-excellent dated content (e.g. Nipigon festival weights 2023). Operator could pursue permission/licensed access - would be T2 P1 if unblocked"}
     - {name: CBC (cbc.ca), reason: "robots.txt disallows Anthropic-ai/Claude-Web site-wide - noticed AFTER tranche 1 mined 3 rows via curl; those rows REMOVED from the ledger 2026-08-08 pending operator decision. No further CBC mining without explicit operator authorization"}
     - {name: tourism/feature sites (superiorcountry.ca, visitthunderbay, northernontario.travel, thenewflyfisher, ontariofishing.net), reason: "evergreen undated content"}

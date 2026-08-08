@@ -1,0 +1,61 @@
+{
+ "windows": {},
+ "candidates": {
+  "pink_run": {
+   "id": "pink_run",
+   "species": "pink",
+   "start": "09-14",
+   "end": "09-29",
+   "authored_start": "09-01",
+   "authored_end": "09-30",
+   "n": 19,
+   "n_years": 6,
+   "years": [
+    2012,
+    2016,
+    2017,
+    2021,
+    2023,
+    2024
+   ],
+   "shift_days": 13,
+   "applied": false,
+   "method": "p10-p90 of local dated reports within the authored window +/-30d; effort-biased (reports, not escapement)"
+  },
+  "fall_steelhead": {
+   "id": "fall_steelhead",
+   "species": "steelhead",
+   "start": "09-05",
+   "end": "10-22",
+   "authored_start": "09-25",
+   "authored_end": "freeze_up",
+   "n": 12,
+   "n_years": 8,
+   "years": [
+    2010,
+    2016,
+    2018,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+   ],
+   "shift_days": -20,
+   "applied": false,
+   "method": "p10-p90 of local dated reports within the authored window +/-30d; effort-biased (reports, not escapement)"
+  }
+ },
+ "apply_min_reports": 20,
+ "apply_min_years": 4,
+ "min_reports": 12,
+ "min_years": 3,
+ "tol_days": 30,
+ "percentiles": [
+  10.0,
+  90.0
+ ],
+ "definition": "Run windows fitted from the LOCAL observation ledger: percentiles of dated report day-of-year within each authored window +/-tol, anchored to the authored window so multi-run species (spring/fall steelhead) stay separate. Effort-biased: describes when people REPORT fish, not escapement. Entries below the evidence bar are absent -> authored window.",
+ "ledger_rows": 489,
+ "generated_utc": "2026-08-08T23:53:07Z"
+}

@@ -27,8 +27,15 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 MIGRATORY = {"chinook", "coho", "pink", "steelhead"}
-MIN_REPORTS = 12      # below this a "fit" is noise dressed as data
+MIN_REPORTS = 12      # below this a "fit" is not even computed
 MIN_YEARS = 3         # a single big season must not define the window
+# TWO-STAGE BAR (added 2026-08-09 after the first real fits). The bar above was set BLIND, before
+# any data existed; the first live run then proposed moving the fall-steelhead window 20 days
+# earlier on 12 photo-sightings. Computing that fit is useful; SHIPPING it to anglers on that
+# evidence is not. So a fit is only APPLIED to the product at the higher bar below — everything
+# between the two bars is emitted as a visible CANDIDATE that the calendar does not consume.
+APPLY_MIN_REPORTS = 20
+APPLY_MIN_YEARS = 4
 TOL_DAYS = 30         # how far outside the authored window a report can sit and still inform it
 LO_PCT, HI_PCT = 10.0, 90.0   # window edges = the bulk of reports, not the extreme tails
 _FREEZE_UP_MD = (12, 1)
@@ -71,7 +78,7 @@ def _report_doys(rows, species: str, win_start: str, win_end: str, tol_days: int
     for r in rows:
         if r.get("species") != species:
             continue
-        if r.get("kind") not in ("catch", "run_status"):
+        if r.get("kind") not in ("catch", "sighting", "run_status"):
             continue
         if r.get("date_precision", "day") not in ("day", "week"):
             continue          # month/year precision cannot time a run
@@ -117,6 +124,7 @@ def fit_entry(entry: dict, rows, *, min_reports: int = MIN_REPORTS, min_years: i
         "n": len(doys), "n_years": len(sorted(years)),
         "years": sorted(years),
         "shift_days": int(round(start_doy - a_start)),
+        "applied": len(doys) >= APPLY_MIN_REPORTS and len(years) >= APPLY_MIN_YEARS,
         "method": (f"p{LO_PCT:g}-p{HI_PCT:g} of local dated reports within the authored window "
                    f"+/-{tol_days}d; effort-biased (reports, not escapement)"),
     }
