@@ -1,0 +1,61 @@
+# SOURCE REGISTRY for the research agent (ADR-042) — every source we can find, verified.
+# The daily Routine and backfill agents work FROM THIS FILE: mine `usable` sources by priority,
+# never touch `dead_ends` (the reason is recorded so nobody re-litigates), retry `unreachable`
+# occasionally. Community/citizen-science category verified 2026-08-08; agency and media
+# categories from their sweeps. Verification = an agent SAW dated observation data there.
+# Rules baked in: robots.txt and ToS respected absolutely (rule 12) — a source that requires
+# violating either is a dead end BY DEFINITION, however rich.
+
+community:
+  usable:
+    - name: iNaturalist API
+      url: https://api.inaturalist.org/v1/observations
+      params: "place_id=133230 (Thunder Bay District), taxon_id=47520 (Salmonidae)"
+      content: "456 salmonid obs (371 research-grade), day-dated, GPS, photo-verified; usable density 2017+ (25-55/yr)"
+      species_counts: "brook_trout 105, steelhead 82, lake_trout 73, pink 39, chinook 15, coho 10"
+      access: "open JSON API, no key; ~1 req/s etiquette, <=10k/day"
+      tos: clean (API provided, CC-licensed)
+      tier: T3
+      priority: 1
+      slices: ["inat:2016".."inat:2026", "one (year x month) request each"]
+      notes: "record positional_accuracy + obscured flags into confidence"
+    - name: GBIF occurrence API
+      url: https://api.gbif.org/v1/occurrence/search
+      params: "familyKey=8615, bbox 48.0-49.2N / -89.9--88.0"
+      content: "1,871 salmonid occurrences 1922-2024+; USGS GLSC trawl RVCAT 1,147 (T1 dated survey catches w/ effort), museums 429, iNat mirror 209 (dedupe by iNat id)"
+      access: "open API; bulk downloads with free account"
+      tos: clean (open-data mandate)
+      tier: "T1 (RVCAT/museum) / T3 (iNat mirror)"
+      priority: 2
+      slices: ["gbif:bulk"]
+    - name: Reddit official Data API
+      url: "r/ThunderBay, r/OntarioFishing, r/FishingOntario"
+      content: "spring steelhead-run + derby chatter; volume unverified (est. tens of dated posts/yr)"
+      access: "OFFICIAL Data API ONLY (OAuth app, 100 QPM, research posture) - unauthenticated .json is robots-prohibited (verified Disallow: /)"
+      tos: "conditional: needs registered app; never scrape"
+      tier: T3
+      priority: 2
+      slices: ["reddit:<sub>:<year> once app registered; demote to P3 if <30 usable posts 2020-2026"]
+    - name: YouTube Data API v3
+      content: "dated Thunder Bay steelhead/salmon uploads, ~10-30/yr; upload date != catch date (week/month precision, low confidence)"
+      access: "Data API v3 only (free key, 10k units/day); oEmbed lacks dates; no scraping"
+      tos: "conditional: needs API key"
+      tier: T3
+      priority: 3
+      slices: ["youtube:historical-search once key provisioned"]
+  dead_ends:
+    - {name: Facebook groups (incl. TBSA page), reason: "rule 12 categorical: auth-walled + ToS-prohibited. TBSA dated derby results live here - accepted loss"}
+    - {name: Fishbrain, reason: "robots.txt disallows /catches/ and /posts/ (the dated pages); detail auth-walled"}
+    - {name: Lake-Link, reason: "robots.txt explicitly blocks ClaudeBot/anthropic-ai UAs; also WI/MI-focused"}
+    - {name: greatlakesfisherman.com, reason: "NAMESPACE TRAP: their 'Thunder Bay' is Thunder Bay MICHIGAN (Alpena). Warning for all keyword extraction: 'Thunder Bay' is ambiguous across the Great Lakes"}
+    - {name: Angler's Atlas / MyCatch, reason: "catch records deliberately non-public (researcher data-sharing agreements only). Opening: formal research-partner agreement - operator decision, not scraping"}
+    - {name: eBird-equivalent for fish, reason: "does not exist; iNaturalist+GBIF is the fish citizen-science layer"}
+    - {name: Discord archives, reason: "auth-walled by design; no legitimately public archives found"}
+    - {name: myccr.com, reason: "reachable+permissive but ~zero Thunder Bay fishing volume (2007-era single threads)"}
+    - {name: thunderbaysalmonassociation.com, reason: "JS-rendered, zero static content; results live on their Facebook (blocked). Derby results via news coverage instead"}
+  unreachable:
+    - {name: ofncommunity.com, note: "proxy CONNECT 502 every attempt; historically the main Ontario forum with NW Ontario reports - manual/operator check worthwhile"}
+    - {name: ontariofishingforums.com, note: "Cloudflare challenge + egress block; challenge suggests automation unwelcome - likely dead end under rule 12; confirm robots manually"}
+
+agency: {}   # populated by the agency/scientific sweep
+media: {}    # populated by the media/clubs/derbies sweep
