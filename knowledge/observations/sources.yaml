@@ -17,7 +17,7 @@ community:
       tos: clean (API provided, CC-licensed)
       tier: T3
       priority: 1
-      slices: ["inat:2016".."inat:2026", "one (year x month) request each"]
+      slices: ["inat:2016 through inat:2026 (one slice per year; one request per year-month)"]
       notes: "record positional_accuracy + obscured flags into confidence"
     - name: GBIF occurrence API
       url: https://api.gbif.org/v1/occurrence/search
@@ -57,5 +57,80 @@ community:
     - {name: ofncommunity.com, note: "proxy CONNECT 502 every attempt; historically the main Ontario forum with NW Ontario reports - manual/operator check worthwhile"}
     - {name: ontariofishingforums.com, note: "Cloudflare challenge + egress block; challenge suggests automation unwelcome - likely dead end under rule 12; confirm robots manually"}
 
-agency: {}   # populated by the agency/scientific sweep
+agency:
+  tooling_note: "WebFetch egress blocks most domains in this category; mine via Bash/curl through the session proxy (+pypdf for PDFs). Verified 2026-08-08."
+  usable:
+    - name: GLFC Sea Lamprey Control annual reports
+      url: "https://www.glfc.org/pubs/slcp/annual_reports/ANNUAL_REPORT_<YYYY>.pdf (2018-2025 verified 200; mirror sealamprey.org)"
+      content: "adult trap counts by stream (Neebing barrier trap; permanent trap first fished 2025), Kaministiquia lampricide treatments (~6.6M larvae est.), dated larval surveys"
+      tier: T1
+      priority: 1
+      slices: ["glfc:annual_reports_2018_2020_neebing_kam_traps", "glfc:annual_reports_2022_2023_2025_neebing_kam_traps"]
+    - name: MN DNR Knife River fish trap reports (North Shore ANALOG)
+      url: "https://files.dnr.state.mn.us/areas/fisheries/lakesuperior/<year>-knife-river-fish-trap-report.pdf (2014-2024 verified)"
+      content: "weekly adult steelhead run counts ice-out-July since ~1996, fall salmonids, juveniles; multi-year tables"
+      tier: T1
+      analog: true
+      priority: 1
+      slices: ["mndnr:knife_river_trap_reports_2014_2024"]
+      notes: "regional run-timing covariate for OUR streams, not local truth - key run-calendar input"
+    - name: USGS GLSC Lake Superior fish community survey reports
+      url: "glfc.org/pubs/lake_committees/common_docs/ (2018-2024 verified, surveys since 1978)"
+      content: "annual June bottom-trawl, 72 fixed stations incl. Black Bay South; species counts/biomass"
+      tier: T1
+      priority: 2
+      slices: ["usgs_glsc:ls_fish_survey_reports_2018_2024_black_bay_stations"]
+    - name: USGS RVCAT raw trawl data (ScienceBase)
+      url: "sciencebase.gov items 57e185c8e4b0908250033a54 + 60d23de3d34e86b938ae1b57 (1958-2018, CSV)"
+      content: "station-level dated trawl catches - filter to Thunder Bay/Black Bay bbox"
+      tier: T1
+      priority: 2
+      slices: ["usgs_rvcat:trawl_ops_1958_2018_tbay_bbox"]
+    - name: MN DNR Lake Superior creel surveys (ANALOG)
+      url: "files.dnr.state.mn.us/areas/fisheries/lakesuperior/ (spring 2017-2024; summer series since 1969)"
+      content: "17-stream spring steelhead creel (harvest+effort by stream); summer boat creel (laker/chinook/coho)"
+      tier: T1
+      analog: true
+      priority: 2
+      slices: ["mndnr:north_shore_spring_creel_2017_2024", "mndnr:ls_summer_creel_2017_2024"]
+    - name: GLFC LSC Recreational & Commercial Harvest report
+      url: "glfc.org/pubs/lake_committees/superior/Lake_Superior_Harvest_Report_2026.pdf (1995-2024)"
+      content: "annual harvest by jurisdiction; NOTE Ontario recreational harvest NOT estimated - context only"
+      tier: T1
+      priority: 3
+      slices: ["glfc_lsc:harvest_report_1995_2024_ontario_commercial"]
+    - name: GLFC commercial production database 1867-2020
+      url: "glfc.org/great-lakes-databases.php (per-lake XLSX)"
+      content: "annual commercial production, Ontario Superior column; no sub-lake geography"
+      tier: T1
+      priority: 3
+      slices: ["glfc:commercial_production_superior_ontario_1867_2020"]
+    - name: Lakehead University Knowledge Commons theses
+      url: "knowledgecommons.lakeheadu.ca (DSpace API verified)"
+      content: "Black Bay steelhead population thesis 2019, migratory rainbow 2017, Nipigon tribs brook/rainbow 2001, salmonid thermal habitats 2020 - embed dated trap/netting/telemetry tables"
+      tier: "T1/T2"
+      priority: 2
+      slices: ["lakehead_kc:black_bay_steelhead_thesis_2019", "lakehead_kc:migratory_rainbow_trout_2017", "lakehead_kc:nscstreams_misc_theses"]
+    - name: Ontario Data Catalogue LSMU datasets (WATCH - not yet open)
+      url: "data.ontario.ca CKAN: lake-superior-fish-community-index-netting-data, -recreational-creel-survey-data (Black Bay!), -commercial-catch-sampling, -fish-derby-monitoring-data"
+      content: "EXACTLY our water's assessment data; all access_level=under_review, zero resources today"
+      tier: "T1 when released"
+      priority: "3 (watch quarterly; operator data request to MNRF is the unlock)"
+      slices: ["mnrf_lsmu:index_netting (future)", "mnrf_lsmu:creel_black_bay (future)", "mnrf_lsmu:derby_monitoring (future)"]
+  dead_ends:
+    - {name: Ontario BsM, reason: "inland-lakes program; no Lake Superior coverage"}
+    - {name: Fish ON-Line / GeoHub non-stocking layers, reason: "web-map + admin polygons; stocking already mined; no further dated obs"}
+    - {name: GLATOS detection portal, reason: "member-login only (rule 12); use published papers instead"}
+    - {name: TrackdAT, reason: "JS story-map inventory; no downloadable detections"}
+    - {name: GLOS, reason: "physical/observing data only, no fish catalogue"}
+    - {name: Great Lakes Fishery Trust, reason: "grant-maker, Michigan corpus"}
+    - {name: EPA GLNPO/GLFMSP, reason: "US-site contaminant composites; no relevant dated catches"}
+    - {name: DFO standalone, reason: "sea-lamprey data flows into GLFC reports; nothing independent found; waves-vagues search 404"}
+    - {name: AOFRC, reason: "2011-2013 sturgeon/walleye updates for Pic/Michipicoten/Nipigon - outside our tributaries"}
+  unreachable:
+    - {name: fsis.glfc.org (Great Lakes stocking DB), note: "gateway allowlist 403, http-only"}
+    - {name: pubs.usgs.gov, note: "504 via proxy; content mirrored on glfc.org + ScienceBase"}
+    - {name: michigan.gov MI DNR, note: "403 bot-block; weakest analog anyway"}
+    - {name: rap.infosuperior.com, note: "unverified this sweep; root domain curl-200 - re-check via curl next tranche"}
+
 media: {}    # populated by the media/clubs/derbies sweep
