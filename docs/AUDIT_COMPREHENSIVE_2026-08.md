@@ -129,3 +129,15 @@ path once the knowledge pipeline mines external text; all sinks now escaped via 
 by live payload injection); MED — a future-dated manifest read as fresh with negative age (now
 ⚠ STALE, rule 5). Verified post-fix: payloads inert, empty-manifest error screen shown, zero JS
 errors across species/days/popups.
+
+## Hindcast campaign — honest data-availability finding (2026-08-08)
+
+The planned 2025-season hindcast (replay archived forecasts vs GLOS observations, persistence
+baseline per row) ran green but appended nothing — because **the NODD archive retains NOWCAST
+files only** (verified: `lsofs/netcdf/2025/07/15/` holds 28 nowcast files, 0 forecast files).
+Historical LSOFS forecasts were never archived anywhere reachable, so retrospective forecast
+skill is UNMEASURABLE — an honest hard limit, recorded rather than worked around. What remains
+measurable: (a) the trailing ~30-day recent-bucket window, backfilled now, and (b) PROSPECTIVE
+accumulation — every daily gate row now carries the persistence baseline, so the
+skill-vs-persistence verdict per lead (the ADR-006 demotion bar) matures over the season and
+`analyze_forecast_error.py` reports it automatically once n≥20 pairs exist.

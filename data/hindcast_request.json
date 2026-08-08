@@ -1,2 +1,2 @@
-{"start": "2025-06-15", "end": "2025-10-15",
- "note": "First hindcast campaign: 2025 open-water season. Idempotent - overlapping re-requests are safe."}
+{"start": "2026-07-14", "end": "2026-08-06",
+ "note": "Trailing ~24 days — the NODD recent bucket's forecast-file retention window. FINDING (2026-08-08): the NODD ARCHIVE keeps NOWCAST files only (verified: 2025-07-15 has 28 nowcast, 0 forecast files), so a retrospective season hindcast of FORECASTS is impossible from any source; forecast skill accumulates PROSPECTIVELY via the daily gate (with the persistence baseline) plus this trailing-window catch-up."}
