@@ -27,11 +27,11 @@ How the forecast the map ships degrades with lead time. Same far-chain caveats. 
 
 | lead | n | corrected MAE | raw MAE |
 |---|---|---|---|
-| +24 h | 5 | 1.76 m | 3.23 m |
-| +48 h | 5 | 1.50 m | 2.79 m |
-| +72 h | 5 | 2.23 m | 3.56 m |
-| +96 h | 5 | 1.72 m | 3.56 m |
-| +120 h | 5 | 1.73 m | 2.99 m |
+| +24 h | 6 | 1.57 m | 2.97 m |
+| +48 h | 6 | 1.32 m | 2.60 m |
+| +72 h | 6 | 1.90 m | 3.25 m |
+| +96 h | 6 | 1.49 m | 3.02 m |
+| +120 h | 6 | 1.46 m | 2.60 m |
 
 (Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent uncertainty band (ADR-021) activates once these per-lead n are respectable — the widening is read from this measured error, never hand-picked.
 
@@ -41,8 +41,8 @@ n=54 clear scenes · shore-warm **+1.18 °C** (range -10.08…+10.14). GLSEA (1 
 
 ## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)
 
-n=9 days · mixed-layer model−clim mean **-0.12 °C**, iso-12 depth model−clim mean **+6.1 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
+n=10 days · mixed-layer model−clim mean **-0.22 °C**, iso-12 depth model−clim mean **+6.0 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=30 buoy-days · GFS speed MAE **2.54 kn**, W-quadrant forecast−obs bias **+0.77 kn** · airport(CYQT)−buoy offset **-0.64 kn** (W-quadrant +0.86). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=32 buoy-days · GFS speed MAE **2.57 kn**, W-quadrant forecast−obs bias **+0.66 kn** · airport(CYQT)−buoy offset **-0.70 kn** (W-quadrant +0.71). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
