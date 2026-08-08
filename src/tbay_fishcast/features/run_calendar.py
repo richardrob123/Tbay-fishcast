@@ -22,6 +22,11 @@ from pathlib import Path
 import yaml
 
 _CALENDAR = Path(__file__).resolve().parents[3] / "knowledge" / "schemas" / "events_calendar.yaml"
+# FITTED windows (ADR-042): measured local phenology from the observation ledger, written by
+# scripts/fit_run_windows.py. When a fit exists for an entry it REPLACES the authored window and
+# the entry is stamped fitted=True (+n/n_years) so the UI can say "measured locally, n=..." instead
+# of "typical". Absent file / absent entry => the authored literature window stands, unchanged.
+_FITTED = Path(__file__).resolve().parents[3] / "data" / "calib" / "run_windows_fitted.json"
 
 # The map's coarse species buckets → the finer calendar species. "salmon" on the map covers the
 # Pacific salmon that run Thunder Bay tributaries; steelhead and lake_trout map through directly.
@@ -42,8 +47,9 @@ class ActiveRun:
     id: str
     species: str          # the calendar species (chinook, coho, pink, steelhead, ...)
     note: str
-    window: tuple[str, str]  # ("MM-DD", "MM-DD" or "freeze_up") as authored
+    window: tuple[str, str]  # ("MM-DD", "MM-DD" or "freeze_up") as authored — or as FITTED
     tier: str
+    fitted: dict | None = None   # {n, n_years, authored, shift_days} when measured locally
 
 
 @lru_cache(maxsize=1)
@@ -56,6 +62,7 @@ def _load_entries():
     except (OSError, yaml.YAMLError) as e:  # pragma: no cover - config must exist in repo
         print(f"⚠ events_calendar.yaml unreadable ({e}) — run markers disabled")
         return []
+    fits = _load_fits()
     out = []
     for e in raw:
         win = e.get("window") or {}
@@ -65,8 +72,27 @@ def _load_entries():
             continue
         if "trigger" in e:                        # condition-triggered (upwelling) — not a calendar run
             continue
+        f = fits.get(e.get("id"))
+        if f and f.get("start") and f.get("end"):
+            # measured local phenology supersedes the authored literature window
+            e = dict(e)
+            e["window"] = {"start": f["start"], "end": f["end"]}
+            e["fitted"] = {"n": f.get("n"), "n_years": f.get("n_years"),
+                           "authored": [win["start"], win["end"]],
+                           "shift_days": f.get("shift_days")}
+            e["tier"] = "DATA(local reports)"
         out.append(e)
     return out
+
+
+def _load_fits() -> dict:
+    """Fitted windows keyed by calendar-entry id. Any problem => {} (authored windows stand)."""
+    try:
+        import json
+        d = json.loads(_FITTED.read_text())
+        return d.get("windows", {}) if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def _md(s: str) -> tuple[int, int]:
@@ -94,7 +120,7 @@ def active_runs(d: date) -> list[ActiveRun]:
             out.append(ActiveRun(
                 id=e["id"], species=str(e.get("species", "")),
                 note=e.get("note", ""), window=(win["start"], win["end"]),
-                tier=str(e.get("tier", "")),
+                tier=str(e.get("tier", "")), fitted=e.get("fitted"),
             ))
     return out
 
@@ -121,7 +147,8 @@ def marker_status(d: date, marker_species: list[str]) -> dict:
             species_active.append(ms)
             for r in active_runs(d):
                 if r.species in hit and r.id not in {x["id"] for x in runs}:
-                    runs.append({"species": r.species, "id": r.id, "note": r.note, "tier": r.tier})
+                    runs.append({"species": r.species, "id": r.id, "note": r.note,
+                                 "tier": r.tier, "fitted": r.fitted})
     return {"active": bool(species_active), "runs": runs, "species_active": species_active}
 
 
