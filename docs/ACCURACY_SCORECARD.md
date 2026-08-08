@@ -45,4 +45,4 @@ n=9 days · mixed-layer model−clim mean **-0.12 °C**, iso-12 depth model−cl
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=16 buoy-days · GFS speed MAE **2.35 kn**, W-quadrant forecast−obs bias **+0.72 kn** · airport(CYQT)−buoy offset **-0.52 kn** (W-quadrant +0.95). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=18 buoy-days · GFS speed MAE **2.39 kn**, W-quadrant forecast−obs bias **+0.74 kn** · airport(CYQT)−buoy offset **-0.56 kn** (W-quadrant +0.95). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
