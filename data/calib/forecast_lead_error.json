@@ -36,6 +36,7 @@
       "p90_m": 3.84
     }
   },
+  "skill_vs_persistence": null,
   "lead_slope_m_per_h": 0.00069,
   "lead_trend_detected": false,
   "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.789 m over leads 24-120 h. Lead trend NOT detected (OLS slope +0.0007 m/h; per-lead means span 0.73 m). CAVEAT: n=25, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
