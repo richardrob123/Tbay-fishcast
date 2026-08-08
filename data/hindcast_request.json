@@ -1,0 +1,2 @@
+{"start": "2025-06-15", "end": "2025-10-15",
+ "note": "First hindcast campaign: 2025 open-water season. Idempotent - overlapping re-requests are safe."}

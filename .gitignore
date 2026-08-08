@@ -23,6 +23,7 @@ data/*
 !data/calib/forecast_lead_error.json
 !data/calib/wind_model_eval.json
 !data/calib/flow_climatology.json
+!data/hindcast_request.json
 # frozen water masks ARE committed: the static shoreline must be deterministic across
 # builds, not re-fetched live from Overpass every run (CLAUDE.md rule #1).
 !data/watermask_frozen/

@@ -5,15 +5,20 @@
 # reach GLOS (the dev container cannot). Idempotent: already-logged (day, chain, lead)
 # keys are skipped, so overlapping ranges are safe.
 name: hindcast-forecast-skill
+# Trigger: commit data/hindcast_request.json {"start": "...", "end": "..."} to the branch
+# (the GitHub App can push but cannot dispatch workflows); manual dispatch also kept for humans.
 on:
+  push:
+    branches: [claude/tbay-fishcast-phase-0-6kh5lx]
+    paths: [data/hindcast_request.json]
   workflow_dispatch:
     inputs:
       start:
         description: "First valid day (YYYY-MM-DD)"
-        required: true
+        required: false
       end:
         description: "Last valid day (YYYY-MM-DD)"
-        required: true
+        required: false
 
 permissions:
   contents: write
@@ -33,10 +38,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[geo]"
+      - name: Resolve the requested range (dispatch inputs or committed request file)
+        id: range
+        run: |
+          START="${{ github.event.inputs.start }}"; END="${{ github.event.inputs.end }}"
+          if [ -z "$START" ] && [ -f data/hindcast_request.json ]; then
+            START=$(python -c "import json;print(json.load(open('data/hindcast_request.json'))['start'])")
+            END=$(python -c "import json;print(json.load(open('data/hindcast_request.json'))['end'])")
+          fi
+          [ -n "$START" ] && [ -n "$END" ] || { echo "no range requested"; exit 1; }
+          echo "start=$START" >> "$GITHUB_OUTPUT"; echo "end=$END" >> "$GITHUB_OUTPUT"
       - name: Backfill the forecast gate over the range
         run: |
           python scripts/accumulate_forecast_gate.py --backfill \
-            "${{ github.event.inputs.start }}" "${{ github.event.inputs.end }}"
+            "${{ steps.range.outputs.start }}" "${{ steps.range.outputs.end }}"
       - name: Re-derive the measured lead error + scorecard, commit the enlarged log
         run: |
           set -e
