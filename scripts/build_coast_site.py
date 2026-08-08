@@ -459,21 +459,26 @@ def _species_tiers(bottom_c, strength, within, depth, sp, prod, season=None):
     if season == "fall" and sp.id == "lake_trout":
         lo_d = 0.0
     within_sp = within & (depth >= lo_d) & (depth <= hi_d)     # per-species depth band from shore
-    suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)
+    suit = _su.thermal_suitability(bottom_c, sp.range_c, sp.optimal)   # ∈[0,1], CITED bands, smooth
     suit = _np.where(within_sp, suit, 0.0)
     fair = suit > IN_RANGE_SUIT                                # inside the preferred range (range_c)
     good = suit >= OPTIMAL_PLATEAU                             # the optimal-core plateau (optimal_c)
-    # STRUCTURE GLOW IS STATIC (bathymetry doesn't move). Gate it on the STABLE in-RANGE mask, NOT
-    # the per-lead OPTIMAL core — otherwise a physical break's glow drifts day to day as the coarse
-    # thermal field shifts (user-caught: "structure blobs moving between days"). A real break glows
-    # in the SAME place every day while its water stays in the species' preferred range; temperature
-    # still modulates (glow vanishes only if the water leaves the range), and the optimal-temp core
-    # is emphasized as s2 where there is no break. Glow wins over the temp tiers when both apply.
-    g_break = fair & (strength >= STRENGTH_BREAK)            # a real break (regional p90), in range
-    g_strong = fair & (strength >= STRENGTH_STRONG)          # strong structure (p95)
-    g_top = fair & (strength >= STRENGTH_TOP)                # exceptional — the best breaks (p99)
-    # DISJOINT tiers (each pixel painted once): temperature base (s1 fair / s2 optimal) with the
-    # STATIC structure glow (s3/s4/s5) taking precedence wherever a reachable break sits in range.
+    # CONTINUOUS CONJUNCTION (ADR-037). A spot's value = right STRUCTURE and right TEMPERATURE, and
+    # a conjunction is a PRODUCT — which carries NO fitted weights (rule 7, no catch data to fit).
+    # `intensity` grades each measured break by how suitable its water is: at optimal temperature it
+    # scores its full measured structure percentile; the SAME static break in marginal water scores
+    # lower on the SAME data-derived p90/p95/p99 scale and DIMS THROUGH THE LEVELS IN PLACE rather
+    # than blinking off at a hard threshold (the old gate flipped the glow on/off as the coarse,
+    # uncertain thermal field crossed an edge — user-caught "blobs moving between days"). Structure
+    # (precise, static) sets WHERE the bright spots are; temperature (uncertain) sets HOW BRIGHT.
+    intensity = suit * strength                               # thermal[0,1] × measured structure
+    g_break = intensity >= STRENGTH_BREAK                    # break, weighted by thermal suitability
+    g_strong = intensity >= STRENGTH_STRONG                  # strong
+    g_top = intensity >= STRENGTH_TOP                        # exceptional
+    # DISJOINT levels (each pixel painted once): faint temperature-context base (s1 in-range /
+    # s2 optimal core, the cited thermal wash for cruising/holding water) with the structure-driven
+    # glow (s3/s4/s5) taking precedence. Because the levels are crossings of a CONTINUOUS product,
+    # a change in temperature moves them smoothly instead of flipping a hard tier.
     tiers = {"s1": fair & ~good & ~g_break, "s2": good & ~g_break,
              "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
     return tiers, fair

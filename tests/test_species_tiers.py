@@ -64,21 +64,21 @@ def test_structure_glow_bands_are_ordered_and_disjoint():
         assert sum(int(tiers[t][0, j]) for t in ("s1", "s2", "s3", "s4", "s5")) == 1
 
 
-def test_structure_glow_is_static_in_range_not_gated_on_optimal():
-    """A real break glows whenever its water is in the preferred RANGE — it must NOT require the
-    tight optimal core (that gating made the static structure drift between forecast days). Here
-    the water is IN RANGE but NOT optimal (11 °C is inside laker 6–12 range, outside 6–10 optimal),
-    with a strong break: it must still glow (s4), not fall back to the plain in-range tier."""
-    bottom_c = _row([11, 11])                       # in range (6-12) but NOT optimal (6-10)
-    strength = _row([0.0, _bcs.STRENGTH_STRONG])
+def test_glow_is_continuous_product_dims_with_temperature():
+    """Glow = thermal_suitability × structure (ADR-037), a conjunction with NO fitted weights. The
+    SAME static strong break glows at optimal temperature but DIMS THROUGH THE LEVELS as its water
+    becomes marginal — it does not blink off at a hard threshold and it never relocates. Here a
+    strong break sits in 8 °C (optimal, suit=1) vs 11 °C (in range, suit=0.5 for laker 4–12/6–10)."""
+    lt = _Sp("lake_trout", (4, 12), (6, 10))
     within = _row([1, 1]).astype(bool)
     depth = _row([8, 8])
-    lt = _Sp("lake_trout", (6, 12), (6, 10))
-    tiers, fair = _species_and_check(bottom_c, strength, within, depth, lt)
-    assert fair[0, 0] and fair[0, 1]
-    assert tiers["s1"][0, 0]    # in range, no break -> base tier
-    assert tiers["s4"][0, 1]    # in range + strong break -> GLOWS even though temp isn't optimal
-    assert not tiers["s2"][0, 1]  # not misfiled as optimal-temp base
+    strong = _row([_bcs.STRENGTH_STRONG, _bcs.STRENGTH_STRONG])
+    t_opt, _ = _species_and_check(_row([8, 8]), strong, within, depth, lt)
+    assert t_opt["s4"][0, 0]                         # optimal temp: full structure score -> strong glow
+    t_marg, fair = _species_and_check(_row([11, 11]), strong, within, depth, lt)
+    # intensity = 0.5 * STRENGTH_STRONG < STRENGTH_BREAK -> the SAME break dims out of the glow...
+    assert not t_marg["s3"][0, 0] and not t_marg["s4"][0, 0] and not t_marg["s5"][0, 0]
+    assert fair[0, 0] and t_marg["s1"][0, 0]         # ...but the water is still shown as in-range
 
 
 def test_out_of_range_temperature_is_floor_blank():

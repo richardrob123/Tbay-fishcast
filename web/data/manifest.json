@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-08T01:00:52Z",
- "age_h": 13.0,
+ "built_utc": "2026-08-08T01:42:41Z",
+ "age_h": 13.7,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -771,7 +771,7 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-05",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.16,
    "low_confidence": false,
    "days": [
@@ -779,31 +779,31 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 14.6
+     "reach_ha": 14.8
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 14.7
+     "reach_ha": 14.9
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 14.4
+     "reach_ha": 14.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 15.1
+     "reach_ha": 15.2
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 15.4
+     "reach_ha": 15.5
     },
     {
      "label": "Wed Aug 12",
@@ -1195,7 +1195,7 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 19.8,
+    "q_cms": 19.7,
     "trend_pct": -2.0,
     "state": "steady",
     "freshet": false,
@@ -1220,10 +1220,10 @@
    },
    "flow": {
     "q_cms": 0.083,
-    "trend_pct": -23.0,
+    "trend_pct": -22.0,
     "state": "falling",
     "freshet": false,
-    "note": "0.08 m\u00b3/s and dropping (-23% / 3d) \u2014 plume easing."
+    "note": "0.08 m\u00b3/s and dropping (-22% / 3d) \u2014 plume easing."
    }
   },
   {
@@ -1242,11 +1242,11 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.213,
-    "trend_pct": -4.0,
+    "q_cms": 0.221,
+    "trend_pct": 2.0,
     "state": "steady",
     "freshet": false,
-    "note": "0.21 m\u00b3/s, steady (-4% / 3d)."
+    "note": "0.22 m\u00b3/s, steady (+2% / 3d)."
    }
   }
  ],
@@ -1286,18 +1286,10 @@
     {
      "id": "little_trout_bay",
      "name": "Little Trout Bay / Cloud Bay",
-     "score": 68,
+     "score": 62,
      "opt_ha": 5.8,
-     "glow_ha": 7.7,
-     "reason": "6 ha optimal temp over 8 ha of structure (breaks/points)"
-    },
-    {
-     "id": "silver_islet",
-     "name": "Silver Islet / Sleeping Giant tip",
-     "score": 64,
-     "opt_ha": 7.6,
-     "glow_ha": 6.6,
-     "reason": "8 ha optimal temp over 7 ha of structure (breaks/points)"
+     "glow_ha": 6.3,
+     "reason": "6 ha optimal temp over 6 ha of structure (breaks/points)"
     },
     {
      "id": "kam_mission",
@@ -1314,6 +1306,14 @@
      "opt_ha": 14.2,
      "glow_ha": 0.3,
      "reason": "14 ha optimal temp over 0 ha of structure (breaks/points)"
+    },
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 45,
+     "opt_ha": 7.6,
+     "glow_ha": 2.8,
+     "reason": "8 ha optimal temp over 3 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1326,13 +1326,13 @@
      "name": "Silver Islet / Sleeping Giant tip",
      "score": 100,
      "opt_ha": 13.6,
-     "glow_ha": 7.9,
-     "reason": "14 ha optimal temp over 8 ha of structure (breaks/points)"
+     "glow_ha": 7.4,
+     "reason": "14 ha optimal temp over 7 ha of structure (breaks/points)"
     },
     {
      "id": "little_trout_bay",
      "name": "Little Trout Bay / Cloud Bay",
-     "score": 77,
+     "score": 80,
      "opt_ha": 14.7,
      "glow_ha": 3.8,
      "reason": "15 ha optimal temp over 4 ha of structure (breaks/points)"
@@ -1340,25 +1340,25 @@
     {
      "id": "shipyard_mackenzie",
      "name": "Shipyard / MacKenzie approach",
-     "score": 64,
+     "score": 65,
      "opt_ha": 13.8,
-     "glow_ha": 0.9,
+     "glow_ha": 0.6,
      "reason": "14 ha optimal temp over 1 ha of structure (breaks/points)"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 58,
+     "score": 59,
      "opt_ha": 14.6,
-     "glow_ha": 0.3,
-     "reason": "15 ha optimal temp over 0 ha of structure (breaks/points)"
+     "glow_ha": 0.2,
+     "reason": "15 ha of optimal-temperature water"
     },
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 54,
-     "opt_ha": 13.6,
-     "glow_ha": 0.4,
+     "score": 56,
+     "opt_ha": 13.7,
+     "glow_ha": 0.3,
      "reason": "14 ha optimal temp over 0 ha of structure (breaks/points)"
     }
    ],
@@ -1386,18 +1386,18 @@
     {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 39,
+     "score": 40,
      "opt_ha": 4.2,
      "glow_ha": 0.0,
-     "reason": "12 ha in preferred temperature"
+     "reason": "13 ha in preferred temperature"
     },
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 26,
-     "opt_ha": 3.2,
+     "score": 27,
+     "opt_ha": 3.3,
      "glow_ha": 0.0,
-     "reason": "7 ha in preferred temperature"
+     "reason": "8 ha in preferred temperature"
     },
     {
      "id": "current_barepoint",
@@ -1448,10 +1448,10 @@
     {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 54,
+     "score": 55,
      "opt_ha": 7.0,
      "glow_ha": 0.0,
-     "reason": "19 ha in preferred temperature"
+     "reason": "20 ha in preferred temperature"
     }
    ],
    "weak_cue": true,

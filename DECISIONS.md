@@ -101,6 +101,25 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-037 — Continuous-conjunction heatmap: glow = thermal_suitability × structure (no fitted weights).**
+  After ADR-036 fixed the data bugs, the residual "structure moves between days" traced to a design
+  error, not a bug: the render used the LEAST-certain, coarsest signal (temperature — a few LSOFS nodes,
+  near-planar per stretch) to draw CRISP per-pixel boundaries (hard fair/optimal/glow tiers). Granting
+  the uncertain field that precision is what made a static break blink on/off as the thermal edge swept
+  across a near-uniform stretch. Correct fix (end-goal reasoning): a spot's value is the CONJUNCTION of
+  right structure AND right temperature, and a conjunction is a PRODUCT — which carries no fitted weights
+  (rule 7). So `intensity = thermal_suitability(bottom_c) × structure_strength`, and the glow levels are
+  crossings of that continuous product at the SAME data-derived p90/p95/p99 structure percentiles. A real
+  break scores its full percentile at optimal temperature and DIMS THROUGH THE LEVELS IN PLACE as its
+  water goes marginal — it never relocates and never blinks off at a knife-edge. Structure (precise,
+  static, survey-grade NONNA) sets WHERE the bright spots are; temperature (uncertain, cited bands) sets
+  HOW BRIGHT today. Every result-driving number has provenance: thermal edges cited (Edsall & Cleland
+  2000 / coaster telemetry / GLFC, stations.yaml), structure measured (NONNA) and normalized to regional
+  percentiles (bathy_slope.json), combine = product with ZERO fitted coefficients. The faint temperature-
+  context wash (s1 in-range / s2 optimal) is kept for cruising/holding water (cited band edges). This
+  completes the "continuous heat-map with a floor" direction — the earlier version made only the
+  STRUCTURE half continuous; this makes the whole product continuous so nothing flips.
+
 - **ADR-036 — Heat-map data-correctness pass: the shading had four real DATA bugs (operator field review).**
   Zooming the live map on a phone showed the suitability shading was, in the operator's words, "random
   blobs" that bled onto land and "moved between days" — so we stopped and verified every data layer at
