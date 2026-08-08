@@ -659,7 +659,9 @@ function markerHTML(m){
     const col = f.freshet?'#1a7a3a':'#555';
     flowLine = `<div class="nt" style="color:${col}">💧 river ${f.q_cms} m³/s ${arrow}`+
       (f.trend_pct!=null?` (${f.trend_pct>0?'+':''}${f.trend_pct}%/3d)`:'')+
-      (f.freshet?' — freshet, staging trigger':'')+`</div>`;
+      (f.pct_label?` · ${esc(f.pct_label)} for the date`:'')+
+      (f.freshet?' — freshet, staging trigger':'')+`</div>`+
+      (f.clim_years?`<div class="nt" style="color:#999;font-size:10.5px">vs ${esc(String(f.clim_years))} daily-flow record (ECCC)</div>`:'');
   }
   return `<div class="rvpop"><b>${esc(m.name)}</b>`+
     `<div class="nt">${esc(m.note||'')}</div>`+

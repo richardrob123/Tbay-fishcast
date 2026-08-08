@@ -71,7 +71,7 @@ def _bathy_grid(lat, lon):
     return depth, dist, res, note
 
 
-def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
+def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats, *, exposure=None):
     """Compute the reachability trajectory + windows for one spot. Reusable by the
     heartbeat. Returns (points, windows, meta) or (None, None, meta) if no bathymetry.
     `bias_stats` = (central, lo, hi, n) pooled subsurface bias (computed once by caller)."""
@@ -88,9 +88,9 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats):
     # Apply the SAME measured nearshore warm-delta the map uses (validation finding #1): GLSEA's
     # ~1 km pixel reads the nearshore too cold, so the pins must warm the anchor identically or
     # the two published views disagree on the same water. Shared helper = single source of truth.
-    from tbay_fishcast.features.nearshore import nearshore_surface_delta
-    _ns_delta, _ = nearshore_surface_delta()
-    surf_sst = (_px.sst_c + _ns_delta) if _px is not None else None
+    from tbay_fishcast.features.nearshore import delta_for_exposure
+    _ns_delta, _ns_n = delta_for_exposure(exposure)   # class-aware, SIGNED; None -> regional median
+    surf_sst = (_px.sst_c + (_ns_delta if _ns_n else 0.0)) if _px is not None else None
     points = []
     grid = None
     for kind, fh, lead in LEADS:

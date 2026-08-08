@@ -74,3 +74,61 @@ def classify(samples) -> RiverFlow:
 
 def _fmt(q: float) -> str:
     return f"{q:.2f}" if q < 10 else f"{q:.0f}"
+
+
+# ---- Seasonal context from the ECCC daily-mean ARCHIVE climatology ---------------------------
+# data/calib/flow_climatology.json (scripts/build_flow_climatology.py): per gauge, day-of-year
+# p10/p25/p50/p75/p90 of daily discharge pooled ±10 d across all archive years (Kam: 1926-2025).
+# This upgrades the honest-but-mute "20 m³/s" into "20 m³/s ≈ 35th percentile for the date" — a
+# MEASURED claim, replacing the documented "no high/low without a climatology" limitation.
+
+from functools import lru_cache
+from pathlib import Path as _Path
+
+_FLOW_CLIM = _Path(__file__).resolve().parents[3] / "data" / "calib" / "flow_climatology.json"
+
+
+@lru_cache(maxsize=1)
+def _climatology(path_str: str = str(_FLOW_CLIM)):
+    import json
+    try:
+        d = json.loads(_Path(path_str).read_text())
+        return d.get("gauges", {}) if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def seasonal_context(gauge_mid: str, q_cms, when) -> dict | None:
+    """Percentile of a discharge vs the gauge's archive climatology for that day-of-year.
+
+    Returns {"pct": int, "pct_label": str, "clim_years": str} or None when unavailable (no
+    climatology / no flow / thin bin) — the popup then simply omits the context line, never
+    guesses. Percentile is piecewise-linear between the archived p10..p90 quantiles; outside
+    that span it reports the honest open-ended "<10th" / ">90th"."""
+    if q_cms is None:
+        return None
+    g = _climatology().get(gauge_mid)
+    if not g:
+        return None
+    doy = min(when.timetuple().tm_yday, 365)
+    bin_ = g.get("doy", {}).get(str(doy))
+    if not bin_:
+        return None
+    knots = [(bin_["p10"], 10.0), (bin_["p25"], 25.0), (bin_["p50"], 50.0),
+             (bin_["p75"], 75.0), (bin_["p90"], 90.0)]
+    q = float(q_cms)
+    if q <= knots[0][0]:
+        pct, label = 9, "<10th %ile"
+    elif q >= knots[-1][0]:
+        pct, label = 91, ">90th %ile"
+    else:
+        pct = 50.0
+        for (q0, p0), (q1, p1) in zip(knots, knots[1:]):
+            if q0 <= q <= q1:
+                pct = p0 if q1 == q0 else p0 + (p1 - p0) * (q - q0) / (q1 - q0)
+                break
+        pct = int(round(pct))
+        sfx = "th" if 10 <= pct % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(pct % 10, "th")
+        label = f"≈{pct}{sfx} %ile"
+    return {"pct": int(round(pct)), "pct_label": label,
+            "clim_years": g.get("years", ""), "clim_n": bin_.get("n")}

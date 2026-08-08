@@ -36,8 +36,37 @@ LEADS_H = [24, 48, 72, 96, 120]
 LOG = Path(__file__).resolve().parents[1] / "data" / "forecast_gate_log.csv"
 FIELDS = ["valid_date", "chain", "lead_h", "issue_date", "obs_iso_m",
           "fcst_raw_iso_m", "fcst_corr_iso_m", "abs_err_m",
+          "persist_iso_m", "persist_abs_err_m",
           "bias_source", "glsea_anchor", "retrieved_utc"]
+
+
+def _migrate_log(path: Path) -> None:
+    """Add the persistence columns to an old-schema log (old rows keep blank persist fields —
+    they stay valid forecast-error samples, just without the baseline)."""
+    if not path.exists():
+        return
+    with path.open() as f:
+        rows = list(csv.DictReader(f))
+    if rows and "persist_iso_m" in rows[0]:
+        return
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in FIELDS})
+    print(f"migrated {path.name} to persistence-baseline schema ({len(rows)} rows kept)")
 LOOKBACK_DAYS = 6
+_BIAS_CACHE: dict = {}
+
+
+def _bias_cached(cfg, issue):
+    if issue not in _BIAS_CACHE:
+        try:
+            _BIAS_CACHE[issue] = bias_live.pooled_or_prior(cfg, issue)
+        except Exception:  # noqa: BLE001 - degrade to the frozen prior, recorded as such
+            c, l, h = bias_live.FROZEN_PRIOR
+            _BIAS_CACHE[issue] = (c, l, h, [], 0, "frozen-prior")
+    return _BIAS_CACHE[issue]
 
 
 def _existing(path: Path) -> set[tuple[str, str, str]]:
@@ -83,34 +112,70 @@ def fcst_row(cfg, chain, samples, valid_day: date, lead_h: int) -> dict | None:
         anchor = "ok" if g_sst is not None else "absent"
     except Exception:  # noqa: BLE001
         g_sst, anchor = None, "absent"
-    c, lo, hi, _, n, src = bias_live.pooled_or_prior(cfg, issue)
+    c, lo, hi, _, n, src = _bias_cached(cfg, issue)
     corr = None
     if g_sst is not None:
         bm = thermocline.BiasModel(raw[0] - g_sst, c, lo, hi, n_buoys=n)
         corr = thermocline.isotherm_band(z, raw, bm, TARGET_C)["central"]
+    # PERSISTENCE baseline: the corrected NOWCAST at issue time, held for lead_h hours — the
+    # standard short-range skill bar (ADR-006 spirit): a forecast that can't beat "assume the
+    # lake stays as it was at issue" adds nothing at that lead and gets benched.
+    persist = None
+    try:
+        fn = LsofsFile(issue, "t12z", "n", 6)
+        dsn = _open_first(candidate_urls(fn, cfg.lsofs.recent_bucket,
+                                         cfg.lsofs.archive_bucket, byterange=False))
+        try:
+            gridn = lsofs_grid.read_grid(dsn)
+            noden = lsofs_grid.nearest_node(gridn, chain.lat, chain.lon, min_depth_m=3.0).node
+            coln = extract_native_columns(dsn, {chain.station_id: noden})[chain.station_id]
+        finally:
+            dsn.close()
+        if g_sst is not None:
+            bmn = thermocline.BiasModel(coln.temps_c[0] - g_sst, c, lo, hi, n_buoys=n)
+            persist = thermocline.isotherm_band(coln.depths_m, coln.temps_c, bmn,
+                                                TARGET_C)["central"]
+    except Exception:  # noqa: BLE001 - nowcast absent -> row still valid without a baseline
+        persist = None
     return {
         "valid_date": valid_day.isoformat(), "chain": chain.station_id,
         "lead_h": str(lead_h), "issue_date": issue.isoformat(),
         "obs_iso_m": _r(obs_iso), "fcst_raw_iso_m": _r(raw_iso),
         "fcst_corr_iso_m": _r(corr),
         "abs_err_m": _r(abs(corr - obs_iso)) if corr is not None else "",
+        "persist_iso_m": _r(persist),
+        "persist_abs_err_m": _r(abs(persist - obs_iso)) if persist is not None else "",
         "bias_source": src, "glsea_anchor": anchor,
         "retrieved_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 
 def main(argv) -> int:
-    end = date.fromisoformat(argv[1]) if len(argv) > 1 else datetime.now(timezone.utc).date()
+    if len(argv) >= 4 and argv[1] == "--backfill":
+        start, end = date.fromisoformat(argv[2]), date.fromisoformat(argv[3])
+        valid_days = [start + timedelta(days=k) for k in range((end - start).days + 1)]
+        print(f"HINDCAST backfill {start} → {end} ({len(valid_days)} valid days)")
+    else:
+        end = date.fromisoformat(argv[1]) if len(argv) > 1 else datetime.now(timezone.utc).date()
+        valid_days = [end - timedelta(days=k) for k in range(LOOKBACK_DAYS + 1)][::-1]
     cfg = load_config()
     LOG.parent.mkdir(parents=True, exist_ok=True)
+    _migrate_log(LOG)
     have = _existing(LOG)
-    valid_days = [end - timedelta(days=k) for k in range(LOOKBACK_DAYS + 1)][::-1]
     new_rows: list[dict] = []
+    CHUNK = 15
     for cid, chain in glos.CHAINS.items():
-        try:
-            samples = glos.fetch_chain(cid, valid_days[0] - timedelta(days=1), end + timedelta(days=1))
-        except Exception as e:  # noqa: BLE001
-            print(f"{cid}: chain fetch failed ({str(e)[:50]})"); continue
+        samples = []
+        w0 = valid_days[0]
+        while w0 <= valid_days[-1]:
+            w1 = min(w0 + timedelta(days=CHUNK), valid_days[-1])
+            try:
+                samples.extend(glos.fetch_chain(cid, w0 - timedelta(days=1), w1 + timedelta(days=1)))
+            except Exception as e:  # noqa: BLE001
+                print(f"{cid}: chain fetch {w0}..{w1} failed ({str(e)[:50]})")
+            w0 = w1 + timedelta(days=1)
+        if not samples:
+            print(f"{cid}: no observations in range"); continue
         for vd in valid_days:
             for L in LEADS_H:
                 if (vd.isoformat(), cid, str(L)) in have:

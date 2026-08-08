@@ -110,12 +110,13 @@ OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
 
 
-def _nearshore_delta():
-    """Measured shore-minus-GLSEA surface warm-delta (°C) and its n. Delegates to the SHARED
-    features.nearshore helper so the map and the station-pin path apply the identical correction
-    (validation finding #1 — they had diverged). See that module for provenance."""
-    from tbay_fishcast.features.nearshore import nearshore_surface_delta
-    return nearshore_surface_delta()
+def _nearshore_delta_by_class():
+    """Measured shore-minus-GLSEA surface delta PER EXPOSURE CLASS (°C, n). Delegates to the
+    SHARED features.nearshore helper so the map and the station-pin path apply identical
+    corrections (validation finding #1 — they had diverged). Exposed open coast ≈ -0.4 (reads
+    like GLSEA); sheltered ≈ +1.6 (trapped warm lens). See that module for provenance."""
+    from tbay_fishcast.features.nearshore import nearshore_delta_by_class
+    return nearshore_delta_by_class()
 
 
 FORECAST_ERR = Path(__file__).resolve().parents[1] / "data" / "calib" / "forecast_lead_error.json"
@@ -718,9 +719,9 @@ def main(argv) -> int:
     centers_m = [merc(la, lo) for (_sid, _nm, la, lo, _ex) in stretches_in]  # for the territory clip
     from tbay_fishcast.features import season as _season
     _issue_season = _season.regime(issue).season   # summer|fall|... — drives the fall laker gate (T1d)
-    ns_delta, ns_n = _nearshore_delta()   # measured shore-minus-GLSEA surface warm-delta
-    if ns_delta > 0:
-        print(f"nearshore surface delta +{ns_delta:.2f} C applied to anchor (Landsat n={ns_n})")
+    ns_by = _nearshore_delta_by_class()   # measured shore-minus-GLSEA delta, per exposure class
+    print("nearshore delta by class: "
+          + ", ".join(f"{c} {d:+.2f} C (n={n})" for c, (d, n) in ns_by.items()))
     for si, (sid, name, clat, clon, exposure) in enumerate(stretches_in):
         try:
             patch = nonna.fetch_patch(clat, clon, half_m=HALF_M, scale_px=PX)
@@ -759,8 +760,10 @@ def main(argv) -> int:
         # add the MEASURED nearshore surface warm-delta: GLSEA's ~1 km pixel reads the
         # nearshore too cold (Landsat 30 m over the shore is +1.7…2.8 °C warmer), which was
         # dragging the shallow reachable band into the cold band. Data-backed, not a guess.
-        if g_sst is not None and ns_delta > 0:
-            g_sst = g_sst + ns_delta
+        _cls = "exposed" if exposure == "high" else "sheltered"
+        ns_delta, ns_n = ns_by[_cls]
+        if g_sst is not None and ns_n > 0:
+            g_sst = g_sst + ns_delta          # SIGNED: exposed is slightly negative, sheltered warm
         if px and px.day != issue.isoformat():
             print(f"    {sid}: GLSEA anchor {px.sst_c:.1f}C from {px.day} (issue not yet posted)")
 
@@ -845,8 +848,10 @@ def main(argv) -> int:
         if not _regs_ok(s.name):        # regs gate on the station recommendation surface
             continue
         try:
+            from tbay_fishcast.features.nearshore import STATION_EXPOSURE
             pts, wins, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue,
-                                               (central, lo, hi, n))
+                                               (central, lo, hi, n),
+                                               exposure=STATION_EXPOSURE.get(s.id))
         except Exception as e:  # noqa: BLE001 - a dead pin costs one pin, not the build (H3):
             # forecast_spot's internal NONNA fetch is unwrapped, and this loop runs AFTER all the
             # expensive stretch overlays — an escape here discarded the whole build (stress-test).
@@ -957,7 +962,14 @@ def main(argv) -> int:
         from tbay_fishcast.features import river_flow as _rflow
         for _mid, _gauge in _hydat.GAUGES.items():
             try:
-                _flow_by_id[_mid] = _rflow.classify(_hydat.fetch_recent_discharge(_gauge)).as_dict()
+                _fl = _rflow.classify(_hydat.fetch_recent_discharge(_gauge)).as_dict()
+                # archive-climatology context: "20 m³/s ≈ <10th %ile for the date" — measured
+                # against the gauge's full daily-mean record (Kam 1926-2025), see
+                # build_flow_climatology.py. Omitted (None) when unavailable, never guessed.
+                _ctx = _rflow.seasonal_context(_mid, _fl.get("q_cms"), issue)
+                if _ctx:
+                    _fl.update(_ctx)
+                _flow_by_id[_mid] = _fl
             except Exception as e:  # noqa: BLE001 - per-gauge graceful
                 print(f"river flow {_mid} unavailable: {str(e)[:50]}")
     except Exception as e:  # noqa: BLE001
@@ -1014,7 +1026,7 @@ def main(argv) -> int:
                      "temp_cue": sp.temp_cue, "default": sp.default, "note": sp.note,
                      "min_depth_m": sp.min_depth_m, "max_depth_m": sp.max_depth_m}
                     for sp in cfg.species],
-        "nearshore_delta_c": round(ns_delta, 2), "nearshore_delta_n": ns_n,
+        "nearshore_delta_by_class": {c: {"delta_c": d, "n": n} for c, (d, n) in ns_by.items()},
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
         "combine": "cited temperature bands (fair=range, good=optimal) × CONTINUOUS measured structure glow (strength = max slope/relief, normalized to regional p90; glow bands at regional p90/p95/p99) — conjunction, no fitted weights",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)

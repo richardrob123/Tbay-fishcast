@@ -1,0 +1,58 @@
+# Hindcast campaign (ADR-006 demotion bar): replay archived LSOFS forecasts (+24…+120 h)
+# against GLOS observed thermistor profiles over a whole date range, with a PERSISTENCE
+# baseline per row — the measured answer to "does the 5-day map beat 'assume no change'".
+# Dispatched manually with a date range so GLOS/NODD load stays deliberate; the runner can
+# reach GLOS (the dev container cannot). Idempotent: already-logged (day, chain, lead)
+# keys are skipped, so overlapping ranges are safe.
+name: hindcast-forecast-skill
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "First valid day (YYYY-MM-DD)"
+        required: true
+      end:
+        description: "Last valid day (YYYY-MM-DD)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  hindcast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/tbay-fishcast-phase-0-6kh5lx
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[geo]"
+      - name: Backfill the forecast gate over the range
+        run: |
+          python scripts/accumulate_forecast_gate.py --backfill \
+            "${{ github.event.inputs.start }}" "${{ github.event.inputs.end }}"
+      - name: Re-derive the measured lead error + scorecard, commit the enlarged log
+        run: |
+          set -e
+          git config user.email "actions@github.com"
+          git config user.name "hindcast bot"
+          python scripts/analyze_forecast_error.py || true
+          python scripts/accuracy_scorecard.py || true
+          for f in data/forecast_gate_log.csv data/calib/forecast_lead_error.json \
+                   docs/ACCURACY_SCORECARD.md; do
+            [ -f "$f" ] && git add "$f"
+          done
+          if git diff --staged --quiet; then
+            echo "no new hindcast rows"; exit 0
+          fi
+          git commit -q -m "data: hindcast forecast-gate backfill ${{ github.event.inputs.start }}..${{ github.event.inputs.end }} [skip ci]"
+          BR=claude/tbay-fishcast-phase-0-6kh5lx
+          git fetch origin "$BR"
+          git rebase --autostash "origin/$BR" || { git rebase --abort; exit 1; }
+          git push origin "HEAD:$BR"

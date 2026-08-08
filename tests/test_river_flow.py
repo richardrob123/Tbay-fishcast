@@ -79,3 +79,19 @@ def test_negative_discharge_rejected():
     rf = river_flow.classify([(t0 - timedelta(days=3), 10.0), (t0, -5.0)])
     assert (rf.q_cms is None) or (rf.q_cms >= 0.0)
     assert "-5" not in rf.note
+
+
+def test_seasonal_context_from_committed_climatology():
+    """The archive climatology must yield a bounded, labelled percentile for a plausible flow and
+    None (never a guess) for unknown gauges / missing flow. Structural, so a climatology refresh
+    can't break it."""
+    from datetime import date
+    d = date(2026, 8, 8)
+    ctx = river_flow.seasonal_context("kam", 20.0, d)
+    assert ctx is not None and 9 <= ctx["pct"] <= 91 and "%ile" in ctx["pct_label"]
+    assert "-" in ctx["clim_years"]
+    # monotonic: a much larger flow can't rank lower
+    hi = river_flow.seasonal_context("kam", 500.0, d)
+    assert hi["pct"] >= ctx["pct"]
+    assert river_flow.seasonal_context("no_such_gauge", 5.0, d) is None
+    assert river_flow.seasonal_context("kam", None, d) is None

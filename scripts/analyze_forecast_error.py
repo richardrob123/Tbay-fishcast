@@ -55,11 +55,17 @@ def main() -> int:
         return 1
     rows = list(csv.DictReader(LOG.open()))
     recs = []
+    pairs = []          # (lead, fcst_err, persist_err) where BOTH exist — the skill sample
     for r in rows:
         try:
             recs.append((int(r["lead_h"]), float(r["abs_err_m"]), r["chain"], r["obs_iso_m"]))
         except (KeyError, ValueError):
             continue
+        try:
+            pairs.append((int(r["lead_h"]), float(r["abs_err_m"]),
+                          float(r["persist_abs_err_m"])))
+        except (KeyError, ValueError):
+            pass
     if not recs:
         print("no usable rows (need lead_h, abs_err_m)")
         return 1
@@ -94,6 +100,25 @@ def main() -> int:
     has_trend = bool(span_h and trend_move > mean_spread and len(all_err) >= 40)
 
     pooled = round(_mae(all_err), 3)
+
+    # SKILL vs the PERSISTENCE baseline (hindcast rows carry persist_abs_err_m): per lead,
+    # MAE(forecast) / MAE(persistence) on the matched sample. Ratio < 1 = the forecast beats
+    # "assume no change" at that lead; >= 1 at a lead = that lead adds nothing and is a
+    # demotion candidate (ADR-006). Only reported when a real sample exists — never guessed.
+    skill = None
+    if len(pairs) >= 20:
+        by = defaultdict(lambda: ([], []))
+        for L, fe, pe in pairs:
+            by[L][0].append(fe); by[L][1].append(pe)
+        skill = {
+            "n_pairs": len(pairs),
+            "per_lead": {str(L): {"n": len(f), "fcst_mae_m": round(_mae(f), 3),
+                                   "persist_mae_m": round(_mae(pv), 3),
+                                   "skill_ratio": round(_mae(f) / _mae(pv), 3) if _mae(pv) > 0 else None,
+                                   "beats_persistence": _mae(f) < _mae(pv)}
+                         for L, (f, pv) in sorted(by.items())},
+        }
+
     result = {
         "source": str(LOG.relative_to(ROOT)),
         "n": len(all_err),
@@ -103,6 +128,7 @@ def main() -> int:
         "pooled_mae_m": pooled,
         "pooled_p90_m": round(_p90(all_err), 3),
         "per_lead": per_lead,
+        "skill_vs_persistence": skill,
         "lead_slope_m_per_h": round(slope, 5),
         "lead_trend_detected": has_trend,
         "note": (
