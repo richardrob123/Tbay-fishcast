@@ -108,3 +108,24 @@ def test_fall_laker_gate_relaxes_shallow():
     _, fair_fall = _bcs._species_tiers(bottom_c, strength, within, depth, lt, _Prod(), season="fall")
     assert not fair_summer[0, 0] and fair_summer[0, 1]      # summer: 2 m excluded
     assert fair_fall[0, 0] and fair_fall[0, 1]              # fall: 2 m shoal now included
+
+
+def test_struct_calib_fallback_matches_committed_json():
+    """The hardcoded fallback in _load_struct_calib must equal the committed calibration —
+    otherwise an unreadable json silently applies STALE bars (caught in the 2026-08 stress test,
+    where the fallback still carried the pre-smoothing values)."""
+    import json
+    from pathlib import Path
+    d = json.loads((Path(_bcs.__file__).resolve().parents[1] / "data" / "calib"
+                    / "bathy_slope.json").read_text())
+    sb = d["strength_bands"]
+    assert (_bcs.STRUCT_SLOPE_ABS, _bcs.STRUCT_RELIEF_ABS,
+            _bcs.STRENGTH_BREAK, _bcs.STRENGTH_STRONG, _bcs.STRENGTH_TOP) == (
+        d["struct_slope_abs"], d["struct_relief_abs_m"],
+        sb["break"], sb["strong"], sb["exceptional"])
+    # and the fallback tuple itself (returned when the json is unreadable) matches too
+    import unittest.mock as _m
+    with _m.patch.object(type(_bcs._BATHY_CALIB), "read_text", side_effect=OSError("gone")):
+        assert _bcs._load_struct_calib() == (
+            d["struct_slope_abs"], d["struct_relief_abs_m"],
+            sb["break"], sb["strong"], sb["exceptional"])

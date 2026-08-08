@@ -421,8 +421,11 @@ def _load_struct_calib():
         return (float(d["struct_slope_abs"]), float(d["struct_relief_abs_m"]),
                 float(sb["break"]), float(sb["strong"]), float(sb["exceptional"]))
     except (OSError, ValueError, KeyError) as e:  # noqa: BLE001
+        # Fallback = the CURRENT committed calibration (smoothed-field values, ADR-036). Must be
+        # kept in lockstep with data/calib/bathy_slope.json — a stale fallback silently applies
+        # old bars when the json is unreadable (caught in the 2026-08 stress-test pass).
         print(f"⚠ bathy_slope.json unreadable ({e}) — using fallback structure bars")
-        return (0.162, 1.55, 1.45, 2.06, 3.68)
+        return (0.123, 1.43, 1.38, 1.91, 3.26)
 
 
 (STRUCT_SLOPE_ABS, STRUCT_RELIEF_ABS,

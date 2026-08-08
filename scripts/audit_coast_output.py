@@ -48,15 +48,29 @@ def _ring_area_m2(ring):
     return abs(s) / 2.0
 
 
-def _load_water_mask(corners):
-    """Frozen OSM water mask for a stretch, from its manifest mercator corners (TL,TR,BR,BL)."""
-    from tbay_fishcast.ingest.watermask import water_mask
-    lons = [c[0] for c in corners]; lats = [c[1] for c in corners]
-    xs = [_merc(lo, la)[0] for lo, la in zip(lons, lats)]
-    ys = [_merc(lo, la)[1] for lo, la in zip(lons, lats)]
-    bounds = (min(xs), min(ys), max(xs), max(ys))
-    shape = (1000, 1000)
-    return water_mask(bounds, shape), bounds, shape
+_FROZEN_MASKS = None
+
+
+def _frozen_masks():
+    """All committed frozen water masks, loaded once — [(bounds_3857, (H, W), mask)]. Fully
+    OFFLINE (iter_frozen reads the committed .npz files); the audit must never hit the network
+    or hang on Overpass, so an uncovered stretch just skips its land check with a note."""
+    global _FROZEN_MASKS
+    if _FROZEN_MASKS is None:
+        from tbay_fishcast.ingest.watermask import iter_frozen
+        _FROZEN_MASKS = list(iter_frozen())
+    return _FROZEN_MASKS
+
+
+def _load_water_mask(center_latlon):
+    """Frozen mask whose bounds contain the stretch centre, or None (skip, don't fetch)."""
+    clat, clon = center_latlon
+    mx, my = _merc(clon, clat)
+    for bounds, (H, W), mask in _frozen_masks():
+        x0, y0, x1, y1 = bounds
+        if x0 <= mx <= x1 and y0 <= my <= y1:
+            return mask, bounds, (H, W)
+    return None
 
 
 def main() -> int:
@@ -69,11 +83,18 @@ def main() -> int:
         sid = st["id"]
         gj = json.loads((DATA / "areas" / f"{sid}.geojson").read_text())
         feats = gj["features"]
-        try:
-            wm, bounds, shape = _load_water_mask(st["corners"])
+        got = _load_water_mask(st["center"])
+        if got is not None:
+            wm, bounds, shape = got
             x0, y0, x1, y1 = bounds; H, W = shape
-        except Exception as e:  # noqa: BLE001
-            wm = None; print(f"  {sid}: water mask unavailable ({str(e)[:40]}) — skipping land check")
+            # land distance-to-water (m): a vertex counts as BLEED only when it sits more than
+            # ~1.5 px inland — a boundary vertex 1 px "inland" is rasterization jitter of the
+            # shoreline itself, not shading on land (verified: such vertices are exactly 1 px out).
+            from scipy.ndimage import distance_transform_edt
+            res_m = (x1 - x0) / W
+            d2w = distance_transform_edt(~wm) * res_m
+        else:
+            wm = None; print(f"  {sid}: no frozen water mask covers centre — land check skipped")
 
         # default species for the land/speckle check
         for sp in species:
@@ -95,7 +116,7 @@ def main() -> int:
                             col = int((mx - x0) / (x1 - x0) * W); row = int((y1 - my) / (y1 - y0) * H)
                             if 0 <= row < H and 0 <= col < W:
                                 tot_v += 1
-                                if not wm[row, col]:
+                                if not wm[row, col] and d2w[row, col] > 1.5 * res_m:
                                     land_v += 1
             bleed = 100.0 * land_v / max(tot_v, 1)
             tag = ""
@@ -120,7 +141,11 @@ def main() -> int:
             vals = np.array(list(by_lead.values()))
             cv = float(vals.std() / max(vals.mean(), 1e-6))
             if cv > GLOW_CV_WARN:
-                warns.append(f"{sid}/{sp0}: glow area CV {cv:.0%} across leads (structure drifting?)")
+                # NOTE: under the continuous product (ADR-037) glow AREA legitimately breathes as
+                # temperature dims a break through the levels IN PLACE — this warn flags the
+                # magnitude for an eyeball (is it dimming, or relocating?), it is not a FAIL.
+                warns.append(f"{sid}/{sp0}: glow area breathes {cv:.0%} across leads "
+                             f"(expected=thermal dimming in place; eyeball that it isn't relocating)")
 
     # COVERAGE per species (all stretches, lead 0)
     print("\n  coverage (lead 0, all stretches):")

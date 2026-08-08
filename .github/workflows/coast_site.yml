@@ -53,6 +53,12 @@ jobs:
       - name: Build the coast site data (today's issue)
         id: build
         run: python scripts/build_coast_site.py
+      # SELF-AUDIT GATE (ADR-036/037): validates the BUILT geojson — land bleed vs the committed
+      # frozen shoreline, speckle fraction, glow stability across leads, per-species coverage.
+      # A FAIL blocks the deploy: yesterday's valid map + a loud age banner beats publishing a
+      # broken one (rule 5). Fully offline (frozen masks only), so it can't hang on a fetch.
+      - name: Self-audit the built output (gates the deploy)
+        run: python scripts/audit_coast_output.py
       - name: Publish web/ to gh-pages
         run: |
           cd web
