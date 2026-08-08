@@ -62,8 +62,12 @@ def rank_species(sp_id: str, weak_cue: bool, per_stretch: dict, names: dict,
     index scaled 0–100 vs the day's top stretch. Stretches with < min_ha total reachable habitat are
     dropped (nothing to recommend there). Empty list when the species has no meaningful water today.
     """
+    import math as _math
     scored = []
     for sid, ta in per_stretch.items():
+        # areas are physical m² — drop non-finite/negative entries so a NaN can't crash round()
+        # and a negative can't invert the 0-100 score contract (stress-test 2026-08)
+        ta = {t: a for t, a in ta.items() if _math.isfinite(a) and a > 0.0}
         total_ha = sum(ta.values()) / 1e4
         if total_ha < min_ha:
             continue

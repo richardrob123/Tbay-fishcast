@@ -47,8 +47,9 @@ def classify(times, pressure_hpa, at_utc: datetime) -> Barometric:
     Sharp rise         → 'slowing'  (post-frontal bluebird).
     Steady             → 'neutral'.
     Insufficient data  → 'unknown' (the UI then shows no barometric line, not a guess)."""
-    pts = [(_parse(t), p) for t, p in zip(times, pressure_hpa) if p is not None]
-    pts = [(t, float(p)) for t, p in pts]
+    import math as _math
+    pts = [(_parse(t), float(p)) for t, p in zip(times, pressure_hpa)
+           if p is not None and _math.isfinite(float(p))]   # NaN would leak into level/trend/note
     if len(pts) < 2:
         return Barometric(None, None, "unknown", "unknown",
                           "barometric prior unavailable (no pressure series)")
@@ -59,10 +60,13 @@ def classify(times, pressure_hpa, at_utc: datetime) -> Barometric:
     # sample closest to _TREND_WINDOW_H before the current sample
     target = cur_t.timestamp() - _TREND_WINDOW_H * 3600
     prev_t, prev_p = min(pts, key=lambda tp: abs(tp[0].timestamp() - target))
-    if prev_t >= cur_t:
+    dt_h = (cur_t - prev_t).total_seconds() / 3600.0
+    # Require at least half the tendency window of real baseline: extrapolating a couple of
+    # minutes of sensor noise ×(3h/dt) manufactures a huge fake trend (stress-test 2026-08 —
+    # the sibling river_flow module already guards this identical failure).
+    if prev_t >= cur_t or dt_h < _TREND_WINDOW_H / 2.0:
         return Barometric(round(cur_p, 1), None, "unknown", "unknown",
                           f"{cur_p:.0f} hPa; trend unavailable (series too short)")
-    dt_h = (cur_t - prev_t).total_seconds() / 3600.0
     trend = (cur_p - prev_p) * (_TREND_WINDOW_H / dt_h)   # normalize to per-3h
     if trend <= -_STEADY_HPA_3H:
         state, prior = "falling", "improving"

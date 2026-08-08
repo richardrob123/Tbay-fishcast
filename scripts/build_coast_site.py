@@ -132,7 +132,12 @@ def _load_forecast_error():
         d = json.loads(FORECAST_ERR.read_text())
     except (OSError, ValueError):
         return None
-    if not d.get("n"):
+    # validate shape: this file is machine-rewritten daily; a partial/interrupted write must
+    # degrade to "no numeric band", not KeyError later in main() (stress-test 2026-08 M2)
+    if not isinstance(d, dict) or not d.get("n"):
+        return None
+    if not all(k in d for k in ("pooled_mae_m", "lead_trend_detected", "n_effective_chains")):
+        print("⚠ forecast_lead_error.json incomplete — ignoring (no numeric band)")
         return None
     return d
 
@@ -147,8 +152,15 @@ def _load_favor_calib():
         d = json.loads(FAVOR_CALIB.read_text())
     except (OSError, ValueError):
         return None
+    if not isinstance(d, dict):
+        return None
     if not d.get("calibrated"):
         print(f"upwelling-favorability: prior in use (calib {d.get('reason','absent')})")
+        return None
+    if not all(k in d for k in ("s50_kn", "width_kn")):
+        # a calibrated:true file missing its params would KeyError deep in the wind block and
+        # silently drop the WHOLE wind/favorability section, blaming the ensemble (stress-test L1)
+        print("⚠ upwelling_favorability.json calibrated but missing s50_kn/width_kn — prior in use")
         return None
     return d
 
@@ -417,6 +429,8 @@ _BATHY_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "bathy_s
 def _load_struct_calib():
     try:
         d = json.loads(_BATHY_CALIB.read_text())
+        if not isinstance(d, dict):
+            raise ValueError("bathy_slope.json is not an object")
         sb = d.get("strength_bands", {})
         return (float(d["struct_slope_abs"]), float(d["struct_relief_abs_m"]),
                 float(sb["break"]), float(sb["strong"]), float(sb["exceptional"]))
@@ -688,7 +702,12 @@ def main(argv) -> int:
         return True
     stretches_in = [s for s in STRETCHES if _regs_ok(s[1])]   # s[1] = display name
 
-    central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
+    try:
+        central, lo, hi, _, n, bias_src = bias_live.pooled_or_prior(cfg, issue)
+    except Exception as e:  # noqa: BLE001 - a malformed LSOFS cycle must degrade, not kill (M4)
+        print(f"⚠ bias pipeline failed ({str(e)[:60]}) — frozen prior in use (degraded mode)")
+        central, lo, hi = bias_live.FROZEN_PRIOR
+        n, bias_src = 0, "frozen-prior"
     bias = (central, lo, hi, n)
     if bias_src != "live":
         print("⚠ live buoy bias unavailable — frozen prior in use (degraded mode)")
@@ -725,7 +744,10 @@ def main(argv) -> int:
         cx = x0 + (np.arange(nx) + 0.5) / nx * (x1 - x0)
         cy = y1 - (np.arange(ny) + 0.5) / ny * (y1 - y0)
         gx, gy = np.meshgrid(cx, cy)
-        inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon)
+        try:
+            inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon)
+        except Exception as e:  # noqa: BLE001 - an S3 blip costs one stretch, not the build (M3)
+            print(f"skip {sid}: LSOFS grid open failed ({str(e)[:50]})"); continue
         if len(inbox) == 0:
             print(f"skip {sid}: no LSOFS nodes"); continue
         # surface anchor: GLSEA lags ~1 day, so fall back to the most recent available
@@ -822,8 +844,15 @@ def main(argv) -> int:
     for s in cfg.shore_stations:
         if not _regs_ok(s.name):        # regs gate on the station recommendation surface
             continue
-        pts, wins, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue, (central, lo, hi, n))
+        try:
+            pts, wins, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue,
+                                               (central, lo, hi, n))
+        except Exception as e:  # noqa: BLE001 - a dead pin costs one pin, not the build (H3):
+            # forecast_spot's internal NONNA fetch is unwrapped, and this loop runs AFTER all the
+            # expensive stretch overlays — an escape here discarded the whole build (stress-test).
+            print(f"skip station {s.id}: forecast failed ({str(e)[:50]})"); continue
         if not pts:
+            print(f"skip station {s.id}: no forecast points (rule 5 — absence must be loud)")
             continue
         traj = [{"label": f"{p.valid_time:%a}", "lead": p.lead_h,
                  "iso": round(p.isotherm_depth_m, 1) if p.isotherm_depth_m is not None else None,

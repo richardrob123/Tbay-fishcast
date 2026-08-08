@@ -26,7 +26,7 @@ dev = ["pytest"]
 # geo/render extras — NOT needed for the test suite (hermetic), only for the live
 # heartbeat (rasterio: NONNA bathymetry patch) and the map/validation scripts
 # (matplotlib for contours; shapely to polygonize + simplify the vector overlays).
-geo = ["rasterio", "matplotlib", "shapely"]
+geo = ["rasterio", "matplotlib", "shapely", "pillow"]  # PIL used directly by watermask/overlay — declare it, don't ride matplotlib's transitive dep
 # ERA5 FLake — the independent (non-FVCOM) lake-physics cross-check. Offline validation
 # only (needs a CDS key); never imported by the heartbeat.
 era5 = ["cdsapi"]

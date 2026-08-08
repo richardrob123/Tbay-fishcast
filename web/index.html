@@ -214,6 +214,11 @@ const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry C
 
 let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
 const MOB = window.matchMedia('(max-width:560px)').matches;   // phone layout: smaller pins, terse labels
+// Escape EVERY manifest-derived string before it reaches innerHTML/setHTML. The manifest is
+// build-controlled today, but the knowledge pipeline is designed to mine external text (reviews,
+// community pins) into name/note fields — unescaped, that becomes stored XSS (stress-test 2026-08).
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // graded suitability zones: features carry temp='sp:<id>:s1|s2|s3'. The build emits them
 // DISJOINT (outer fair ring / good ring / prime core, no overlap), so these translucent fills
 // read as a light graded wash you can see the water through — not a compounded opaque slab.
@@ -234,7 +239,7 @@ const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp']
 function buildSpeciesChips(){
   const el = document.getElementById('species'); if(!el) return;
   el.innerHTML = SPECIES.map(s =>
-    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${s.id}" title="${s.name}${s.note?' — '+s.note:''}">${s.name.split(/[(\/]/)[0].trim()}</button>`).join('');
+    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${esc(s.id)}" title="${esc(s.name)}${s.note?' — '+esc(s.note):''}">${esc(s.name.split(/[(\/]/)[0].trim())}</button>`).join('');
   el.querySelectorAll('.spchip').forEach(b => b.addEventListener('click', () => {
     curSp = SPECIES.find(x=>x.id===b.dataset.id);
     el.querySelectorAll('.spchip').forEach(x=>x.classList.toggle('on', x===b));
@@ -344,12 +349,12 @@ function renderPhase(lead){
   box.style.display = 'flex';
   box.style.borderLeftColor = m.col;
   const obs = (ph.source||'').startsWith('observed');
-  const srcName = obs ? ((MAN.phase.obs_station||'obs')+' obs') : 'forecast';
+  const srcName = obs ? (esc(MAN.phase.obs_station||'obs')+' obs') : 'forecast';
   const conf = ph.confidence ? ph.confidence[0].toUpperCase()+ph.confidence.slice(1) : '';
   box.innerHTML =
     `<span class="ic">${m.ic}</span>`+
     `<span class="txt"><div class="lab" style="color:${m.col}">${m.lab}</div>`+
-    `<div class="det">${ph.detail||''}</div></span>`+
+    `<div class="det">${esc(ph.detail||'')}</div></span>`+
     `<span class="src">${obs?'🛰 ':''}${srcName}${conf?'<br>'+conf+' conf.':''}</span>`;
 }
 
@@ -391,8 +396,8 @@ function renderTopSpots(){
   if(ranked.length){
     html += `<div class="row">` + ranked.map(r => {
       const g5 = r.glow_ha >= 1 ? ' g5' : '';
-      return `<button class="spot${g5}" data-id="${r.id}" title="${r.reason.replace(/"/g,'&quot;')}">`+
-             `${r.name.split('—')[0].trim()} <span class="sc">${r.score}</span></button>`;
+      return `<button class="spot${g5}" data-id="${esc(r.id)}" title="${esc(r.reason)}">`+
+             `${esc(r.name.split('—')[0].trim())} <span class="sc">${r.score}</span></button>`;
     }).join('') + `</div>`;
   } else {
     html += `<span class="none">no stretch has meaningful reachable habitat for this species today</span>`;
@@ -401,10 +406,10 @@ function renderTopSpots(){
   const runs = (MAN.top_spots._active_runs)||[];
   if(ts.weak_cue){
     if(runs.length){
-      const names = runs.map(r=>r.id.replace(/_/g,' ')).join(', ');
-      html += `<span class="cav">🐟 Run window active: <b>${names}</b>. ${ts.caveat||''}</span>`;
+      const names = esc(runs.map(r=>r.id.replace(/_/g,' ')).join(', '));
+      html += `<span class="cav">🐟 Run window active: <b>${names}</b>. ${esc(ts.caveat||'')}</span>`;
     } else {
-      html += `<span class="cav">No spawning-run window is open yet (pre-season). ${ts.caveat||''}</span>`;
+      html += `<span class="cav">No spawning-run window is open yet (pre-season). ${esc(ts.caveat||'')}</span>`;
     }
   }
   box.innerHTML = html;
@@ -486,6 +491,11 @@ map.on('load', async () => {
     if(!r.ok) throw new Error('manifest '+r.status);
     man = await r.json();
   } catch(e){ return fail('Could not load the forecast data ('+e.message+'). If this is a fresh deploy, the daily build may not have run yet.'); }
+  // A structurally-valid manifest with NO stretches previously threw inside this async handler
+  // AFTER the spinner was cleared — a silent blank page with no diagnostic (stress-test 2026-08).
+  // Fail loudly instead: the error screen is the honest state when the build emitted no areas.
+  if(!man.stretches || !man.stretches.length || !man.stretches[0].days || !man.stretches[0].days.length)
+    return fail('The forecast build produced no map areas — the daily build likely failed its self-audit; check the build logs.');
   MAN = man;
   document.getElementById('load').style.display='none';
   document.getElementById('ctl').style.display='block';
@@ -562,9 +572,13 @@ map.on('load', async () => {
       const t = Date.parse(man.issued_utc);
       if(!isNaN(t)) h = (Date.now() - t) / 3.6e6;
     }
-    const stale = h > 18;
+    // negative age = issue date in the FUTURE (misdated manifest / clock skew) — that is NOT
+    // fresh, it's untrustworthy, and must read STALE too (rule 5; stress-test 2026-08).
+    const stale = h > 18 || h < -1;
     const days = h >= 48 ? ` (${(h/24).toFixed(1)} days)` : '';
-    age.textContent = `issue ${man.issue} · ${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
+    age.textContent = h < -1
+      ? `issue ${man.issue} · dated in the future ⚠ STALE`
+      : `issue ${man.issue} · ${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
     age.classList.toggle('stale', stale);
     if(man.bias && man.bias.source && man.bias.source !== 'live')
       age.textContent += ' · ⚠ degraded bias';
@@ -598,7 +612,7 @@ map.on('load', async () => {
   const t = document.getElementById('t');
   t.max = days.length-1;
   document.getElementById('ticks').innerHTML =
-    days.map((d,i)=>`<span data-i="${i}">${d.label.split(' ')[0]}</span>`).join('');
+    days.map((d,i)=>`<span data-i="${i}">${esc(d.label.split(' ')[0])}</span>`).join('');
   t.addEventListener('input', e => setDay(+e.target.value));
   document.getElementById('op').addEventListener('input', paintFills);
   document.getElementById('play').addEventListener('click', togglePlay);
@@ -612,14 +626,14 @@ function stationHTML(st, coldCued=true){
   // cell tone mirrors the band: solid green = whole band agrees, pale = central-only
   const traj = (st.traj||[]).map(p => {
     const cls = p.certain ? 'go' : (p.reach ? 'go soft' : '');
-    return `<div class="c ${cls}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${p.label}</div>`;
+    return `<div class="c ${cls}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${esc(p.label)}</div>`;
   }).join('');
   // for the warm-preferring weak-cue species, say plainly that cold-reachability isn't their signal
   const caveat = coldCued
     ? `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div>`
     : `<div class="v" style="color:#8a6d00;font-size:10.5px;margin-top:5px">this pin is cold-water reachability — a lake-trout signal. For ${curSp?curSp.name.split(/[(\/]/)[0].trim().toLowerCase():'this species'} it's a minor cue; fish river mouths + the run windows instead.</div>`;
-  return `<div class="pop"><b class="v">${st.name.split('—')[0].trim()}</b>`+
-    `<div class="v" style="margin-top:3px">${st.verdict}</div>`+
+  return `<div class="pop"><b class="v">${esc(st.name.split('—')[0].trim())}</b>`+
+    `<div class="v" style="margin-top:3px">${esc(st.verdict||'')}</div>`+
     (st.surf_sst!=null?`<div class="v" style="color:#555;font-size:12px;margin-top:2px">surface ${st.surf_sst}°C</div>`:'')+
     `<div class="traj">${traj}</div>`+
     caveat+`</div>`;
@@ -632,7 +646,7 @@ function markerHTML(m){
   const run = m.run || {};
   let runLine = '';
   if(run.active && (run.runs||[]).length){
-    const rn = run.runs.map(r => r.id.replace(/_/g,' ')).join(' · ');
+    const rn = esc(run.runs.map(r => r.id.replace(/_/g,' ')).join(' · '));
     runLine = `<div class="sp" style="color:#8a6d00">🐟 run window active (typical): ${rn}</div>`;
   } else {
     runLine = `<div class="nt" style="color:#999">no spawning-run window open now (typical dates)</div>`;
@@ -647,10 +661,10 @@ function markerHTML(m){
       (f.trend_pct!=null?` (${f.trend_pct>0?'+':''}${f.trend_pct}%/3d)`:'')+
       (f.freshet?' — freshet, staging trigger':'')+`</div>`;
   }
-  return `<div class="rvpop"><b>${m.name}</b>`+
-    `<div class="nt">${m.note||''}</div>`+
+  return `<div class="rvpop"><b>${esc(m.name)}</b>`+
+    `<div class="nt">${esc(m.note||'')}</div>`+
     runLine+ flowLine+
-    (names.length?`<div class="sp">stages: ${names.join(' · ')}</div>`:'')+
+    (names.length?`<div class="sp">stages: ${esc(names.join(' · '))}</div>`:'')+
     `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · flow ECCC · position approximate (field-verify)</div></div>`;
 }
 

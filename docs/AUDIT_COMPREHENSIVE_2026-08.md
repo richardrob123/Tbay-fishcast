@@ -98,3 +98,34 @@ Thunder Bay nearshore), tributary temperature (not served by ECCC), creel/stocki
 (static climatology, not a dynamic input), **nearshore wave/chop (T4d — Open-Meteo marine unvalidated
 for Superior, ~7× off the one real buoy obs; offshore buoys too far/missing).** The one true unlock
 remains operator field-catch logs.
+
+## Adversarial stress-test campaign — 2026-08-08
+
+Three parallel attack lanes against the finished system (scripts under the session scratchpad;
+findings fixed same-day, each with a regression test where testable):
+
+**Lane 1 — pure-function edge attacks.** Solstices/leap-days/polar latitudes, year-boundary run
+windows, NaN/negative/degenerate inputs into every math function, all-sentinel isotherm fields.
+Result: no HIGH; 2 MED in `river_flow.classify` — NaN discharge classified "steady" with a literal
+"nan m³/s" in the UI note, and negative discharge (real ECCC ice/backwater artifact) confidently
+classified. FIXED (finite+non-negative intake filter). Cheap hardenings from the LOW list also
+applied: barometric short-baseline guard, thermal_suitability optimal-clamped-into-range,
+top_spots non-finite/negative area guard. `daylight`, `run_calendar`, `_iso_field`,
+`_bottom_temp_field`, `_species_tiers` survived everything thrown at them.
+
+**Lane 2 — failure injection on the build.** Corrupt calib jsons, garbage CSVs, simulated network
+failures at every ingest call site, workflow/deps consistency, determinism, gitignore traps.
+Result: H2 GLSEA 200-with-junk-body escaped the try and killed the whole build (parse moved inside,
+exceptions widened, all three glsea endpoints); H3 the per-station loop was unwrapped so a NONNA
+blip AFTER all stretch work discarded the entire build (wrapped, loud skip); M1-M4 loader
+type-guards + `_node_columns_in_box` and bias-pipeline call-site wraps (degrade to frozen prior);
+M5 stations that produce no forecast now log their absence (rule 5). PASS: nearshore-log QC
+bulletproof, workflow deps complete, build deterministic, every runtime-read file committed.
+
+**Lane 3 — UI manifest fuzzing.** All 20 planned mutations degraded gracefully. Three real
+findings from the deeper audit: HIGH — empty `stretches` produced a silent blank page (now fails
+loudly to the error screen); HIGH — 11 manifest string fields flowed raw into innerHTML (stored-XSS
+path once the knowledge pipeline mines external text; all sinks now escaped via `esc()`, verified
+by live payload injection); MED — a future-dated manifest read as fresh with negative age (now
+⚠ STALE, rule 5). Verified post-fix: payloads inert, empty-manifest error screen shown, zero JS
+errors across species/days/popups.

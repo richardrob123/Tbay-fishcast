@@ -58,3 +58,24 @@ def test_small_river_level_formatting():
     """A sub-10 m³/s river keeps 2 decimals in the note; a big one rounds to integer."""
     assert "0.08" in river_flow.classify(_series(0.10, 0.08)).note
     assert "20 m" in river_flow.classify(_series(21.0, 20.0)).note
+
+
+def test_nan_discharge_is_unknown_never_steady():
+    """MED-1 (stress-test 2026-08): a NaN sample survived every comparison into a confident
+    'steady' with 'nan m³/s' in the UI note. NaN must be dropped; if nothing valid remains,
+    state is 'unknown' — never a guess."""
+    t0 = datetime(2026, 9, 10, 12, tzinfo=timezone.utc)
+    rf = river_flow.classify([(t0 - timedelta(days=3), 5.0), (t0, float("nan"))])
+    assert rf.state in ("unknown", "steady") and (rf.q_cms is None or rf.q_cms == 5.0)
+    assert "nan" not in rf.note.lower()
+    rf2 = river_flow.classify([(t0, float("nan"))])
+    assert rf2.state == "unknown" and rf2.q_cms is None
+
+
+def test_negative_discharge_rejected():
+    """MED-2: ECCC gauges emit negative artifacts (ice/backwater); a physically impossible flow
+    must never be confidently classified."""
+    t0 = datetime(2026, 9, 10, 12, tzinfo=timezone.utc)
+    rf = river_flow.classify([(t0 - timedelta(days=3), 10.0), (t0, -5.0)])
+    assert (rf.q_cms is None) or (rf.q_cms >= 0.0)
+    assert "-5" not in rf.note

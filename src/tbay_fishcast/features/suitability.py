@@ -152,6 +152,10 @@ def thermal_suitability(bottom_c, range_c, optimal_c=None):
     b = np.asarray(bottom_c, dtype=float)
     r_cold, r_warm = float(range_c[0]), float(range_c[1])
     o_cold, o_warm = (float(optimal_c[0]), float(optimal_c[1])) if optimal_c else (r_cold, r_warm)
+    # The optimal core is BY DEFINITION inside the preferred range; clamp so a config error
+    # (optimal wider than range) can never score 1.0 outside range_c — the plateau test would
+    # otherwise silently override the range bounds (stress-test 2026-08).
+    o_cold, o_warm = max(o_cold, r_cold), min(o_warm, r_warm)
 
     s = np.zeros(b.shape, dtype=float)
     with np.errstate(invalid="ignore"):

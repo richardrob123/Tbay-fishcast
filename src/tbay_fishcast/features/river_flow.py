@@ -40,7 +40,15 @@ def classify(samples) -> RiverFlow:
     Uses the newest sample as the current flow and the sample closest to _TREND_WINDOW_DAYS earlier
     as the baseline. Returns state 'unknown' (and the UI shows no flow line) when the series is too
     short or too brief to establish a trend — never a guess."""
-    pts = sorted([(t, float(q)) for t, q in samples], key=lambda tp: tp[0])
+    # Keep only physically valid samples: finite and non-negative. ECCC realtime gauges emit
+    # occasional negative/NaN artifacts (ice, backwater, sensor glitch); a NaN would otherwise
+    # sail through every comparison into a confident "steady" with 'nan m³/s' in the UI note,
+    # and a negative flow is impossible — both violate the "never a guess" contract
+    # (adversarial stress-test 2026-08, MED-1/MED-2).
+    import math as _math
+    pts = sorted([(t, float(q)) for t, q in samples
+                  if q is not None and _math.isfinite(float(q)) and float(q) >= 0.0],
+                 key=lambda tp: tp[0])
     if not pts:
         return RiverFlow(None, None, "unknown", False, "river flow unavailable")
     cur_t, cur_q = pts[-1]

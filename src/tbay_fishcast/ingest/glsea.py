@@ -48,9 +48,12 @@ def _erddap_box(dataset: str, day: str, lat: float, lon: float, half: float) -> 
     try:
         r = requests.get(q, timeout=60)
         r.raise_for_status()
-    except requests.RequestException as e:
-        raise SourceUnavailable(f"GLSEA ERDDAP unreachable: {e}") from e
-    return r.json()["table"]["rows"]
+        # Parse INSIDE the try: a 200 with an HTML maintenance page (JSONDecodeError) or a JSON
+        # body missing "table" (KeyError) previously ESCAPED as raw exceptions and killed the
+        # whole build (stress-test 2026-08 H2). All transport+shape failures → SourceUnavailable.
+        return r.json()["table"]["rows"]
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        raise SourceUnavailable(f"GLSEA ERDDAP unreachable/malformed: {e}") from e
 
 
 def _haversine_km(lat1, lon1, lat2, lon2) -> float:
@@ -110,9 +113,10 @@ def coverage_end(dataset: str = DATASET_TRUTH, timeout: float = 60.0) -> str:
         r = requests.get(f"https://apps.glerl.noaa.gov/erddap/info/{dataset}/index.json",
                          timeout=timeout)
         r.raise_for_status()
-    except requests.RequestException as e:
-        raise SourceUnavailable(f"GLSEA info unreachable: {e}") from e
-    for row in r.json()["table"]["rows"]:
+        rows = r.json()["table"]["rows"]        # parse inside the try (stress-test H2)
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        raise SourceUnavailable(f"GLSEA info unreachable/malformed: {e}") from e
+    for row in rows:
         if len(row) >= 5 and row[2] == "time_coverage_end":
             return str(row[4])[:10]
     raise SourceUnavailable("GLSEA time_coverage_end not found")
@@ -132,10 +136,11 @@ def fetch_series(pixel_lat: float, pixel_lon: float, start: str, end: str,
     try:
         r = requests.get(q, timeout=timeout)
         r.raise_for_status()
-    except requests.RequestException as e:
-        raise SourceUnavailable(f"GLSEA series unreachable: {e}") from e
+        rows = r.json()["table"]["rows"]        # parse inside the try (stress-test H2)
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        raise SourceUnavailable(f"GLSEA series unreachable/malformed: {e}") from e
     out: dict[str, float] = {}
-    for t, _plat, _plon, sst in r.json()["table"]["rows"]:
+    for t, _plat, _plon, sst in rows:
         if sst is not None:
             out[str(t)[:10]] = float(sst)
     return out
