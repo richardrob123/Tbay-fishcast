@@ -101,6 +101,31 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-042 — Research agent: observation ledger + run confirmation + pre-registered catch back test.**
+  Operator request: a daily agent researching runs/catches, a FULL historical scan of all viable
+  sources, and true integration — "not just another 'layer' of reports" — up to back-testing our
+  predictions against actual catches. Fits ADR-001's carve-out exactly: the LLM researches and
+  extracts; the heartbeat stays deterministic. DESIGN: (1) an append-only OBSERVATION LEDGER
+  (`knowledge/observations/observations.jsonl`) of schema-validated claims — catch / run_status /
+  stocking / trap_count / derby_result — each with species, date(+precision), gazetteer-resolved
+  place_id, verbatim quote, source URL, tier, confidence. Places resolve ONLY against the known
+  gazetteer; the agent can never mint new water (Kakabeka lesson), and regs/legality claims are
+  rejected outright (rule 4 — never auto-applied). (2) INTEGRATION, structural not decorative:
+  run-calendar windows re-FIT from multi-year first/last-report distributions when n suffices
+  (`fit_run_windows.py` → data/calib); in-season markers flip to "confirmed active (date, source)"
+  from fresh reports with ~7-day decay (`confirmations.json`, consumed by the deterministic build);
+  and the ledger is the outcome dataset for the CATCH BACK TEST — protocol PRE-REGISTERED in
+  docs/BACKTEST_PROTOCOL.md BEFORE any correlation is computed (rule 7 applied to ourselves):
+  retro-scores rebuilt from ARCHIVED layers only (GLSEA, wind phase, flow, calendar, static
+  structure — LSOFS has no forecast archive, degradation documented), matched-control design
+  against effort confounds, temporal splits (tune ≤2024, validate 2025+), all species reported.
+  If the ranking fails the back test, the demotion rule applies to it. (3) OPERATOR DECISIONS
+  (2026-08-08): research outputs AUTO-COMMIT (observations and data-fitted calendar updates —
+  the operator explicitly chose this over per-batch PRs; code and regs still go through review);
+  no raw-report feed in the UI; backfill + daily watcher in parallel. Sources: ToS-respecting
+  only (agency/open data, news, public forums, derby pages; no Facebook/auth-walled — rule 12);
+  all fetched text treated as hostile (schema gate, no tool-steering, esc() at render).
+
 - **ADR-041 — Chart view + settings sheet (declutter round 2).** User: "I want a toggle to have the
   water swap out with contour lines… we need a settings menu… the UI still too crowded." (1) CHART
   VIEW: a basemap toggle swaps the satellite for a dark nautical-chart ground with ISOBATH polylines
