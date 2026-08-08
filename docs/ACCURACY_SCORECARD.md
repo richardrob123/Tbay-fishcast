@@ -37,7 +37,7 @@ How the forecast the map ships degrades with lead time. Same far-chain caveats. 
 
 ## Nearshore anchor (Landsat 30 m shore − GLSEA offshore, same-day)
 
-n=3 clear scenes · shore-warm **+2.35 °C** (range +1.73…+2.76). GLSEA (1 km) cannot resolve this nearshore warming; too few scenes to fold into the anchor yet (see OVERNIGHT_ITERATION ADR-020).
+n=54 clear scenes · shore-warm **+1.18 °C** (range -10.08…+10.14). GLSEA (1 km) cannot resolve this nearshore warming; too few scenes to fold into the anchor yet (see OVERNIGHT_ITERATION ADR-020).
 
 ## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)
 
@@ -45,4 +45,4 @@ n=9 days · mixed-layer model−clim mean **-0.12 °C**, iso-12 depth model−cl
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=14 buoy-days · GFS speed MAE **2.29 kn**, W-quadrant forecast−obs bias **+0.69 kn** · airport(CYQT)−buoy offset **-0.48 kn** (W-quadrant +0.94). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=16 buoy-days · GFS speed MAE **2.35 kn**, W-quadrant forecast−obs bias **+0.72 kn** · airport(CYQT)−buoy offset **-0.52 kn** (W-quadrant +0.95). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
