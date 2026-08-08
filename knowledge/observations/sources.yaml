@@ -28,14 +28,23 @@ community:
       tier: "T1 (RVCAT/museum) / T3 (iNat mirror)"
       priority: 2
       slices: ["gbif:bulk"]
-    - name: Reddit official Data API
+    - name: Reddit via Arctic Shift public archive (NO KEY NEEDED)
+      url: "https://arctic-shift.photon-reddit.com/api/posts/search?subreddit=<sub>&query=<q>"
+      content: "third-party academic redistribution of Reddit dumps; VERIFIED working, current through 2026-07. r/ThunderBay hits: 'Are the Steelhead and smelt running yet?' (2023-04-16), shore-fishing spot threads (2026-07). VOLUME IS THIN: query 'salmon' returned 0 rows for r/ThunderBay"
+      access: "open JSON API, no key, no account; arctic-shift robots.txt = 'Disallow:' (allow all). We never touch reddit.com, so reddit's Disallow:/ is not engaged"
+      tos: "we honor arctic-shift's robots; content is Reddit's Public Content Policy material - non-commercial research use"
+      tier: T4
+      priority: 3
+      slices: ["arctic_shift:r_ThunderBay_fishing_terms", "arctic_shift:r_OntarioFishing_thunder_bay"]
+      notes: "resolves the 'no API key' question: reddit.com/robots.txt IS Disallow:/ for all agents (re-verified 2026-08-08), and developers.reddit.com's 'no API key' line describes DEVVIT apps that run on Reddit's own infra installed in a subreddit - not external fetching. Arctic Shift is the keyless path; low yield, so P3"
+    - name: Reddit official Data API (alternative to Arctic Shift)
       url: "r/ThunderBay, r/OntarioFishing, r/FishingOntario"
-      content: "spring steelhead-run + derby chatter; volume unverified (est. tens of dated posts/yr)"
-      access: "OFFICIAL Data API ONLY (OAuth app, 100 QPM, research posture) - unauthenticated .json is robots-prohibited (verified Disallow: /)"
-      tos: "conditional: needs registered app; never scrape"
+      content: "same content, fresher; volume equally thin per the Arctic Shift probe"
+      access: "OAuth app at reddit.com/prefs/apps (free, 100 QPM, non-commercial) - operator action; never scrape reddit.com directly"
+      tos: "conditional: needs registered app"
       tier: T3
-      priority: 2
-      slices: ["reddit:<sub>:<year> once app registered; demote to P3 if <30 usable posts 2020-2026"]
+      priority: 3
+      slices: ["reddit_api:<sub>:<year> if operator registers an app"]
     - name: YouTube Data API v3
       content: "dated Thunder Bay steelhead/salmon uploads, ~10-30/yr; upload date != catch date (week/month precision, low confidence)"
       access: "Data API v3 only (free key, 10k units/day); oEmbed lacks dates; no scraping"
