@@ -89,7 +89,8 @@ def rank_species(sp_id: str, weak_cue: bool, per_stretch: dict, names: dict,
     return out
 
 
-def build(species, tier_area_by_stretch: dict, names: dict, active_runs=None) -> dict:
+def build(species, tier_area_by_stretch: dict, names: dict, active_runs=None,
+          low_confidence=frozenset()) -> dict:
     """Assemble the full top-spots block for the manifest.
 
     species: iterable of objects with .id, .name, .temp_cue.
@@ -98,9 +99,15 @@ def build(species, tier_area_by_stretch: dict, names: dict, active_runs=None) ->
     Returns {species_id: {ranked: [...], weak_cue: bool, caveat: str|None}}.
     """
     out = {}
+    # NEVER rank a low-confidence stretch (walkthrough finding #1): the headline total already
+    # excludes them as "indicative", so crowning one as the #1 recommendation contradicted the
+    # system's own trust model — the tool must not send an angler 40 min out on its least
+    # reliable data. They are listed separately as unverified, not hidden (rule 5).
+    excluded = sorted(names.get(s, s) for s in low_confidence if s in tier_area_by_stretch)
     for sp in species:
         weak = getattr(sp, "temp_cue", "strong") == "weak"
-        per = {sid: d.get(sp.id, {}) for sid, d in tier_area_by_stretch.items()}
+        per = {sid: d.get(sp.id, {}) for sid, d in tier_area_by_stretch.items()
+               if sid not in low_confidence}
         ranked = rank_species(sp.id, weak, per, names)
         caveat = None
         if weak:
@@ -110,4 +117,6 @@ def build(species, tier_area_by_stretch: dict, names: dict, active_runs=None) ->
         out[sp.id] = {"ranked": ranked, "weak_cue": weak, "caveat": caveat}
     if active_runs is not None:
         out["_active_runs"] = active_runs
+    if excluded:
+        out["_unranked_unverified"] = excluded
     return out

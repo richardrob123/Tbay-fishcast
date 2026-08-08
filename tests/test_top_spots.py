@@ -67,3 +67,16 @@ def test_scores_are_relative_to_daily_best():
     ranked = ts.rank_species("lake_trout", False, per, {"a": "A", "b": "B"})
     assert ranked[0]["score"] == 100
     assert ranked[1]["score"] == 50   # half the weighted area → half the index
+
+
+def test_low_confidence_stretches_are_never_ranked():
+    """Walkthrough #1 (credibility-critical): the ranking must not crown a stretch the system
+    itself flags low-confidence/indicative — it is excluded from ranked and listed as unverified."""
+    species = [Sp("lake_trout", "Lake trout", "strong")]
+    tabs = {"ltb": {"lake_trout": {"s2": 50 * HA, "s5": 10 * HA}},   # would win by area...
+            "mck": {"lake_trout": {"s2": 5 * HA}}}
+    names = {"ltb": "Little Trout Bay", "mck": "McKellar"}
+    out = ts.build(species, tabs, names, low_confidence=frozenset({"ltb"}))
+    ranked_ids = [r["id"] for r in out["lake_trout"]["ranked"]]
+    assert "ltb" not in ranked_ids and ranked_ids == ["mck"]
+    assert out["_unranked_unverified"] == ["Little Trout Bay"]

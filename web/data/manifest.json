@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-08T05:41:01Z",
- "age_h": 17.7,
+ "built_utc": "2026-08-08T06:07:30Z",
+ "age_h": 18.1,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -1180,6 +1180,38 @@
     "detail": "no sustained west-quadrant blow in the observed window"
    }
   },
+  "daily_wind": {
+   "0": {
+    "dir_deg": 267,
+    "mean_kn": 8,
+    "max_kn": 12
+   },
+   "24": {
+    "dir_deg": 288,
+    "mean_kn": 7,
+    "max_kn": 8
+   },
+   "48": {
+    "dir_deg": 308,
+    "mean_kn": 5,
+    "max_kn": 6
+   },
+   "72": {
+    "dir_deg": 270,
+    "mean_kn": 2,
+    "max_kn": 4
+   },
+   "96": {
+    "dir_deg": 353,
+    "mean_kn": 2,
+    "max_kn": 4
+   },
+   "120": {
+    "dir_deg": 312,
+    "mean_kn": 5,
+    "max_kn": 6
+   }
+  },
   "obs_station": "CYQT",
   "obs_available": true,
   "threshold_obs_kn": 13.0,
@@ -1206,13 +1238,13 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 23.2,
-    "trend_pct": 4.0,
+    "q_cms": 24.2,
+    "trend_pct": 5.0,
     "state": "steady",
     "freshet": false,
-    "note": "23 m\u00b3/s, steady (+4% / 3d).",
-    "pct": 14,
-    "pct_label": "\u224814th %ile",
+    "note": "24 m\u00b3/s, steady (+5% / 3d).",
+    "pct": 17,
+    "pct_label": "\u224817th %ile",
     "clim_years": "1926-2025",
     "clim_n": 2083
    }
@@ -1261,13 +1293,13 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.236,
-    "trend_pct": 12.0,
+    "q_cms": 0.232,
+    "trend_pct": 13.0,
     "state": "rising",
     "freshet": true,
-    "note": "0.24 m\u00b3/s and rising (+12% / 3d) \u2014 freshet pulls staging fish in.",
-    "pct": 52,
-    "pct_label": "\u224852nd %ile",
+    "note": "0.23 m\u00b3/s and rising (+13% / 3d) \u2014 freshet pulls staging fish in.",
+    "pct": 51,
+    "pct_label": "\u224851st %ile",
     "clim_years": "1972-2025",
     "clim_n": 1533
    }
@@ -1299,17 +1331,9 @@
   "lake_trout": {
    "ranked": [
     {
-     "id": "little_trout_bay",
-     "name": "Little Trout Bay / Cloud Bay",
-     "score": 100,
-     "opt_ha": 9.3,
-     "glow_ha": 13.2,
-     "reason": "9 ha optimal temp over 13 ha of structure (breaks/points)"
-    },
-    {
      "id": "mckellar_harbour",
      "name": "McKellar / north harbour",
-     "score": 97,
+     "score": 100,
      "opt_ha": 31.0,
      "glow_ha": 2.5,
      "reason": "31 ha optimal temp over 2 ha of structure (breaks/points)"
@@ -1317,7 +1341,7 @@
     {
      "id": "silver_islet",
      "name": "Silver Islet / Sleeping Giant tip",
-     "score": 82,
+     "score": 84,
      "opt_ha": 8.3,
      "glow_ha": 10.3,
      "reason": "8 ha optimal temp over 10 ha of structure (breaks/points)"
@@ -1325,7 +1349,7 @@
     {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 54,
+     "score": 55,
      "opt_ha": 15.2,
      "glow_ha": 0.9,
      "reason": "15 ha optimal temp over 1 ha of structure (breaks/points)"
@@ -1333,10 +1357,18 @@
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 44,
+     "score": 45,
      "opt_ha": 14.7,
      "glow_ha": 0.7,
      "reason": "15 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 35,
+     "opt_ha": 9.1,
+     "glow_ha": 1.0,
+     "reason": "9 ha optimal temp over 1 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1351,14 +1383,6 @@
      "opt_ha": 20.3,
      "glow_ha": 10.6,
      "reason": "20 ha optimal temp over 11 ha of structure (breaks/points)"
-    },
-    {
-     "id": "little_trout_bay",
-     "name": "Little Trout Bay / Cloud Bay",
-     "score": 96,
-     "opt_ha": 20.8,
-     "glow_ha": 9.0,
-     "reason": "21 ha optimal temp over 9 ha of structure (breaks/points)"
     },
     {
      "id": "mackenzie_silver",
@@ -1383,6 +1407,14 @@
      "opt_ha": 11.2,
      "glow_ha": 1.1,
      "reason": "11 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "chippewa",
+     "name": "Chippewa / Sturgeon River shore",
+     "score": 42,
+     "opt_ha": 12.4,
+     "glow_ha": 1.1,
+     "reason": "12 ha optimal temp over 1 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1480,6 +1512,15 @@
    "weak_cue": true,
    "caveat": "Temperature is a minor cue for this species \u2014 the real driver is run timing and tributary plumes. Treat the map ranking as secondary to the river-mouth markers and the run windows."
   },
-  "_active_runs": []
+  "_active_runs": [],
+  "_unranked_unverified": [
+   "Little Trout Bay / Cloud Bay"
+  ],
+  "_next_run": {
+   "id": "chinook_staging",
+   "species": "chinook",
+   "opens": "2026-08-25",
+   "days_until": 18
+  }
  }
 }

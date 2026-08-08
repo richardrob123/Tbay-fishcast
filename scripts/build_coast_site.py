@@ -215,8 +215,28 @@ def _build_phase(lead_valid, ens):
     obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=up.OBSERVED_THRESHOLD_KN) if o_t else []
     all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=FORECAST_THRESHOLD_KN)
 
+    def _wind_at(valid_iso):
+        """Representative wind around a frame's valid instant from the stitched series:
+        circular-mean direction + mean/max speed over ±6 h. Display data, no scoring."""
+        import math as _m
+        t0 = up._utc(valid_iso)
+        sel = [(d, v) for t, d, v in zip(st_t, st_d, st_s)
+               if abs((t - t0).total_seconds()) <= 6 * 3600 and v is not None and d is not None]
+        if not sel:
+            return None
+        xs = sum(_m.sin(_m.radians(d)) for d, _ in sel) / len(sel)
+        ys = sum(_m.cos(_m.radians(d)) for d, _ in sel) / len(sel)
+        mean_dir = _m.degrees(_m.atan2(xs, ys)) % 360.0
+        spd = [v for _, v in sel]
+        return {"dir_deg": round(mean_dir), "mean_kn": round(sum(spd) / len(spd)),
+                "max_kn": round(max(spd))}
+
     by_lead = {}
+    daily_wind = {}
     for lead, valid in sorted(lead_valid.items()):
+        w = _wind_at(valid)
+        if w:
+            daily_wind[str(lead)] = w
         if lead == 0 and obs:
             ph = up.classify_at(obs_runs, valid, source=f"observed:{metar.CYQT}",
                                 confidence="high" if len(o_t) >= 24 else "med")
@@ -226,7 +246,7 @@ def _build_phase(lead_valid, ens):
                                 confidence="med" if lead <= 48 else "low")
         by_lead[str(lead)] = ph.as_dict()
 
-    return {"now": by_lead.get("0"), "by_lead": by_lead,
+    return {"now": by_lead.get("0"), "by_lead": by_lead, "daily_wind": daily_wind,
             "obs_station": metar.CYQT if obs else None,
             "obs_available": bool(obs),
             # BOTH bars are reported honestly: day-0 observed uses the airport bar, the forecast
@@ -1016,7 +1036,11 @@ def main(argv) -> int:
     _names = {sid: nm for (sid, nm, *_rest) in stretches_in}
     _active = [{"id": r.id, "species": r.species, "note": r.note}
                for r in _runcal.active_runs(issue)]
-    top_block = _top.build(cfg.species, tier_area_by_stretch, _names, active_runs=_active)
+    _nxt = _runcal.next_run(issue)          # countdown to the next run window (walkthrough #5)
+    top_block = _top.build(cfg.species, tier_area_by_stretch, _names, active_runs=_active,
+                           low_confidence=frozenset(LOW_CONFIDENCE))
+    if _nxt:
+        top_block["_next_run"] = _nxt
     for _sp in cfg.species:
         _rk = top_block.get(_sp.id, {}).get("ranked", [])
         if _rk:
@@ -1029,7 +1053,7 @@ def main(argv) -> int:
         "built_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         # age_h/stale are the BUILD-TIME values; the page recomputes age client-side
         # from issued_utc so a dead build can't display a frozen age (AUDIT_ROUND3)
-        "age_h": round(age_h, 1), "stale": age_h > 18,
+        "age_h": round(age_h, 1), "stale": age_h > 30,
         "target_c": cfg.product.target_c, "cast_m": cfg.product.cast_m,
         "max_reach_depth_m": cfg.product.max_reach_depth_m,
         # ACTUAL isotherm targets driving the shading = species band endpoints +

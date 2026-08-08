@@ -352,7 +352,7 @@ const PHASE_META = {
   relaxation: {ic:'🎯', lab:'Relaxation — prime bite window', col:'#39d353'},
   peak:       {ic:'❄️', lab:'Peak upwelling — cold shock, bite often off', col:'#4aa3ff'},
   setup:      {ic:'🌬️', lab:'Upwelling building — bite may slow', col:'#ffb020'},
-  neutral:    {ic:'•',  lab:'Neutral — no active upwelling; fish the front', col:'#9aa4ae'},
+  neutral:    {ic:'•',  lab:'Neutral — no active upwelling; work the gold breaks in the teal', col:'#9aa4ae'},
   unknown:    {ic:'•',  lab:'Wind unavailable', col:'#9aa4ae'},
 };
 function renderPhase(lead){
@@ -416,6 +416,10 @@ function renderTopSpots(){
   } else {
     html += `<span class="none">no stretch has meaningful reachable habitat for this species today</span>`;
   }
+  const unv = MAN.top_spots._unranked_unverified || [];
+  if(unv.length && !ts.weak_cue){
+    html += `<span class="cav" style="opacity:.75">not ranked (unverified survey): ${esc(unv.map(n=>n.split('/')[0].trim()).join(', '))}</span>`;
+  }
   // active run windows (surfaced prominently for the weak-cue migratory species)
   const runs = (MAN.top_spots._active_runs)||[];
   if(ts.weak_cue){
@@ -423,7 +427,9 @@ function renderTopSpots(){
       const names = esc(runs.map(r=>r.id.replace(/_/g,' ')).join(', '));
       html += `<span class="cav">🐟 Run window active: <b>${names}</b>. ${esc(ts.caveat||'')}</span>`;
     } else {
-      html += `<span class="cav">No spawning-run window is open yet (pre-season). ${esc(ts.caveat||'')}</span>`;
+      const nx = MAN.top_spots._next_run;
+      const nxTxt = nx ? `Next: <b>${esc(nx.id.replace(/_/g,' '))}</b> opens ~${esc(nx.opens.slice(5))} (in ${nx.days_until} d). ` : '';
+      html += `<span class="cav">No run window open yet. ${nxTxt}${esc(ts.caveat||'')}</span>`;
     }
   }
   box.innerHTML = html;
@@ -441,6 +447,8 @@ function renderMapKey(){
   const stDot = cold ? '#39d353' : '#6b7682';
   const stTxt = cold ? 'station — cold water reachable' : 'station — cold-reach (minor here)';
   el.innerHTML =
+    (MOB ? `<span class="k"><i class="sw" style="background:#28b58c;width:11px;height:11px;margin:0"></i>temp (moves)</span>`+
+           `<span class="k"><i class="sw" style="background:#f4c430;width:11px;height:11px;margin:0"></i>breaks (fixed)</span>` : '')+
     `<span class="k"><span class="tear" style="background:#2f80ed"></span>river mouth — tap for run + flow</span>`+
     `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`;
 }
@@ -593,7 +601,7 @@ map.on('load', async () => {
     }
     // negative age = issue date in the FUTURE (misdated manifest / clock skew) — that is NOT
     // fresh, it's untrustworthy, and must read STALE too (rule 5; stress-test 2026-08).
-    const stale = h > 18 || h < -1;
+    const stale = h > 30 || h < -1;   // stale = a build was MISSED, not "it's night"
     const days = h >= 48 ? ` (${(h/24).toFixed(1)} days)` : '';
     age.textContent = h < -1
       ? `issue ${man.issue} · dated in the future ⚠ STALE`
@@ -631,11 +639,19 @@ map.on('load', async () => {
   const t = document.getElementById('t');
   t.max = days.length-1;
   document.getElementById('ticks').innerHTML =
-    days.map((d,i)=>`<span data-i="${i}">${esc(d.label.split(' ')[0])}</span>`).join('');
+    days.map((d,i)=>{
+      const t=new Date(d.valid_utc);
+      const today=!isNaN(+t)&&new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay'}).format(t)===new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay'}).format(new Date());
+      return `<span data-i="${i}">${today?'Today':esc(d.label.split(' ')[0])}</span>`;
+    }).join('');
   t.addEventListener('input', e => setDay(+e.target.value));
   document.getElementById('op').addEventListener('input', paintFills);
   document.getElementById('play').addEventListener('click', togglePlay);
-  setDay(0);
+  // open on the frame you're DECIDING on: the first snapshot still in the future
+  // (walkthrough finding #3 — Friday 9 pm should land on Saturday dawn, not this morning)
+  let start0 = 0;
+  for(let i=0;i<days.length;i++){ const tt=Date.parse(days[i].valid_utc); if(!isNaN(tt)&&tt>Date.now()){ start0=i; break; } }
+  setDay(start0);
   renderTiming();      // dawn/dusk + barometer (same all days)
   renderTopSpots();    // best spots for the default species
   renderMapKey();      // what the map pins mean
@@ -711,19 +727,34 @@ function setDay(i){
   // headline total counts only well-surveyed stretches — a sparse-survey box (e.g. Little
   // Trout Bay, ~14% NONNA) interpolates its cold band over mostly-unsurveyed water and can
   // report a large but poorly-constrained area, which would inflate the number misleadingly.
-  const haOf = s => s.days[Math.min(i,s.days.length-1)].reach_ha||0;
-  const totHa = man.stretches.filter(s=>!s.low_confidence).reduce((a,s)=>a+haOf(s),0);
-  const nLow = man.stretches.filter(s=>s.low_confidence).length;
-  document.getElementById('halab').textContent =
-    totHa.toFixed(0)+' ha reachable' + (nLow&&!MOB?` (+${nLow} sparse-survey area${nLow>1?'s':''}, indicative)`:'');
+  // TREND, not raw hectares (walkthrough: the actionable signal is more/less cold water than
+  // the prior frame, not an absolute figure) — low-confidence stretches stay excluded
+  const haAt = j => man.stretches.filter(s=>!s.low_confidence)
+    .reduce((a,s)=>a+(s.days[Math.min(j,s.days.length-1)].reach_ha||0),0);
+  const totHa = haAt(i);
+  let trend = '';
+  if(i>0){
+    const prev = haAt(i-1);
+    const d = prev>0 ? (totHa-prev)/prev : 0;
+    trend = d>0.08 ? 'cold water ↑' : (d<-0.08 ? 'cold water ↓' : 'cold water steady');
+  }
+  document.getElementById('halab').textContent = trend;
   // continuous upwelling-favorability (graded response to wind strength), with context so a
   // low reading is never a bare, alarming "0%" — light wind simply can't upwell.
   const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
+  // PLAIN wind first — the standard pre-trip check (from the same obs+forecast series the
+  // phase uses; measured/forecast data, display only). Compass + mean–max kt.
+  const dw = man.phase && man.phase.daily_wind ? man.phase.daily_wind[String(d0.lead)] : null;
   let wl = '';
+  if(dw){
+    const pts=['N','NE','E','SE','S','SW','W','NW'];
+    const c = pts[Math.round(((dw.dir_deg%360)+360)%360/45)%8];
+    wl = `<b>${c} ${dw.mean_kn}${dw.max_kn>dw.mean_kn?'–'+dw.max_kn:''} kt</b>`;
+  }
   if(w){
     const fav = Math.round((w.favor!=null?w.favor:w.p||0)*100);
-    if(fav >= 8) wl = `upwelling-favorable wind: <b>${fav}%</b>`;
-    else wl = `<span style="opacity:.85">light wind${MOB?'':' — no upwelling blow'}${w.peak_kn&&!MOB?` (W&nbsp;≤${w.peak_kn}&nbsp;kt)`:''}</span>`;
+    if(fav >= 8) wl += `${wl?' · ':''}upwelling-favorable: <b>${fav}%</b>`;
+    else if(!MOB) wl += `${wl?' · ':''}<span style="opacity:.85">no upwelling blow</span>`;
   }
   document.getElementById('wlab').innerHTML = wl;
   document.querySelectorAll('#ticks span').forEach(sp =>

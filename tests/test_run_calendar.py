@@ -57,3 +57,12 @@ def test_determinism_and_species_mapping():
     b = rc.marker_status(date(2026, 9, 10), ["salmon"])
     assert a == b
     assert a["active"] is True and a["species_active"] == ["salmon"]
+
+
+def test_next_run_countdown():
+    """Walkthrough #5: pre-season must say WHEN the next window opens, not just 'none open'."""
+    nx = rc.next_run(date(2026, 8, 8))
+    assert nx["id"] == "chinook_staging" and nx["opens"] == "2026-08-25" and nx["days_until"] == 17
+    # after the last window of the year, it wraps to next year's first opener
+    nx2 = rc.next_run(date(2026, 12, 20))
+    assert nx2["days_until"] > 200 and nx2["opens"].startswith("2027-")

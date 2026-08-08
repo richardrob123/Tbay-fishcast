@@ -123,3 +123,24 @@ def marker_status(d: date, marker_species: list[str]) -> dict:
                 if r.species in hit and r.id not in {x["id"] for x in runs}:
                     runs.append({"species": r.species, "id": r.id, "note": r.note, "tier": r.tier})
     return {"active": bool(species_active), "runs": runs, "species_active": species_active}
+
+
+def next_run(d: date) -> dict | None:
+    """The NEXT upcoming run window after date d (walkthrough finding #5: 'no run open' is a
+    shrug — a salmon angler in August wants the chinook countdown). Returns
+    {id, species, opens (ISO), days_until} for the soonest future start within the next year,
+    or None if the calendar is empty."""
+    from datetime import date as _date, timedelta as _td
+    best = None
+    for e in _load_entries():
+        m, day = _md(e["window"]["start"])
+        opens = _date(d.year, m, day)
+        if opens <= d:
+            opens = _date(d.year + 1, m, day)
+        if best is None or opens < best[0]:
+            best = (opens, e)
+    if best is None:
+        return None
+    opens, e = best
+    return {"id": e["id"], "species": str(e.get("species", "")),
+            "opens": opens.isoformat(), "days_until": (opens - d).days}
