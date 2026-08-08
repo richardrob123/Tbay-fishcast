@@ -101,6 +101,23 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-039 — Structure marks as a measured percentile RAMP (g75…g99), not three near-binary steps.**
+  User review of the ADR-038 render: "is this truly a heat map at this point? Like we have the 'gold' but
+  is it just on or off?" — correct: three steps starting at p90 read as on/off at map scale. The marks are
+  now SIX nested CUMULATIVE bands (filled-contour stacking — g99 ⊆ g95 ⊆ … ⊆ g75; disjoint rings were
+  tried first and shredded into sliver speckle the audit caught) whose edges are the MEASURED percentiles
+  of the pooled regional strength distribution — p75/p80/p85/p90/p95/p99, the `strength_pcts` ladder from
+  scripts/analyze_bathy_slope.py (n=463,960 reachable px across 9 surveyed stretches) — rendered faint
+  amber rising to bright gold, so brightness IS the break's regional rank. Every band edge is a measured
+  number; the only judgments are bounded display choices (ladder floor p75 = "context shading begins";
+  the opacity/colour ramp). Everything else is UNCHANGED: marks remain static (no lead property, audit
+  hard-fails otherwise), temperature-free, per-species depth-gated; and the RANKING keeps the ADR-029
+  "real break" bars exactly (boolean intersections at p90/p95/p99 only — sub-p90 shading never scores),
+  so "Best spots today" is identical before and after the ramp. Loader (`_load_struct_calib`) reads the
+  ladder with a lockstep-tested fallback. Mobile main screen decluttered in the same pass: Play +
+  overlay-opacity controls and the pin/channel key moved off-screen (key folded into the collapsible
+  "how to read this") — operator controls are not fishing information.
+
 - **ADR-038 — Bivariate display: temperature and structure in SEPARATE visual channels (supersedes the
   ADR-037 product).** Operator review: multiplying the uncertain thermal curve into the measured structure
   percentile — even weightlessly — "feels arbitrary… doing too much"; show them "separately but at the same

@@ -420,11 +420,20 @@ SUIT_LEVELS = [
     ("s1", "in range"),      # temperature wash: acceptable (range_c)
     ("s2", "optimal temp"),  # temperature wash: optimal core (optimal_c)
 ]
+# STRUCTURE RAMP (ADR-039): three steps read as on/off ("is the gold just on or off?"). The marks
+# are now a fine ramp of nested bands whose edges are the MEASURED percentiles of the pooled
+# regional strength distribution (strength_pcts in bathy_slope.json) — faint amber at p75 rising to
+# bright gold at p99, so intensity IS the regional rank of the break. Data-derived edges, not a
+# styling gradient. The "real break" definition for RANKING is unchanged: p90/p95/p99 (ADR-029).
 STRUCT_LEVELS = [
-    ("g3", "break"),         # measured break (regional structure p90) — static
-    ("g4", "strong break"),  # strong structure (p95) — static
-    ("g5", "top break"),     # exceptional structure (p99) — static, rare
+    ("g75", "faint structure"),   # p75 of pooled regional strength — static
+    ("g80", "structure"),         # p80 — static
+    ("g85", "notable structure"), # p85 — static
+    ("g90", "break"),             # p90 — the ADR-029 "real break" bar — static
+    ("g95", "strong break"),      # p95 — static
+    ("g99", "top break"),         # p99 — static, rare
 ]
+_RAMP_QS = (75, 80, 85, 90, 95, 99)   # ladder anchors; tags are f"g{q}"
 IN_RANGE_SUIT = 0.0            # fair = strictly inside the preferred range (suit > this)
 OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
 # Structure bars + glow bands are LOADED from the calibration record at runtime (single source of
@@ -443,19 +452,20 @@ def _load_struct_calib():
         d = json.loads(_BATHY_CALIB.read_text())
         if not isinstance(d, dict):
             raise ValueError("bathy_slope.json is not an object")
-        sb = d.get("strength_bands", {})
-        return (float(d["struct_slope_abs"]), float(d["struct_relief_abs_m"]),
-                float(sb["break"]), float(sb["strong"]), float(sb["exceptional"]))
+        ladder = d["strength_pcts"]
+        ramp = tuple(float(ladder[str(q)]) for q in _RAMP_QS)
+        return (float(d["struct_slope_abs"]), float(d["struct_relief_abs_m"]), ramp)
     except (OSError, ValueError, KeyError) as e:  # noqa: BLE001
-        # Fallback = the CURRENT committed calibration (smoothed-field values, ADR-036). Must be
-        # kept in lockstep with data/calib/bathy_slope.json — a stale fallback silently applies
+        # Fallback = the CURRENT committed calibration (smoothed-field values, ADR-036/039). Must
+        # be kept in lockstep with data/calib/bathy_slope.json — a stale fallback silently applies
         # old bars when the json is unreadable (caught in the 2026-08 stress-test pass).
         print(f"⚠ bathy_slope.json unreadable ({e}) — using fallback structure bars")
-        return (0.123, 1.43, 1.38, 1.91, 3.26)
+        return (0.123, 1.43, (0.72, 0.87, 1.08, 1.38, 1.91, 3.26))
 
 
-(STRUCT_SLOPE_ABS, STRUCT_RELIEF_ABS,
- STRENGTH_BREAK, STRENGTH_STRONG, STRENGTH_TOP) = _load_struct_calib()
+(STRUCT_SLOPE_ABS, STRUCT_RELIEF_ABS, STRENGTH_RAMP) = _load_struct_calib()
+# The ADR-029 "real break" bars for RANKING (unchanged by the display ramp): p90 / p95 / p99.
+STRENGTH_BREAK, STRENGTH_STRONG, STRENGTH_TOP = STRENGTH_RAMP[3], STRENGTH_RAMP[4], STRENGTH_RAMP[5]
 
 # CLAMP-EXTENSION isotherms (°C). _bottom_temp_field clamps water beyond the coldest/warmest target
 # to that target's temperature. If the coldest target equals a species' band edge (6 °C == laker
@@ -507,9 +517,19 @@ def _species_structure(strength, within, depth, sp, prod, season=None):
 
     Gated only on reachability + the species' depth band, so the marks sit in the SAME place at the
     same level on every forecast day by construction (they are emitted once per stretch, not per
-    lead). Levels are the data-derived regional percentiles: g3 break (p90) / g4 strong (p95) /
-    g5 top (p99), disjoint. The temperature wash next to them says whether that water is right
-    TODAY; the marks say where the bottom structure IS, period (ADR-038 bivariate display)."""
+    lead). NOTE this depth gate is per-species ON PURPOSE: the bottom is the same everywhere, but a
+    mark is only drawn where that species can actually use it (summer adult lakers ≥4 m, brookies
+    shallow) — so the gold differs between species wherever their depth bands differ.
+
+    Levels (ADR-039 continuous ramp): NESTED CUMULATIVE bands — g<q> = strength ≥ the MEASURED
+    p<q> of the pooled regional strength distribution, for q in 75/80/85/90/95/99 (strength_pcts
+    in bathy_slope.json). Cumulative (filled-contour stacking), NOT disjoint rings: a disjoint
+    band is the thin annulus between two contours, which marching squares shreds into sliver
+    fragments — that read as "detached blobs" on the map and tripped the speckle audit. Solid
+    nested regions have no slivers; the renderer stacks their translucent fills so opacity
+    accumulates into the gradient, brightest where the measured rank is highest. The temperature
+    wash next to them says whether that water is right TODAY; the marks say where the bottom
+    structure IS, period."""
     import numpy as _np
     lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
     hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
@@ -517,10 +537,7 @@ def _species_structure(strength, within, depth, sp, prod, season=None):
         lo_d = 0.0                                             # fall shoal-staging (T1d)
     within_sp = within & (depth >= lo_d) & (depth <= hi_d)
     s = _np.where(within_sp, strength, 0.0)
-    g3 = s >= STRENGTH_BREAK
-    g4 = s >= STRENGTH_STRONG
-    g5 = s >= STRENGTH_TOP
-    return {"g3": g3 & ~g4, "g4": g4 & ~g5, "g5": g5}
+    return {f"g{q}": s >= edge for q, edge in zip(_RAMP_QS, STRENGTH_RAMP)}
 
 
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
@@ -688,14 +705,17 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
         # RANKING sample: plain BOOLEAN INTERSECTIONS (no product scalar) — how much in-range /
         # optimal water, and how much measured break sits INSIDE each (the conjunction as set
         # logic). Pixel counts here; converted to m² by the caller (res is uniform per stretch).
+        # Ranking tiers keep the ADR-029 "real break" definition (p90/p95/p99) regardless of the
+        # finer display ramp: the sub-p90 ramp bands are context shading, not "structure" for
+        # scoring purposes, so the ranking is IDENTICAL to the pre-ramp product. Masks are nested
+        # (g99 ⊆ g95 ⊆ g90), so the disjoint scoring tiers are set differences.
         good = tiers["s2"]
-        anyg = gtier["g3"] | gtier["g4"] | gtier["g5"]
-        strong = gtier["g4"] | gtier["g5"]
+        anyg, strong, top = gtier["g90"], gtier["g95"], gtier["g99"]
         inter_area[sp.id] = {
             "s1": float(tiers["s1"].sum()), "s2": float((good & ~anyg).sum()),
-            "s3": float((fair & gtier["g3"]).sum()),
-            "s4": float((fair & strong & ~gtier["g5"]).sum()),
-            "s5": float((fair & gtier["g5"]).sum()),
+            "s3": float((fair & anyg & ~strong).sum()),
+            "s4": float((fair & strong & ~top).sum()),
+            "s5": float((fair & top).sum()),
         }
         if sp.default or (default_id is None and sp is species[0]):
             reach_px_primary = float(fair.sum())             # total-zone (in-range) area
@@ -1069,7 +1089,7 @@ def main(argv) -> int:
         "nearshore_delta_by_class": {c: {"delta_c": d, "n": n} for c, (d, n) in ns_by.items()},
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
         "struct_levels": [{"tag": t, "label": lb} for t, lb in STRUCT_LEVELS],
-        "combine": "BIVARIATE display (ADR-038): cited temperature bands as a moving wash (s1 range / s2 optimal) + STATIC measured-structure marks (g3/g4/g5 = regional p90/p95/p99, lead-independent) in separate visual channels — no fusion math; ranking uses boolean intersections only",
+        "combine": "BIVARIATE display (ADR-038/039): cited temperature bands as a moving wash (s1 range / s2 optimal) + STATIC measured-structure ramp (g75..g99 = regional strength p75..p99, lead-independent) in separate visual channels — no fusion math; ranking uses boolean intersections at the p90/p95/p99 break bars only",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),

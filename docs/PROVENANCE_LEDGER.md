@@ -19,7 +19,8 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 |---|---|---|---|
 | Structure = a real break (slope bar) | `STRUCT_SLOPE_ABS` 0.123 | **DATA** | p90 of pooled \|∇depth\| over reachable water, 9 stretches, n=464k px, computed on depth **smoothed to NONNA's native ~10 m** (removes the 4 m upsampling-step speckle — ADR-036) — `analyze_bathy_slope.py` → `data/calib/bathy_slope.json` |
 | Structure = a shoal/point (relief bar) | `STRUCT_RELIEF_ABS` 1.43 m | **DATA** | p90 of pooled local relief, same (smoothed) measurement |
-| Glow bands (break / strong / top) | 1.38 / 1.91 / 3.26 | **DATA** | p90 / p95 / p99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_bands`) |
+| Glow RAMP band edges (display) | 0.72 / 0.87 / 1.08 / 1.38 / 1.91 / 3.26 | **DATA** | p75/p80/p85/p90/p95/p99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_pcts`, ADR-039) — brightness = measured regional rank |
+| Break bars (ranking: break / strong / top) | 1.38 / 1.91 / 3.26 | **DATA** | p90 / p95 / p99 of the same distribution (`strength_bands`) — "Best spots" boolean intersections use ONLY these; sub-p90 ramp shading never scores |
 | "in range" (fair) boundary | `suit > 0` | **DEFINITIONAL** | = the species' preferred **range_c** — the literature band edge, not a picked cutoff |
 | "optimal" (good) boundary | `suit ≥ 1` (plateau) | **DEFINITIONAL** | = the species' **optimal_c** core — the literature band |
 | Species thermal range / optimal | per species | **LITERATURE** | stations.yaml, tier T2/T3 with citations (Edsall & Cleland 2000; coaster telemetry; GLFC) |
@@ -28,7 +29,7 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 | Nearshore surface warm-delta | **≈ +0.2 °C (QC'd median, n=24)** | **DATA (multi-year, QC'd)** | Landsat shore − same-day GLSEA over 63 clear L8/9 summer scenes 2019-2025 (`backfill_nearshore_anchor.py`), QC'd to summer + clear + near-station, robust median. SUPERSEDES the old uniform **+2.35** (a single warm-scene artifact that over-warmed the exposed shore ~2 °C — ADR-036). SPATIALLY VARIABLE: exposed points ~0/−, sheltered marina ~+1.6 — exposure-aware delta is a future refinement. |
 | Per-species min/max hold depth | e.g. laker ≥4 m | **T3/T4 judgment (not flat LITERATURE)** | round-number behavioral gates; laker 4 m is a map-mover from a *subarctic-lake* telemetry study (transfer caveat), not a Superior measurement |
 | Relief neighborhood radius | 60 m | **PICKED (bounded)** | sets the spatial scale of "shoal/point"; self-consistent (live path + calib both use it) but the scale is a judgment |
-| Structure percentile choice | p90 bar; p90/95/99 glow | **PICKED (bounded)** | the *values* are measured; *which* percentile means "a real break" is a judgment ("pin at a high percentile") |
+| Structure percentile choice | p90 bar; p75–p99 display ramp; p90/95/99 ranking | **PICKED (bounded)** | the *values* are measured; *which* percentile means "a real break" (p90) and where context shading begins (p75) are judgments |
 | Structure combine form | `max(slope/bar, relief/bar)` | **METHOD (picked, defensible)** | avoids double-counting a spot that is both steep and high-relief — the right form, but a chosen one |
 | Speckle/area/sentinel cuts | min_reach_px 4, MIN_AREA 120, sentinel-majority >0.5 | **PICKED (bounded)** | polygon hygiene; small effect on where the edge is drawn |
 | Cast reach / max depth | 75 m / 22 m | **DEFINITIONAL** | shore-cast product scope — not a quality judgment |

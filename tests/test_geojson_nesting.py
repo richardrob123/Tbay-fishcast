@@ -3,7 +3,8 @@ web/data, no network).
 
 The map grades, per species, within a cast (docs/FISH_BEHAVIOR_REVIEW.md): a discrete TEMPERATURE
 base (s1 = in preferred range, s2 = optimal core) plus SEPARATE static measured-structure marks
-(g3/g4/g5 = break/strong/top, ADR-038 bivariate — no lead property, never move). Area features carry
+(g75..g99 = the measured regional strength percentile ramp, ADR-038/039 — no lead property, never
+move). Area features carry
 temp='sp:<species-id>:<level>'. This guards the shipped overlays: every feature is a valid polygon tagged with a
 species the manifest declares and a known level, and each stretch actually shades the default
 species (so a build that silently dropped the bands can't pass CI)."""
@@ -40,7 +41,7 @@ def test_species_bands_valid(path):
     if not ids:
         pytest.skip("no species in manifest")
     fc = json.load(open(path))
-    levels = {"s1", "s2", "g3", "g4", "g5"}
+    levels = {"s1", "s2", "g75", "g80", "g85", "g90", "g95", "g99"}
     seen_default = False
     for f in fc["features"]:
         tag = f["properties"].get("temp", "")
@@ -61,7 +62,7 @@ def test_species_bands_valid(path):
 
 @pytest.mark.parametrize("path", AREAS, ids=lambda p: os.path.basename(p))
 def test_structure_marks_are_static_no_lead(path):
-    """ADR-038: structure marks (g3/g4/g5) are a STATIC channel — they must carry NO lead property
+    """ADR-038/039: structure marks (g75..g99) are a STATIC channel — they must carry NO lead property
     (a lead on a mark means per-day emission regressed and the marks could move again), while the
     temperature wash (s1/s2) must ALWAYS carry one. Structure is measured bottom, so it is emitted
     for every species within its depth band (the old no-glow-for-weak-cue rule applied to the

@@ -47,18 +47,24 @@ def test_depth_gate_excludes_shallow_for_min_depth_species():
     assert tiers["s2"][0, 2] and not tiers["s2"][0, 0]
 
 
-def test_structure_marks_are_ordered_disjoint_and_temperature_free():
-    """ADR-038: structure marks are a SEPARATE static channel — pure bathymetry, no temperature
-    input at all. Levels are the regional percentiles, disjoint."""
-    strength = _row([0.5, _bcs.STRENGTH_BREAK, _bcs.STRENGTH_STRONG, _bcs.STRENGTH_TOP])
-    within = _row([1, 1, 1, 1]).astype(bool)
-    depth = _row([8, 8, 8, 8])
+def test_structure_marks_are_nested_cumulative_and_temperature_free():
+    """ADR-038/039: structure marks are a SEPARATE static channel — pure bathymetry, no temperature
+    input at all. Levels are the measured percentile RAMP (g75..g99), NESTED CUMULATIVE (filled
+    contours: g99 ⊆ g95 ⊆ … ⊆ g75) — disjoint rings would shred into sliver speckle."""
+    ramp_tags = [f"g{q}" for q in _bcs._RAMP_QS]
+    # one pixel below the ramp floor, then one pixel exactly at each measured edge
+    strength = _row([0.5 * _bcs.STRENGTH_RAMP[0]] + list(_bcs.STRENGTH_RAMP))
+    n = strength.shape[1]
+    within = _row([1] * n).astype(bool)
+    depth = _row([8] * n)
     lt = _Sp("lake_trout", (6, 12), (6, 10))
     g = _bcs._species_structure(strength, within, depth, lt, _Prod())
-    assert not g["g3"][0, 0] and not g["g4"][0, 0] and not g["g5"][0, 0]   # below the bar: no mark
-    assert g["g3"][0, 1] and g["g4"][0, 2] and g["g5"][0, 3]
-    for j in range(4):
-        assert sum(int(g[t][0, j]) for t in ("g3", "g4", "g5")) <= 1        # disjoint
+    assert set(g) == set(ramp_tags)
+    assert not any(g[t][0, 0] for t in ramp_tags)          # below the ramp floor: no mark at all
+    for i, t in enumerate(ramp_tags):
+        assert g[t][0, i + 1], f"{t} must fire at its own measured edge"
+    for hi, lo in zip(ramp_tags[1:], ramp_tags[:-1]):      # nesting: stronger ⊆ weaker
+        assert (~g[hi] | g[lo]).all(), f"{hi} must be a subset of {lo}"
     # temperature-free by construction: the function takes no bottom_c at all — and the marks are
     # identical whatever the thermal field does (static across forecast days by construction)
     g2 = _bcs._species_structure(strength, within, depth, lt, _Prod())
@@ -118,14 +124,15 @@ def test_struct_calib_fallback_matches_committed_json():
     from pathlib import Path
     d = json.loads((Path(_bcs.__file__).resolve().parents[1] / "data" / "calib"
                     / "bathy_slope.json").read_text())
+    ramp = tuple(d["strength_pcts"][str(q)] for q in _bcs._RAMP_QS)
+    assert (_bcs.STRUCT_SLOPE_ABS, _bcs.STRUCT_RELIEF_ABS, _bcs.STRENGTH_RAMP) == (
+        d["struct_slope_abs"], d["struct_relief_abs_m"], ramp)
+    # the ranking bars stay pinned to the ADR-029 p90/p95/p99 entries of the same ladder
     sb = d["strength_bands"]
-    assert (_bcs.STRUCT_SLOPE_ABS, _bcs.STRUCT_RELIEF_ABS,
-            _bcs.STRENGTH_BREAK, _bcs.STRENGTH_STRONG, _bcs.STRENGTH_TOP) == (
-        d["struct_slope_abs"], d["struct_relief_abs_m"],
+    assert (_bcs.STRENGTH_BREAK, _bcs.STRENGTH_STRONG, _bcs.STRENGTH_TOP) == (
         sb["break"], sb["strong"], sb["exceptional"])
     # and the fallback tuple itself (returned when the json is unreadable) matches too
     import unittest.mock as _m
     with _m.patch.object(type(_bcs._BATHY_CALIB), "read_text", side_effect=OSError("gone")):
         assert _bcs._load_struct_calib() == (
-            d["struct_slope_abs"], d["struct_relief_abs_m"],
-            sb["break"], sb["strong"], sb["exceptional"])
+            d["struct_slope_abs"], d["struct_relief_abs_m"], ramp)

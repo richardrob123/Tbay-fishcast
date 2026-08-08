@@ -10,8 +10,8 @@ Checks (per stretch, lead-0 unless noted), thresholds chosen from the 2026-08 da
                     to the eroded water mask). FAIL > 1.0%.
   2. SPECKLE      — count of shaded polygons and the fraction that are tiny (<300 m²). Hundreds of
                     tiny polys = grid-noise speckle. FAIL if tiny-fraction > 0.45 with > 60 polys.
-  3. STATIC GLOW  — structure-glow (s3-s5) area coefficient-of-variation ACROSS forecast leads. The
-                    lake bottom doesn't move, so the glow should be ~stable. WARN > 0.25 CV.
+  3. STATIC GLOW  — structure marks (g-band ramp, ADR-039) must carry NO lead property. The lake
+                    bottom doesn't move, so a lead on a mark = per-day emission regressed. HARD FAIL.
   4. COVERAGE     — total shaded ha per species is within a sane band (not ~0, not the whole box).
 """
 from __future__ import annotations

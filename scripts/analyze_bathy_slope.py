@@ -85,6 +85,10 @@ def main() -> int:
     # The glow-band edges are percentiles of THIS pooled strength distribution — data-derived, not
     # picked multipliers. (break = the p90 reference ~1.0; strong/exceptional = p95/p99.)
     strength = np.maximum(alls / s_bar, allr / r_bar)
+    # FULL percentile ladder of the pooled strength — anchors for the continuous glow RAMP
+    # (ADR-039: 3 bands read as on/off; a measured p75..p99 ladder renders as a true gradient).
+    strength_pcts = {str(q): round(float(np.percentile(strength, q)), 2)
+                     for q in (50, 60, 70, 75, 80, 85, 90, 95, 99)}
     strength_bands = {
         "break": round(float(np.percentile(strength, 90)), 2),
         "strong": round(float(np.percentile(strength, 95)), 2),
@@ -100,7 +104,8 @@ def main() -> int:
     OUT.write_text(json.dumps({
         "struct_slope_abs": s_bar, "struct_relief_abs_m": r_bar, "percentile": PCTILE,
         "slope_percentiles": s_pcts, "relief_percentiles_m": r_pcts, "n_pixels": int(alls.size),
-        "strength_bands": strength_bands,  # continuous-glow edges (p90/p95/p99 of pooled strength)
+        "strength_bands": strength_bands,
+        "strength_pcts": strength_pcts,  # continuous-glow edges (p90/p95/p99 of pooled strength)
         "per_stretch": per_stretch, "stretches": list(per_stretch.keys()),
         "definition": ("Absolute structure bars, both the pXX percentile pooled over reachable "
                        "water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| "

@@ -38,9 +38,9 @@
   #legend .key i.sw:first-child{margin-left:0}
   #legend .sw.s1{background:#7fe0cb}
   #legend .sw.s2{background:#28b58c}
-  #legend .sw.g3{background:#e8b23a}
-  #legend .sw.g4{background:#f4c430}
-  #legend .sw.g5{background:#ffd75e}
+  #legend .sw.g75{background:#c8963a;opacity:.55}
+  #legend .sw.g90{background:#edb93a}
+  #legend .sw.g99{background:#ffd75e}
   #legend .lmut{color:var(--muted)}
   #legend .lwarn{color:#e0a53a;font-weight:600}
   #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
@@ -88,9 +88,10 @@
   #topspots .cav{color:var(--muted);font-size:11px;line-height:1.35}
   #topspots .cav b{color:#dcebfa}
   #topspots .none{color:var(--muted);font-size:11.5px}
-  /* what the map pins mean (answers "what are the blue flags?") */
+  /* what the map pins mean (answers "what are the blue flags?") — lives INSIDE the collapsible
+     "how to read this", so the main screen stays clean (mobile-declutter, 2026-08) */
   #mapkey{width:100%;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted);
-    margin-top:2px;padding-top:6px;border-top:1px solid var(--line)}
+    margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
   #mapkey .k{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
   #mapkey .dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;flex:none}
   #mapkey .tear{width:11px;height:11px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
@@ -145,8 +146,10 @@
     .daylab .d{font-size:12.5px}
     .daylab .ha,.daylab .wind{font-size:10.5px}
     .daylab .wind{margin-left:0}
-    .row2{margin-top:7px;gap:9px}
-    .row2 label{font-size:11px}
+    /* mobile-declutter (2026-08): Play + overlay-opacity are operator controls, not fishing
+       info — off the phone screen entirely. The hidden slider keeps its default value, so
+       paintFills still reads a sane opacity. */
+    .row2{display:none}
     button{padding:5px 9px;font-size:12px}
   }
 </style>
@@ -165,16 +168,18 @@
   <div id="species" class="species"></div>
   <div id="legend"></div>
   <div id="topspots"></div>
-  <div id="mapkey"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
     <div class="more"><b>Two measured signals, kept visibly separate.</b> The <b>teal wash</b> is
       <b>temperature</b> — the species' published preferred bands (faint = in range, brighter =
-      optimal). It moves with the forecast, because the water does. The <b>gold marks</b> are
+      optimal). It moves with the forecast, because the water does. The <b>gold shading</b> is
       <b>structure</b> — real drop-offs, shoal tops and point tips measured in the CHS survey
-      soundings, graded against the whole shore (regional 90th/95th/99th percentile) so <b>flat
-      water gets no mark and the brightest gold is genuinely rare</b>. The marks <b>never move</b> —
-      the bottom doesn't. Nothing is blended: <b>fish where a gold mark sits inside bright teal</b> —
+      soundings. Its brightness is a true gradient: how strongly that bottom ranks against the whole
+      surveyed shore (75th→99th percentile), so <b>flat water gets no gold and the brightest gold is
+      genuinely rare</b>. Each species only shows gold in water it can use (adult lakers hold
+      ≥4&nbsp;m in summer, brookies shallower — so the gold differs by species on purpose). The
+      marks <b>never move</b> — the bottom doesn't. Nothing is blended: <b>fish where bright gold
+      sits inside bright teal</b> —
       right structure in right-temperature water, read directly off two honest layers. All within a
       ~75&nbsp;m cast (≤22&nbsp;m deep). It's a ranking, not a catch percentage — that would need
       logged trips. The
@@ -189,6 +194,7 @@
       <i>today for that species</i> (the most reachable water at the right temperature and structure);
       the rest are scored against it. It is NOT a catch percentage. Forecasts
       <b>water, not fish</b> — check Ontario regs before fishing.</div>
+    <div id="mapkey"></div>
   </details>
 </div>
 
@@ -231,10 +237,19 @@ const SUIT = [
   {suf:'s1', op:0.16, col:'#7fe0cb'},   // temperature wash: in range
   {suf:'s2', op:0.34, col:'#28b58c'},   // temperature wash: optimal core
 ];
+// ADR-039: a TRUE gradient, not 3 on/off steps. Six NESTED CUMULATIVE bands (g<q> = everything at
+// or above the MEASURED regional strength percentile p<q>) stacked as translucent fills — standard
+// filled-contour rendering, so opacity accumulates and brightness IS the break's regional rank.
+// Nested solid regions, not disjoint rings: rings shred into sliver fragments ("detached blobs").
+// Per-layer op values are solved so the STACKED opacity hits ~.14/.22/.32/.44/.60/.80 at each
+// level (1−Π(1−op)); the brightest gold (p99) stays genuinely rare by construction.
 const STRUCT = [
-  {suf:'g3', op:0.42, col:'#e8b23a'},   // measured break (regional p90) — static
-  {suf:'g4', op:0.60, col:'#f4c430'},   // strong break (p95) — static
-  {suf:'g5', op:0.80, col:'#ffd75e'},   // top break (p99) — static, rare
+  {suf:'g75', op:0.14, col:'#c8963a'},  // p75 — faint context        (stack ≈ .14)
+  {suf:'g80', op:0.09, col:'#d5a139'},  // p80                        (stack ≈ .22)
+  {suf:'g85', op:0.13, col:'#e1ad39'},  // p85                        (stack ≈ .32)
+  {suf:'g90', op:0.18, col:'#edb93a'},  // p90 — a regionally-real break (stack ≈ .44)
+  {suf:'g95', op:0.29, col:'#f6c63f'},  // p95 — strong               (stack ≈ .60)
+  {suf:'g99', op:0.50, col:'#ffd75e'},  // p99 — top, rare            (stack ≈ .80)
 ];
 const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
 const GF = (id,suf) => ['==', ['get','temp'], 'sp:'+id+':'+suf];   // structure: species only, no lead
@@ -262,7 +277,7 @@ function applyLayers(){
       const id = 'arstr'+k+'_'+z.suf;
       map.getLayer(id) && map.setFilter(id, GF(curSp.id, z.suf));
     });
-    map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g5'));
+    map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g99'));
   });
   paintFills();
   renderLegend();
@@ -323,14 +338,14 @@ function renderLegend(){
     // no structure glow for plume-driven species — just the temperature base
     el.innerHTML =
       `<span class="key"><i class="sw s2"></i>optimal<i class="sw s1"></i>in&nbsp;range`+
-      `<i class="sw g4"></i>breaks</span>`+
+      `<i class="sw g90"></i>breaks</span>`+
       `<span class="lmut">${opt[0]}–${opt[1]}°C · weak temp cue — mouths &gt; map</span>`;
   } else {
-    // two channels, named as channels: the moving temp wash vs the fixed structure marks
+    // two channels, named as channels: the moving temp wash vs the fixed structure ramp
     el.innerHTML =
       `<span class="key"><i class="sw s1"></i><i class="sw s2"></i>right temp (moves)`+
-      `<i class="sw g3"></i><i class="sw g4"></i><i class="sw g5"></i>breaks (fixed)</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C core · gold mark in bright teal = the spot</span>`;
+      `<i class="sw g75"></i><i class="sw g90"></i><i class="sw g99"></i>breaks (brighter = stronger)</span>`+
+      `<span class="lmut">${opt[0]}–${opt[1]}°C core · bright gold in bright teal = the spot</span>`;
   }
   // Measured thermal-field uncertainty stays DISCOVERABLE on hover, not crowding the bar.
   // Honest about what it is: an absolute isotherm-depth error vs a STABLE reference (0 moving-obs
@@ -446,9 +461,10 @@ function renderMapKey(){
   const cold = curSp.temp_cue !== 'weak';
   const stDot = cold ? '#39d353' : '#6b7682';
   const stTxt = cold ? 'station — cold water reachable' : 'station — cold-reach (minor here)';
+  // the key sits inside the collapsed "how to read this" now — swatches shown on all viewports
   el.innerHTML =
-    (MOB ? `<span class="k"><i class="sw" style="background:#28b58c;width:11px;height:11px;margin:0"></i>temp (moves)</span>`+
-           `<span class="k"><i class="sw" style="background:#f4c430;width:11px;height:11px;margin:0"></i>breaks (fixed)</span>` : '')+
+    `<span class="k"><i class="sw" style="background:#28b58c;width:11px;height:11px;margin:0"></i>temp (moves)</span>`+
+    `<span class="k"><i class="sw" style="background:linear-gradient(90deg,#c8963a,#ffd75e);width:22px;height:11px;margin:0"></i>breaks (brighter = stronger, fixed)</span>`+
     `<span class="k"><span class="tear" style="background:#2f80ed"></span>river mouth — tap for run + flow</span>`+
     `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`;
 }
@@ -548,8 +564,8 @@ map.on('load', async () => {
           filter:GF(curSp.id, z.suf),
           paint:{ 'fill-color':z.col, 'fill-opacity':z.op } });
       });
-      // thin outline on the PRIME core only — marks the best spots without adding blob weight
-      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:GF(curSp.id, 'g5'),
+      // thin outline on the TOP (p99) band only — marks the rare best breaks without blob weight
+      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:GF(curSp.id, 'g99'),
         layout:{ 'line-join':'round' },
         paint:{ 'line-color':'#053d2a', 'line-width':1.1, 'line-opacity':0.7 } });
     }
