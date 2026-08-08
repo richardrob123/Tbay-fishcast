@@ -101,6 +101,35 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-036 — Heat-map data-correctness pass: the shading had four real DATA bugs (operator field review).**
+  Zooming the live map on a phone showed the suitability shading was, in the operator's words, "random
+  blobs" that bled onto land and "moved between days" — so we stopped and verified every data layer at
+  the pixel level (marina + Silver Islet + Little Trout Bay). Four genuine defects, each fixed at the
+  ROOT, not painted over:
+  (1) **Land/dock/island bleed** — the fill used only `isfinite(depth)` as its water definition, so
+  bridged depth + small shore-distance leaked shading onto the beach/breakwall (measured: **7.6 % of
+  shaded pixels sat on OSM land** at the marina). Fix: intersect the fill with the authoritative frozen
+  OSM water mask (`within &= water_mask`). (2) **"Structure" was mostly grid noise** — CHS NONNA-10's
+  10 m soundings are nearest-neighbour upsampled to the ~4 m raster (adjacent-pixel depth diff ≈ 0 within
+  a cell, a hard STEP at each cell edge), and `|∇depth|` read those steps as **~140 isolated ≤3-px "strong
+  breaks" per stretch** — the blobs. Fix: compute slope/relief on depth **smoothed to native resolution**
+  (`suitability.native_smoothed`, Gaussian σ≈½ native cell), which cut Silver Islet strong-break speckle
+  213→19 px while keeping 18 real breaks; the p90/p95/p99 glow bands were **recalibrated on the same
+  smoothed field** (`bathy_slope.json`: slope bar 0.162→0.123) so provenance stays consistent; `MIN_AREA`
+  120→300 m² clears residual fragments. (3) **Nearshore warm-delta was a single-scene artifact AND
+  spatially wrong** — the uniform **+2.35 °C** came from ONE warm 2026-07-28 pass. A historical backfill
+  of 63 clear Landsat 8/9 summer scenes (2019-2025, `backfill_nearshore_anchor.py`), QC'd to the
+  summer-stratified regime + clear + near-station pixels (n=24), shows the true region-wide value is
+  **≈ +0.2 °C** — and that it is SPATIALLY VARIABLE: ~0/slightly-negative at the exposed points (Silver
+  Harbour −0.65, MacKenzie −0.33) and +1.6 only at the sheltered marina. The old +2.35 over-warmed the
+  whole exposed shore by ~2 °C, wrongly pushing the shallow band out of the laker range. Fix:
+  `nearshore_surface_delta` now QC-filters the multi-year log and returns the robust **median** (exposure-
+  aware delta is a future refinement). (4) **Structure glow "moved" between forecast days** — it was gated
+  on the per-lead OPTIMAL-temperature core, so a STATIC break drifted as the coarse thermal field shifted.
+  Fix: gate the glow on the STABLE in-RANGE mask (`fair`), so a real break glows in the same place every
+  day while its water stays in the species' preferred range; the optimal core is still emphasized (s2)
+  where there is no break. All deterministic, all validated pre-rebuild; 296 tests pass.
+
 - **ADR-035 — The temporal layer: WHEN, added as honestly-labelled priors beside the spatial map (audit T2/T3/T4).**
   The comprehensive live-UI+data+behavior audit found the map answered WHERE but nothing answered
   WHEN-within-a-day, WHEN-in-the-season, or "so where do I actually go" — the drivers that decide

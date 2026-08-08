@@ -90,15 +90,18 @@ LOW_CONFIDENCE = {"little_trout_bay"}
 # are map-derived mouth locations (tier T4, field_verify: replace with field GPS before any
 # access claim). `species` = the species each mouth most helps (drives the popup copy).
 RIVER_MOUTHS = [
-    {"id": "kam", "name": "Kaministiquia R. mouth", "lat": 48.383, "lon": -89.246,
+    # Coords are the LAKE-ENTRY (mouth) points traced from OSM river geometry (waterway=river
+    # downstream ends), 2026-08 — the earlier values were map-guessed and sat up-river/inland
+    # (Kam was ~2.5 km too far west). Still coord_tier T4 (field-verify the exact plume edge).
+    {"id": "kam", "name": "Kaministiquia R. mouth", "lat": 48.3772, "lon": -89.2126,
      "note": "Delta channels + warm plume — prime chinook/coho staging (late summer–fall). "
              "Temperature is a minor cue here; fish the plume edge and current seams.",
      "species": ["salmon", "steelhead"]},
-    {"id": "current", "name": "Current R. mouth", "lat": 48.455, "lon": -89.185,
+    {"id": "current", "name": "Current R. mouth", "lat": 48.4510, "lon": -89.1842,
      "note": "North-shore plume below Boulevard Lake — steelhead/salmon staging; lake trout "
              "hold where the plume meets the cold shelf.",
      "species": ["steelhead", "salmon", "lake_trout"]},
-    {"id": "neebing", "name": "Neebing–McIntyre Floodway mouth", "lat": 48.373, "lon": -89.237,
+    {"id": "neebing", "name": "Neebing–McIntyre Floodway mouth", "lat": 48.3829, "lon": -89.2112,
      "note": "Mission Marsh outlet — plume + forage; secondary structure to the Kam delta.",
      "species": ["salmon", "steelhead"]},
 ]
@@ -441,11 +444,18 @@ def _species_tiers(bottom_c, strength, within, depth, sp, prod, season=None):
     suit = _np.where(within_sp, suit, 0.0)
     fair = suit > IN_RANGE_SUIT                                # inside the preferred range (range_c)
     good = suit >= OPTIMAL_PLATEAU                             # the optimal-core plateau (optimal_c)
-    g_break = good & (strength >= STRENGTH_BREAK)             # a real break (regional p90)
-    g_strong = good & (strength >= STRENGTH_STRONG)           # strong structure (p95)
-    g_top = good & (strength >= STRENGTH_TOP)                 # exceptional — the best breaks (p99)
-    # DISJOINT tiers (each pixel painted once): temperature base (s1/s2) + 3 structure-glow bands.
-    tiers = {"s1": fair & ~good, "s2": good & ~g_break,
+    # STRUCTURE GLOW IS STATIC (bathymetry doesn't move). Gate it on the STABLE in-RANGE mask, NOT
+    # the per-lead OPTIMAL core — otherwise a physical break's glow drifts day to day as the coarse
+    # thermal field shifts (user-caught: "structure blobs moving between days"). A real break glows
+    # in the SAME place every day while its water stays in the species' preferred range; temperature
+    # still modulates (glow vanishes only if the water leaves the range), and the optimal-temp core
+    # is emphasized as s2 where there is no break. Glow wins over the temp tiers when both apply.
+    g_break = fair & (strength >= STRENGTH_BREAK)            # a real break (regional p90), in range
+    g_strong = fair & (strength >= STRENGTH_STRONG)          # strong structure (p95)
+    g_top = fair & (strength >= STRENGTH_TOP)                # exceptional — the best breaks (p99)
+    # DISJOINT tiers (each pixel painted once): temperature base (s1 fair / s2 optimal) with the
+    # STATIC structure glow (s3/s4/s5) taking precedence wherever a reachable break sits in range.
+    tiers = {"s1": fair & ~good & ~g_break, "s2": good & ~g_break,
              "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
     return tiers, fair
 
@@ -491,14 +501,19 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     # so a genuine within-cast cold wedge off a NARROW point is no longer wrongly clipped
     # (user-caught: solid green missing right off Silver tip).
     kw = {"cast_m": prod.cast_m, "max_reach_depth_m": prod.max_reach_depth_m, "min_reach_px": 4}
-    MIN_AREA = 120.0
+    # Drop sub-~garage fragments. Was 120 m² (kept to preserve a thin cold wedge off Silver tip),
+    # but that also let grid-speckle through; now that structure is computed on the smoothed field
+    # the speckle is gone at the source, so a modest floor cleans residual thermal fragments without
+    # clipping a genuine 75 m-long nearshore wedge (~300 m²+).
+    MIN_AREA = 300.0
     from shapely.geometry import Polygon as _ShPoly
     from shapely.ops import unary_union as _uunion
 
     def _shape(mask):
         """reachable_area_features -> one clean shapely (Multi)Polygon (lon/lat)."""
         polys = []
-        for rings in reachable_area_features(mask, bounds_3857, res, min_area_m2=MIN_AREA):
+        for rings in reachable_area_features(mask, bounds_3857, res, min_area_m2=MIN_AREA,
+                                             smooth_iters=1):
             try:
                 p = _ShPoly([(a, b) for a, b in rings[0]],
                             [[(a, b) for a, b in h] for h in rings[1:]])
@@ -543,7 +558,21 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     from tbay_fishcast.features import suitability as _su
     iso_fields = {t: _iso_field(gx, gy, iso_pts, tvals[t]) for t in targets}
     water = np.isfinite(depth)
-    within = water & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
+    # CLIP TO AUTHORITATIVE WATER: the fill previously used only isfinite(depth), so bridged
+    # depth + small shore-distance leaked the shading onto the beach / docks / islands (verified:
+    # ~7.6% of shaded pixels sat on OSM land at the marina). Intersect with the frozen OSM water
+    # mask so nothing is ever painted on land.
+    try:
+        from scipy.ndimage import binary_erosion as _erode
+        from tbay_fishcast.ingest.watermask import WaterMaskError, water_mask
+        _wm = water_mask(bounds_3857, depth.shape)
+        # Erode the water mask ~2 px (~8 m) so the SMOOTHED polygon edges (Chaikin rounds corners
+        # outward by up to ~simplify_m) still land in water, not on the beach/dock. You cast FROM
+        # shore into the water, so a few-metre setback off the exact waterline is correct, not lossy.
+        _wm = _erode(_wm, iterations=2, border_value=1)
+    except (WaterMaskError, Exception):  # noqa: BLE001 - degrade to prior behavior if mask absent
+        _wm = water
+    within = water & _wm & (dist <= prod.cast_m) & (depth <= prod.max_reach_depth_m)
     # TERRITORY CLIP: the coverage boxes overlap by design, so adjacent stretches would each
     # draw the same shore — doubling into lumpy "blobs". Keep only the pixels this stretch owns
     # (closer to its centre than to any other stretch's), so the stretches tile the shore instead
@@ -561,8 +590,14 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     # higher. max of the two measured kinds: slope catches drop-off flanks, relief catches the flat
     # shoal-tops / point-tips the slope misses. This continuous field drives the glow (no binary
     # prime blob); featureless water stays ~0 (the floor).
-    slope = _su.bathymetric_structure(depth, res)            # rise/run
-    relief = _su.bathymetric_relief(depth, res)              # m, shallower-than-surroundings
+    # Compute structure on depth SMOOTHED to NONNA's native ~10 m resolution: the raw 4 m raster is
+    # an upsampled step-field whose cell-boundary steps read as false breaks (the "random blobs").
+    # Smoothing removes the grid steps while keeping real drop-offs (validated: strong-break speckle
+    # 213→19 px at Silver Islet, real breaks retained). Bands in bathy_slope.json are recalibrated
+    # on the same smoothed field so the p90/p95/p99 provenance stays consistent.
+    depth_struct = _su.native_smoothed(depth, res)
+    slope = _su.bathymetric_structure(depth_struct, res)     # rise/run
+    relief = _su.bathymetric_relief(depth_struct, res)       # m, shallower-than-surroundings
     with np.errstate(invalid="ignore"):
         s_norm = np.where(np.isfinite(slope), slope / STRUCT_SLOPE_ABS, 0.0)
         r_norm = np.where(np.isfinite(relief), relief / STRUCT_RELIEF_ABS, 0.0)

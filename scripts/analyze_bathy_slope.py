@@ -52,8 +52,12 @@ def main() -> int:
         depth, dist, _deg = corrected_fields(patch.depth, patch.bounds_3857, res)
         within = (np.isfinite(depth) & (dist <= cfg.product.cast_m)
                   & (depth <= cfg.product.max_reach_depth_m))
-        slope = su.bathymetric_structure(depth, res)
-        relief = su.bathymetric_relief(depth, res)
+        # Structure on depth smoothed to NONNA's native ~10 m resolution — IDENTICAL to the live
+        # build path (_overlay), so the pooled p90/p95/p99 bands describe the same field the map
+        # glows on. Computing bands on the raw step-field (as before) would over-count grid speckle.
+        depth_struct = su.native_smoothed(depth, res)
+        slope = su.bathymetric_structure(depth_struct, res)
+        relief = su.bathymetric_relief(depth_struct, res)
         # aligned pairs under a COMMON mask so the combined structure STRENGTH (max of the two
         # normalized kinds) can be computed per-pixel for the continuous-glow band edges.
         common = within & np.isfinite(slope) & np.isfinite(relief)

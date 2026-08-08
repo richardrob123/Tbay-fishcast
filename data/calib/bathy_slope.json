@@ -1,67 +1,67 @@
 {
- "struct_slope_abs": 0.162,
- "struct_relief_abs_m": 1.55,
+ "struct_slope_abs": 0.123,
+ "struct_relief_abs_m": 1.43,
  "percentile": 90,
  "slope_percentiles": {
-  "50": 0.021,
+  "50": 0.025,
   "66": 0.044,
-  "75": 0.066,
-  "85": 0.115,
-  "90": 0.162,
-  "95": 0.257,
-  "99": 0.527
+  "75": 0.061,
+  "85": 0.094,
+  "90": 0.123,
+  "95": 0.175,
+  "99": 0.318
  },
  "relief_percentiles_m": {
-  "50": 0.06,
-  "66": 0.25,
-  "75": 0.46,
-  "85": 1.05,
-  "90": 1.55,
-  "95": 2.42,
-  "99": 4.51
+  "50": 0.07,
+  "66": 0.24,
+  "75": 0.45,
+  "85": 0.99,
+  "90": 1.43,
+  "95": 2.23,
+  "99": 4.08
  },
  "n_pixels": 463960,
  "strength_bands": {
-  "break": 1.45,
-  "strong": 2.06,
-  "exceptional": 3.68
+  "break": 1.38,
+  "strong": 1.91,
+  "exceptional": 3.26
  },
  "per_stretch": {
   "chippewa": {
-   "slope_p90": 0.108,
-   "relief_p90_m": 0.9
+   "slope_p90": 0.085,
+   "relief_p90_m": 0.84
   },
   "kam_mission": {
-   "slope_p90": 0.189,
-   "relief_p90_m": 1.92
+   "slope_p90": 0.141,
+   "relief_p90_m": 1.76
   },
   "mckellar_harbour": {
-   "slope_p90": 0.188,
-   "relief_p90_m": 1.56
+   "slope_p90": 0.131,
+   "relief_p90_m": 1.38
   },
   "marina_mcvicar": {
-   "slope_p90": 0.173,
-   "relief_p90_m": 1.24
+   "slope_p90": 0.119,
+   "relief_p90_m": 1.1
   },
   "boulevard_current": {
-   "slope_p90": 0.09,
-   "relief_p90_m": 0.57
+   "slope_p90": 0.069,
+   "relief_p90_m": 0.52
   },
   "current_barepoint": {
-   "slope_p90": 0.064,
-   "relief_p90_m": 0.62
+   "slope_p90": 0.046,
+   "relief_p90_m": 0.6
   },
   "shipyard_mackenzie": {
-   "slope_p90": 0.138,
-   "relief_p90_m": 1.57
+   "slope_p90": 0.099,
+   "relief_p90_m": 1.48
   },
   "mackenzie_silver": {
-   "slope_p90": 0.13,
-   "relief_p90_m": 1.25
+   "slope_p90": 0.107,
+   "relief_p90_m": 1.22
   },
   "silver_islet": {
-   "slope_p90": 0.331,
-   "relief_p90_m": 3.33
+   "slope_p90": 0.245,
+   "relief_p90_m": 3.11
   }
  },
  "stretches": [
@@ -76,5 +76,5 @@
   "silver_islet"
  ],
  "definition": "Absolute structure bars, both the pXX percentile pooled over reachable water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| (drop-off flanks); relief = neighbourhood-mean depth \u2212 depth (shoal tops / point tips / crests the slope misses). Reproducible, not picked constants.",
- "retrieved_utc": "2026-08-07T19:59:14Z"
+ "retrieved_utc": "2026-08-08T00:07:52Z"
 }

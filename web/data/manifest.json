@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-07T23:02:14Z",
- "age_h": 11.0,
+ "built_utc": "2026-08-08T00:29:14Z",
+ "age_h": 12.5,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -91,8 +91,8 @@
    "max_depth_m": null
   }
  ],
- "nearshore_delta_c": 2.35,
- "nearshore_delta_n": 3,
+ "nearshore_delta_c": 0.23,
+ "nearshore_delta_n": 24,
  "suit_levels": [
   {
    "tag": "s1",
@@ -203,37 +203,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 20.2
+     "reach_ha": 18.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 28.8
+     "reach_ha": 26.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 22.0
+     "reach_ha": 19.9
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 27.0
+     "reach_ha": 24.8
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 69.0
+     "reach_ha": 65.8
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 69.0
+     "reach_ha": 65.8
     }
    ],
    "degraded": false,
@@ -275,37 +275,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 14.4
+     "reach_ha": 12.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 9.6
+     "reach_ha": 8.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 7.9
+     "reach_ha": 6.6
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 5.4
+     "reach_ha": 4.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 3.8
+     "reach_ha": 3.0
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 4.1
+     "reach_ha": 3.3
     }
    ],
    "degraded": false,
@@ -347,37 +347,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 25.9
+     "reach_ha": 24.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 19.9
+     "reach_ha": 18.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 21.5
+     "reach_ha": 20.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 18.9
+     "reach_ha": 17.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 18.8
+     "reach_ha": 17.3
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 18.8
+     "reach_ha": 17.3
     }
    ],
    "degraded": false,
@@ -419,37 +419,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 30.5
+     "reach_ha": 23.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 35.4
+     "reach_ha": 27.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 38.0
+     "reach_ha": 30.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 38.1
+     "reach_ha": 30.0
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 38.1
+     "reach_ha": 30.0
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 38.1
+     "reach_ha": 30.0
     }
    ],
    "degraded": false,
@@ -491,37 +491,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 10.9
+     "reach_ha": 8.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 10.2
+     "reach_ha": 8.1
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 4.5
+     "reach_ha": 2.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 3.6
+     "reach_ha": 2.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 4.5
+     "reach_ha": 2.8
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 4.1
+     "reach_ha": 2.7
     }
    ],
    "degraded": false,
@@ -563,37 +563,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 0.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.8
+     "reach_ha": 0.3
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 0.8
+     "reach_ha": 0.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 0.5
+     "reach_ha": 0.1
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 1.0
+     "reach_ha": 0.2
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 0.6
+     "reach_ha": 0.1
     }
    ],
    "degraded": false,
@@ -641,19 +641,19 @@
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.6
+     "reach_ha": 1.0
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 1.0
+     "reach_ha": 1.1
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 1.0
+     "reach_ha": 1.1
     },
     {
      "label": "Tue Aug 11",
@@ -707,37 +707,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 8.4
+     "reach_ha": 3.7
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 1.7
+     "reach_ha": 3.0
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 4.9
+     "reach_ha": 5.6
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 4.3
+     "reach_ha": 5.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 5.1
+     "reach_ha": 5.2
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 5.0
+     "reach_ha": 3.5
     }
    ],
    "degraded": false,
@@ -779,37 +779,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 5.5
+     "reach_ha": 5.2
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 6.5
+     "reach_ha": 7.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 7.0
+     "reach_ha": 7.6
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 5.9
+     "reach_ha": 6.3
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 9.4
+     "reach_ha": 9.5
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 7.3
+     "reach_ha": 6.9
     }
    ],
    "degraded": false,
@@ -851,37 +851,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 16.4
+     "reach_ha": 15.8
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.7
+     "reach_ha": 8.1
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 12.9
+     "reach_ha": 12.2
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 8.5
+     "reach_ha": 7.6
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.3
+     "reach_ha": 17.0
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 12.6
+     "reach_ha": 12.5
     }
    ],
    "degraded": false,
@@ -898,12 +898,12 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 19.7,
+   "surf_sst": 17.5,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 4.4,
+     "iso": 4.0,
      "reach": true,
      "certain": true,
      "possible": true
@@ -911,7 +911,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 4.7,
+     "iso": 4.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -919,7 +919,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 4.3,
+     "iso": 3.9,
      "reach": true,
      "certain": true,
      "possible": true
@@ -927,7 +927,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 4.6,
+     "iso": 4.2,
      "reach": true,
      "certain": true,
      "possible": true
@@ -935,7 +935,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 4.4,
+     "iso": 4.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -943,7 +943,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 4.5,
+     "iso": 4.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -958,12 +958,12 @@
    "now": true,
    "now_certain": false,
    "verdict": "open now and still open at +120 h (edge of band \u2014 uncertain)",
-   "surf_sst": 19.8,
+   "surf_sst": 17.7,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 4.8,
+     "iso": 4.5,
      "reach": true,
      "certain": false,
      "possible": true
@@ -971,7 +971,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 5.1,
+     "iso": 4.8,
      "reach": true,
      "certain": false,
      "possible": true
@@ -979,7 +979,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 5.0,
+     "iso": 4.7,
      "reach": true,
      "certain": true,
      "possible": true
@@ -987,7 +987,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 4.7,
+     "iso": 4.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -995,7 +995,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 4.4,
+     "iso": 4.0,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1003,7 +1003,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 4.0,
+     "iso": 3.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1018,12 +1018,12 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 17.8,
+   "surf_sst": 15.6,
    "traj": [
     {
      "label": "Fri",
      "lead": 0,
-     "iso": 1.7,
+     "iso": 1.4,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1031,7 +1031,7 @@
     {
      "label": "Sat",
      "lead": 24,
-     "iso": 2.0,
+     "iso": 1.1,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1039,7 +1039,7 @@
     {
      "label": "Sun",
      "lead": 48,
-     "iso": 4.1,
+     "iso": 3.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1047,7 +1047,7 @@
     {
      "label": "Mon",
      "lead": 72,
-     "iso": 3.1,
+     "iso": 1.2,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1055,7 +1055,7 @@
     {
      "label": "Tue",
      "lead": 96,
-     "iso": 3.1,
+     "iso": 1.2,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1063,7 +1063,7 @@
     {
      "label": "Wed",
      "lead": 120,
-     "iso": 3.5,
+     "iso": 2.5,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1073,22 +1073,16 @@
  ],
  "wind": [
   {
-   "day": "Fri",
-   "favor": 0.03,
-   "p": 0.0,
-   "peak_kn": 7
-  },
-  {
    "day": "Sat",
-   "favor": 0.11,
+   "favor": 0.12,
    "p": 0.0,
-   "peak_kn": 10
+   "peak_kn": 9
   },
   {
    "day": "Sun",
-   "favor": 0.02,
+   "favor": 0.03,
    "p": 0.0,
-   "peak_kn": 3
+   "peak_kn": 5
   },
   {
    "day": "Mon",
@@ -1100,7 +1094,13 @@
    "day": "Tue",
    "favor": 0.04,
    "p": 0.0,
-   "peak_kn": 11
+   "peak_kn": 4
+  },
+  {
+   "day": "Wed",
+   "favor": 0.04,
+   "p": 0.0,
+   "peak_kn": 5
   }
  ],
  "phase": {
@@ -1182,8 +1182,8 @@
   {
    "id": "kam",
    "name": "Kaministiquia R. mouth",
-   "lat": 48.383,
-   "lon": -89.246,
+   "lat": 48.3772,
+   "lon": -89.2126,
    "note": "Delta channels + warm plume \u2014 prime chinook/coho staging (late summer\u2013fall). Temperature is a minor cue here; fish the plume edge and current seams.",
    "species": [
     "salmon",
@@ -1195,18 +1195,18 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 20.0,
-    "trend_pct": -3.0,
+    "q_cms": 19.8,
+    "trend_pct": -2.0,
     "state": "steady",
     "freshet": false,
-    "note": "20 m\u00b3/s, steady (-3% / 3d)."
+    "note": "20 m\u00b3/s, steady (-2% / 3d)."
    }
   },
   {
    "id": "current",
    "name": "Current R. mouth",
-   "lat": 48.455,
-   "lon": -89.185,
+   "lat": 48.451,
+   "lon": -89.1842,
    "note": "North-shore plume below Boulevard Lake \u2014 steelhead/salmon staging; lake trout hold where the plume meets the cold shelf.",
    "species": [
     "steelhead",
@@ -1219,18 +1219,18 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.084,
-    "trend_pct": -27.0,
+    "q_cms": 0.086,
+    "trend_pct": -21.0,
     "state": "falling",
     "freshet": false,
-    "note": "0.08 m\u00b3/s and dropping (-27% / 3d) \u2014 plume easing."
+    "note": "0.09 m\u00b3/s and dropping (-21% / 3d) \u2014 plume easing."
    }
   },
   {
    "id": "neebing",
    "name": "Neebing\u2013McIntyre Floodway mouth",
-   "lat": 48.373,
-   "lon": -89.237,
+   "lat": 48.3829,
+   "lon": -89.2112,
    "note": "Mission Marsh outlet \u2014 plume + forage; secondary structure to the Kam delta.",
    "species": [
     "salmon",
@@ -1242,11 +1242,11 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.228,
-    "trend_pct": 0.0,
+    "q_cms": 0.213,
+    "trend_pct": -4.0,
     "state": "steady",
     "freshet": false,
-    "note": "0.23 m\u00b3/s, steady (+0% / 3d)."
+    "note": "0.21 m\u00b3/s, steady (-4% / 3d)."
    }
   }
  ],
@@ -1271,15 +1271,7 @@
   ],
   "basis": "civil twilight (\u22126\u00b0) \u2192 sunrise+45m AM / sunset\u221245m \u2192 civil dusk PM; NOAA solar geometry"
  },
- "barometric": {
-  "level_hpa": 1009.5,
-  "trend_hpa_3h": -1.1,
-  "state": "falling",
-  "prior": "improving",
-  "note": "1010 hPa and falling (-1.1/3h) \u2014 a dropping barometer ahead of a change often switches fish on (prior).",
-  "tier": "T3",
-  "cloud_pct": 98
- },
+ "barometric": null,
  "top_spots": {
   "lake_trout": {
    "ranked": [
@@ -1287,41 +1279,41 @@
      "id": "mckellar_harbour",
      "name": "McKellar / north harbour",
      "score": 100,
-     "opt_ha": 26.6,
-     "glow_ha": 0.7,
-     "reason": "27 ha optimal temp over 1 ha of structure (breaks/points)"
+     "opt_ha": 20.5,
+     "glow_ha": 1.0,
+     "reason": "21 ha optimal temp over 1 ha of structure (breaks/points)"
     },
     {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 72,
-     "opt_ha": 17.4,
-     "glow_ha": 0.1,
-     "reason": "17 ha of optimal-temperature water"
+     "score": 83,
+     "opt_ha": 16.0,
+     "glow_ha": 0.0,
+     "reason": "16 ha of optimal-temperature water"
+    },
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 49,
+     "opt_ha": 1.0,
+     "glow_ha": 4.7,
+     "reason": "1 ha optimal temp over 5 ha of structure (breaks/points)"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 33,
-     "opt_ha": 9.0,
+     "score": 34,
+     "opt_ha": 7.5,
      "glow_ha": 0.1,
-     "reason": "9 ha of optimal-temperature water"
+     "reason": "7 ha of optimal-temperature water"
     },
     {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 24,
-     "opt_ha": 4.2,
-     "glow_ha": 0.0,
-     "reason": "4 ha of optimal-temperature water"
-    },
-    {
-     "id": "little_trout_bay",
-     "name": "Little Trout Bay / Cloud Bay",
-     "score": 20,
-     "opt_ha": 1.8,
+     "score": 28,
+     "opt_ha": 3.7,
      "glow_ha": 0.3,
-     "reason": "2 ha optimal temp over 0 ha of structure (breaks/points)"
+     "reason": "4 ha optimal temp over 0 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1330,44 +1322,44 @@
   "brook_trout": {
    "ranked": [
     {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 100,
+     "opt_ha": 13.6,
+     "glow_ha": 7.9,
+     "reason": "14 ha optimal temp over 8 ha of structure (breaks/points)"
+    },
+    {
      "id": "little_trout_bay",
      "name": "Little Trout Bay / Cloud Bay",
-     "score": 100,
-     "opt_ha": 25.7,
-     "glow_ha": 11.1,
-     "reason": "26 ha optimal temp over 11 ha of structure (breaks/points)"
+     "score": 77,
+     "opt_ha": 14.7,
+     "glow_ha": 3.8,
+     "reason": "15 ha optimal temp over 4 ha of structure (breaks/points)"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 34,
-     "opt_ha": 13.2,
+     "score": 58,
+     "opt_ha": 14.6,
      "glow_ha": 0.3,
-     "reason": "13 ha of optimal-temperature water"
+     "reason": "15 ha optimal temp over 0 ha of structure (breaks/points)"
     },
     {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 33,
-     "opt_ha": 12.9,
-     "glow_ha": 0.3,
-     "reason": "13 ha of optimal-temperature water"
+     "score": 49,
+     "opt_ha": 11.3,
+     "glow_ha": 0.5,
+     "reason": "11 ha optimal temp over 0 ha of structure (breaks/points)"
     },
     {
-     "id": "mckellar_harbour",
-     "name": "McKellar / north harbour",
-     "score": 29,
-     "opt_ha": 9.9,
-     "glow_ha": 1.7,
-     "reason": "10 ha optimal temp over 2 ha of structure (breaks/points)"
-    },
-    {
-     "id": "silver_islet",
-     "name": "Silver Islet / Sleeping Giant tip",
-     "score": 29,
-     "opt_ha": 6.5,
-     "glow_ha": 1.2,
-     "reason": "6 ha optimal temp over 1 ha of structure (breaks/points)"
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 38,
+     "opt_ha": 6.7,
+     "glow_ha": 0.1,
+     "reason": "7 ha of optimal-temperature water"
     }
    ],
    "weak_cue": false,
@@ -1379,41 +1371,41 @@
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
      "score": 100,
-     "opt_ha": 12.9,
+     "opt_ha": 12.3,
      "glow_ha": 0.0,
-     "reason": "20 ha in preferred temperature"
+     "reason": "19 ha in preferred temperature"
     },
     {
      "id": "shipyard_mackenzie",
      "name": "Shipyard / MacKenzie approach",
-     "score": 60,
-     "opt_ha": 7.4,
+     "score": 70,
+     "opt_ha": 8.5,
      "glow_ha": 0.0,
-     "reason": "13 ha in preferred temperature"
+     "reason": "14 ha in preferred temperature"
     },
     {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
      "score": 46,
-     "opt_ha": 4.1,
+     "opt_ha": 4.2,
      "glow_ha": 0.0,
-     "reason": "13 ha in preferred temperature"
+     "reason": "12 ha in preferred temperature"
     },
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 22,
-     "opt_ha": 1.9,
+     "score": 25,
+     "opt_ha": 2.3,
      "glow_ha": 0.0,
-     "reason": "7 ha in preferred temperature"
+     "reason": "6 ha in preferred temperature"
     },
     {
      "id": "current_barepoint",
      "name": "Current River / Trowbridge shore",
-     "score": 19,
-     "opt_ha": 2.6,
+     "score": 23,
+     "opt_ha": 2.7,
      "glow_ha": 0.0,
-     "reason": "4 ha in preferred temperature"
+     "reason": "5 ha in preferred temperature"
     }
    ],
    "weak_cue": true,
@@ -1422,44 +1414,44 @@
   "steelhead": {
    "ranked": [
     {
-     "id": "shipyard_mackenzie",
-     "name": "Shipyard / MacKenzie approach",
-     "score": 100,
-     "opt_ha": 6.4,
-     "glow_ha": 0.0,
-     "reason": "14 ha in preferred temperature"
-    },
-    {
-     "id": "boulevard_current",
-     "name": "Boulevard / Current mouth",
-     "score": 98,
-     "opt_ha": 8.2,
-     "glow_ha": 0.0,
-     "reason": "9 ha in preferred temperature"
-    },
-    {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 96,
-     "opt_ha": 7.0,
+     "score": 100,
+     "opt_ha": 18.2,
      "glow_ha": 0.0,
-     "reason": "11 ha in preferred temperature"
+     "reason": "24 ha in preferred temperature"
     },
     {
-     "id": "silver_islet",
-     "name": "Silver Islet / Sleeping Giant tip",
-     "score": 89,
-     "opt_ha": 3.3,
+     "id": "current_barepoint",
+     "name": "Current River / Trowbridge shore",
+     "score": 82,
+     "opt_ha": 14.6,
+     "glow_ha": 0.0,
+     "reason": "20 ha in preferred temperature"
+    },
+    {
+     "id": "shipyard_mackenzie",
+     "name": "Shipyard / MacKenzie approach",
+     "score": 63,
+     "opt_ha": 10.0,
      "glow_ha": 0.0,
      "reason": "18 ha in preferred temperature"
     },
     {
+     "id": "boulevard_current",
+     "name": "Boulevard / Current mouth",
+     "score": 60,
+     "opt_ha": 10.0,
+     "glow_ha": 0.0,
+     "reason": "17 ha in preferred temperature"
+    },
+    {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 78,
-     "opt_ha": 2.8,
+     "score": 54,
+     "opt_ha": 7.0,
      "glow_ha": 0.0,
-     "reason": "16 ha in preferred temperature"
+     "reason": "19 ha in preferred temperature"
     }
    ],
    "weak_cue": true,

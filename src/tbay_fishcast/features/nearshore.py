@@ -21,11 +21,40 @@ NEARSHORE_ANCHOR = REPO_ROOT / "data" / "nearshore_anchor.csv"
 
 
 def nearshore_surface_delta(path=NEARSHORE_ANCHOR) -> tuple[float, int]:
+    """Region-wide shore-minus-GLSEA warm delta (°C) and its sample count, QC'd.
+
+    Built from the multi-year Landsat anchor log (scripts/backfill_nearshore_anchor.py + the daily
+    accumulator). The RAW rows are noisy — cloud-contaminated pixels read cold, the spring (June)
+    regime runs very warm, and pixels sampled far from the station are unrepresentative — so we
+    filter to the SUMMER-STRATIFIED regime the map models, clear pixels near the station, and a
+    physical delta range, then take the MEDIAN (robust to the remaining skew).
+
+    IMPORTANT (validated 2026-08): the delta is SPATIALLY VARIABLE — ~0/slightly-negative at the
+    exposed points (Silver Harbour, MacKenzie) and ~+1.6 only at the sheltered marina. The old
+    uniform +2.35 was a single warm-scene artifact that over-warmed the whole exposed shore. The
+    region-wide median is ~+0.2 (near zero); a future refinement is an exposure-aware delta. Returns
+    (0.0, 0) when the log is absent/empty (then no correction is applied)."""
     try:
         rows = list(csv.DictReader(open(path)))
-        deltas = [float(r["delta_c"]) for r in rows if r.get("delta_c") not in (None, "")]
     except (OSError, ValueError, KeyError):
         return 0.0, 0
-    if not deltas:
+    kept = []
+    for r in rows:
+        try:
+            d = float(r["delta_c"]); cloud = float(r.get("cloud_pct", 0) or 0)
+            dist = float(r.get("dist_m", 0) or 0); ls = float(r.get("landsat_st_c", 0) or 0)
+            mo = (r.get("scene_date", "") or "")[5:7]
+        except (ValueError, KeyError):
+            continue
+        if mo not in ("07", "08", "09"):      # summer stratified regime only (exclude spring)
+            continue
+        if cloud > 10 or dist > 150:          # clear pixel, near the station
+            continue
+        if not (-3.0 <= d <= 6.0 and 2.0 <= ls <= 26.0):   # physically plausible
+            continue
+        kept.append(d)
+    if not kept:
         return 0.0, 0
-    return sum(deltas) / len(deltas), len(deltas)
+    kept.sort()
+    median = kept[len(kept) // 2] if len(kept) % 2 else (kept[len(kept) // 2 - 1] + kept[len(kept) // 2]) / 2
+    return round(median, 2), len(kept)

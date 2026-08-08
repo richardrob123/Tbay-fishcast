@@ -64,6 +64,23 @@ def test_structure_glow_bands_are_ordered_and_disjoint():
         assert sum(int(tiers[t][0, j]) for t in ("s1", "s2", "s3", "s4", "s5")) == 1
 
 
+def test_structure_glow_is_static_in_range_not_gated_on_optimal():
+    """A real break glows whenever its water is in the preferred RANGE — it must NOT require the
+    tight optimal core (that gating made the static structure drift between forecast days). Here
+    the water is IN RANGE but NOT optimal (11 °C is inside laker 6–12 range, outside 6–10 optimal),
+    with a strong break: it must still glow (s4), not fall back to the plain in-range tier."""
+    bottom_c = _row([11, 11])                       # in range (6-12) but NOT optimal (6-10)
+    strength = _row([0.0, _bcs.STRENGTH_STRONG])
+    within = _row([1, 1]).astype(bool)
+    depth = _row([8, 8])
+    lt = _Sp("lake_trout", (6, 12), (6, 10))
+    tiers, fair = _species_and_check(bottom_c, strength, within, depth, lt)
+    assert fair[0, 0] and fair[0, 1]
+    assert tiers["s1"][0, 0]    # in range, no break -> base tier
+    assert tiers["s4"][0, 1]    # in range + strong break -> GLOWS even though temp isn't optimal
+    assert not tiers["s2"][0, 1]  # not misfiled as optimal-temp base
+
+
 def test_out_of_range_temperature_is_floor_blank():
     bottom_c = _row([20, 20])                       # way above the laker range -> suit 0
     strength = _row([_bcs.STRENGTH_TOP, _bcs.STRENGTH_TOP])   # strong structure, but wrong temp

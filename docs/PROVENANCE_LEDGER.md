@@ -17,15 +17,15 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 
 | Judgment | Value | Class | Source / basis |
 |---|---|---|---|
-| Structure = a real break (slope bar) | `STRUCT_SLOPE_ABS` 0.16 | **DATA** | p90 of pooled \|∇depth\| over reachable water, 9 stretches, n=464k px — `analyze_bathy_slope.py` → `data/calib/bathy_slope.json` |
-| Structure = a shoal/point (relief bar) | `STRUCT_RELIEF_ABS` 1.55 m | **DATA** | p90 of pooled local relief, same measurement |
-| Glow bands (break / strong / top) | 1.45 / 2.06 / 3.68 | **DATA** | p90 / p95 / p99 of the pooled regional structure-*strength* distribution (`strength_bands`) |
+| Structure = a real break (slope bar) | `STRUCT_SLOPE_ABS` 0.123 | **DATA** | p90 of pooled \|∇depth\| over reachable water, 9 stretches, n=464k px, computed on depth **smoothed to NONNA's native ~10 m** (removes the 4 m upsampling-step speckle — ADR-036) — `analyze_bathy_slope.py` → `data/calib/bathy_slope.json` |
+| Structure = a shoal/point (relief bar) | `STRUCT_RELIEF_ABS` 1.43 m | **DATA** | p90 of pooled local relief, same (smoothed) measurement |
+| Glow bands (break / strong / top) | 1.38 / 1.91 / 3.26 | **DATA** | p90 / p95 / p99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_bands`) |
 | "in range" (fair) boundary | `suit > 0` | **DEFINITIONAL** | = the species' preferred **range_c** — the literature band edge, not a picked cutoff |
 | "optimal" (good) boundary | `suit ≥ 1` (plateau) | **DEFINITIONAL** | = the species' **optimal_c** core — the literature band |
 | Species thermal range / optimal | per species | **LITERATURE** | stations.yaml, tier T2/T3 with citations (Edsall & Cleland 2000; coaster telemetry; GLFC) |
 | Per-species min/max hold depth | e.g. laker ≥4 m | **LITERATURE** | telemetry (adult lakers off the summer-daylight flats; coasters <7 m) |
 | Bottom-temp isotherm targets | 6–16 °C, 2 °C grid | **LITERATURE** | union of the species band endpoints (`config.band_temps`) |
-| Nearshore surface warm-delta | +2.35 °C | **DATA (single scene) — a prior, not n=3** | Landsat shore − GLSEA, but the 3 rows are 3 stations on ONE pass (2026-07-28, city arc); applied region-wide + every lead + every calendar day. Direction certain; magnitude/spatial-transfer/seasonal-stability are one summer snapshot (audit T1e). |
+| Nearshore surface warm-delta | **≈ +0.2 °C (QC'd median, n=24)** | **DATA (multi-year, QC'd)** | Landsat shore − same-day GLSEA over 63 clear L8/9 summer scenes 2019-2025 (`backfill_nearshore_anchor.py`), QC'd to summer + clear + near-station, robust median. SUPERSEDES the old uniform **+2.35** (a single warm-scene artifact that over-warmed the exposed shore ~2 °C — ADR-036). SPATIALLY VARIABLE: exposed points ~0/−, sheltered marina ~+1.6 — exposure-aware delta is a future refinement. |
 | Per-species min/max hold depth | e.g. laker ≥4 m | **T3/T4 judgment (not flat LITERATURE)** | round-number behavioral gates; laker 4 m is a map-mover from a *subarctic-lake* telemetry study (transfer caveat), not a Superior measurement |
 | Relief neighborhood radius | 60 m | **PICKED (bounded)** | sets the spatial scale of "shoal/point"; self-consistent (live path + calib both use it) but the scale is a judgment |
 | Structure percentile choice | p90 bar; p90/95/99 glow | **PICKED (bounded)** | the *values* are measured; *which* percentile means "a real break" is a judgment ("pin at a high percentile") |

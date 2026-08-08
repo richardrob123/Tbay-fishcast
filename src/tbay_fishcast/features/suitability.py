@@ -81,6 +81,31 @@ def thermal_front_gradient(bottom_c, res_m: float):
     return np.hypot(gx, gy)
 
 
+def native_smoothed(depth_m, res_m: float, native_m: float = 10.0):
+    """Depth smoothed to its NATIVE survey resolution, for computing structure honestly.
+
+    CHS NONNA-10 is a 10 m product; the coast map grids it to a finer (~4 m) raster, which
+    nearest-neighbour-upsamples each sounding cell into a flat plateau with a hard STEP at every
+    cell boundary (verified: adjacent-pixel depth diff ≈ 0 within a cell, then a spike at the edge).
+    A raw |∇depth| then reads those grid steps as hundreds of tiny false "breaks" — the speckle that
+    made the glow look like random blobs. Smoothing depth to ~native resolution (Gaussian σ ≈ half
+    the native cell in pixels) removes the upsampling steps while preserving REAL drop-offs, which
+    span many native cells. NaN-aware (normalized Gaussian over the water mask). Use this as the
+    input to `bathymetric_structure` / `bathymetric_relief` so structure reflects the lake bottom,
+    not the resampling grid."""
+    from scipy.ndimage import gaussian_filter
+    d = np.asarray(depth_m, dtype=float)
+    m = np.isfinite(d)
+    if not m.any():
+        return d
+    sigma = max(1.0, (native_m / max(res_m, 1e-6)) / 2.0)
+    num = gaussian_filter(np.where(m, d, 0.0), sigma)
+    den = gaussian_filter(m.astype(float), sigma)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = np.where(den > 1e-6, num / den, np.nan)
+    return np.where(m, out, np.nan)
+
+
 def bathymetric_structure(depth_m, res_m: float):
     """Bathymetric structure strength: the bottom SLOPE magnitude |∇depth| (rise/run,
     dimensionless). Where the bottom drops off fastest is a break / ledge / shoal edge —
