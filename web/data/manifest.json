@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-08",
  "issued_utc": "2026-08-08T12:00:00Z",
- "built_utc": "2026-08-08T17:10:53Z",
- "age_h": 5.2,
+ "built_utc": "2026-08-08T17:43:53Z",
+ "age_h": 5.7,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -392,7 +392,7 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-06",
+   "anchor_day": "2026-08-07",
    "survey_cov": 0.19,
    "low_confidence": false,
    "days": [
@@ -1311,13 +1311,13 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.089,
-    "trend_pct": -5.0,
+    "q_cms": 0.087,
+    "trend_pct": -7.0,
     "state": "steady",
     "freshet": false,
-    "note": "0.09 m\u00b3/s, steady (-5% / 3d).",
-    "pct": 21,
-    "pct_label": "\u224821st %ile",
+    "note": "0.09 m\u00b3/s, steady (-7% / 3d).",
+    "pct": 20,
+    "pct_label": "\u224820th %ile",
     "clim_years": "1972-2016",
     "clim_n": 951
    }
