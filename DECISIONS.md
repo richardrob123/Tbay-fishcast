@@ -101,6 +101,19 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-041 — Chart view + settings sheet (declutter round 2).** User: "I want a toggle to have the
+  water swap out with contour lines… we need a settings menu… the UI still too crowded." (1) CHART
+  VIEW: a basemap toggle swaps the satellite for a dark nautical-chart ground with ISOBATH polylines
+  (2/4/6/8/10/12/15/20/25 m; 10/20 m index-weighted, depth-labelled) generated per stretch from the
+  SAME native-smoothed CHS NONNA field the structure marks are computed on — one bathymetry, two
+  views, so the chart can never disagree with the gold. Static, emitted once, lazily loaded only when
+  toggled. (2) SETTINGS SHEET (⚙ beside Play): basemap toggle + overlay-strength slider, persisted in
+  localStorage — operator controls off the main screen on every viewport. (3) DECLUTTER: mobile drops
+  the app title and the issue-date prefix (age + Today tick carry it; STALE warnings stay loud on all
+  viewports), the "100 = strongest" hint (in how-to-read), and the persistent unverified-survey line
+  (moved into how-to-read, still stated). The main screen now carries only fishing information:
+  species, best-today, phase, dawn/dusk, day slider, Play.
+
 - **ADR-040 — Visual-truth pass (user review of the live map).** Three user-caught issues, each root-caused:
   (1) *"Still looks stacked"* — 6 ramp bands left visible contour steps; the ladder is now THIRTEEN
   measured percentiles (p75,77,79,…,95,97,99 from `strength_pcts`), each stacked step ~0.05 opacity +

@@ -112,6 +112,37 @@ RIVER_MOUTHS = [
 OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
 
+# Depth-contour CHART VIEW (ADR-041): static isobath polylines per stretch, drawn from the SAME
+# native-smoothed CHS NONNA field the structure marks are computed on — one bathymetry, two views.
+# Nearshore-weighted ladder: fine where casting happens, coarser past reach (max reach is 22 m).
+CONTOUR_DEPTHS_M = (2, 4, 6, 8, 10, 12, 15, 20, 25)
+
+
+def _depth_contours(depth, res, bounds_3857):
+    """Isobath LineString features (lon/lat) on the native-smoothed depth. contourpy handles the
+    NaN mask, so lines END at the survey/data edge — no artificial strokes along the box border."""
+    from contourpy import contour_generator
+    from shapely.geometry import LineString
+    from tbay_fishcast.features import suitability as _su
+    ds = _su.native_smoothed(depth, res)
+    x0, y0, x1, y1 = bounds_3857
+    ny, nx = ds.shape
+    cx = x0 + (np.arange(nx) + 0.5) / nx * (x1 - x0)
+    cy = y0 + (np.arange(ny) + 0.5) / ny * (y1 - y0)          # ascending for contourpy
+    gen = contour_generator(x=cx, y=cy, z=np.ma.masked_invalid(ds[::-1]))
+    feats = []
+    for d in CONTOUR_DEPTHS_M:
+        for line in gen.lines(float(d)):
+            if len(line) < 8:
+                continue
+            ls = LineString(line).simplify(res * 1.5)          # ~6 m: below the 10 m native cell
+            if ls.length < 60:                                 # sub-cast-length squiggles are noise
+                continue
+            coords = [[round(v, 6) for v in _merc_to_ll(x, y)] for x, y in ls.coords]
+            feats.append({"type": "Feature", "properties": {"d": d},
+                          "geometry": {"type": "LineString", "coordinates": coords}})
+    return feats
+
 
 def _nearshore_delta_by_class():
     """Measured shore-minus-GLSEA surface delta PER EXPOSURE CLASS (°C, n). Delegates to the
@@ -897,6 +928,18 @@ def main(argv) -> int:
         (OUT / "areas").mkdir(exist_ok=True)
         (OUT / "areas" / f"{sid}.geojson").write_text(
             json.dumps({"type": "FeatureCollection", "features": area_feats}))
+        # CHART VIEW isobaths (ADR-041): static per-stretch, loaded lazily by the client only
+        # when the user flips to depth-contour view. Failure costs the toggle, never the map.
+        _ctr_path = None
+        try:
+            _cf = _depth_contours(depth, res, patch.bounds_3857)
+            if _cf:
+                (OUT / "contours").mkdir(exist_ok=True)
+                (OUT / "contours" / f"{sid}.geojson").write_text(
+                    json.dumps({"type": "FeatureCollection", "features": _cf}))
+                _ctr_path = f"data/contours/{sid}.geojson"
+        except Exception as e:  # noqa: BLE001
+            print(f"    {sid}: contours failed ({str(e)[:60]})")
         tier_area_by_stretch[sid] = tier_area
         # survey_cov = fraction of the box with real CHS soundings (informational). NOTE: a low
         # whole-box fraction does NOT by itself mean a bad map — the verified city stretches sit
@@ -917,7 +960,7 @@ def main(argv) -> int:
                               "survey_cov": round(float(patch.coverage_frac), 2),
                               "low_confidence": sid in LOW_CONFIDENCE, "days": days,
                               "degraded": bool(degraded), "anchor_stale": bool(anchor_stale),
-                              "area": f"data/areas/{sid}.geojson"})
+                              "area": f"data/areas/{sid}.geojson", "contours": _ctr_path})
         print(f"  {sid}: {len(days)} days, {len(inbox)} nodes, res {res:.0f} m, "
               f"ha {days[0]['reach_ha']}..{max(d['reach_ha'] for d in days)}")
 

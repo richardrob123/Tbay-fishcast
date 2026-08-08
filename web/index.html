@@ -106,6 +106,15 @@
   .ticks span.on{color:var(--ink);font-weight:650}
   /* opacity + play row */
   .row2{display:flex;align-items:center;gap:12px;margin-top:9px}
+  #gear{font-size:14px;padding:4px 9px}
+  /* settings sheet: operator controls live here, not on the main screen (ADR-041) */
+  #settings{position:absolute;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:30;
+    min-width:250px;max-width:320px;display:flex;flex-direction:column;gap:10px}
+  #settings .strow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    font-size:12.5px;color:var(--ink)}
+  #settings .strow small{color:var(--muted)}
+  #settings .strow input[type=range]{width:110px}
+  #settings #setclose{padding:2px 8px}
   button{background:#1b2430;color:var(--ink);border:1px solid var(--line);border-radius:8px;
     padding:6px 11px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
   button:active{background:#243040}
@@ -146,11 +155,12 @@
     .daylab .d{font-size:12.5px}
     .daylab .ha,.daylab .wind{font-size:10.5px}
     .daylab .wind{margin-left:0}
-    /* mobile-declutter (2026-08): the overlay-opacity slider is an operator control, not fishing
-       info — off the phone screen (the hidden input keeps its default value, so paintFills still
-       reads a sane opacity). Play STAYS — the user likes stepping the forecast (user 2026-08-08). */
+    /* mobile-declutter round 2 (ADR-041): operator controls live in the ⚙ settings sheet; the
+       main screen keeps only fishing information. Title dropped — the user knows what app they
+       opened; the age/season line carries the state. */
+    #top h1{display:none}
     .row2{margin-top:7px}
-    .row2 label{display:none}
+    #settings{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom))}
     button{padding:5px 9px;font-size:12px}
   }
 </style>
@@ -194,7 +204,8 @@
       <b>The "Best today" numbers are a relative score, 0–100</b> — 100 is the strongest stretch
       <i>today for that species</i> (the most reachable water at the right temperature and structure);
       the rest are scored against it. It is NOT a catch percentage. Forecasts
-      <b>water, not fish</b> — check Ontario regs before fishing.</div>
+      <b>water, not fish</b> — check Ontario regs before fishing.
+      <div id="unvnote" style="margin-top:5px"></div></div>
     <div id="mapkey"></div>
   </details>
 </div>
@@ -211,8 +222,17 @@
   <div class="ticks" id="ticks"></div>
   <div class="row2">
     <button id="play">▶ Play</button>
-    <label>overlay <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
+    <span class="spacer" style="flex:1"></span>
+    <button id="gear" title="settings">⚙</button>
   </div>
+</div>
+
+<div class="card" id="settings" style="display:none">
+  <div class="strow"><b>Settings</b><button id="setclose" title="close">✕</button></div>
+  <label class="strow"><span>Depth-contour chart<br><small>swap satellite for isobath lines (CHS survey)</small></span>
+    <input type="checkbox" id="chartview" /></label>
+  <label class="strow"><span>Overlay strength</span>
+    <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
 </div>
 
 <script>
@@ -430,7 +450,9 @@ function renderTopSpots(){
   if(!ts){ box.style.display='none'; return; }
   box.style.display = 'flex';
   const ranked = ts.ranked || [];
-  let html = `<span class="lb">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today <span style="opacity:.7">· 100 = strongest</span>:</span>`;
+  // mobile drops the "100 = strongest" hint (explained in how-to-read; title attr keeps it)
+  const hint = MOB ? '' : ' <span style="opacity:.7">· 100 = strongest</span>';
+  let html = `<span class="lb" title="relative habitat index — 100 = today's strongest stretch for this species">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today${hint}:</span>`;
   if(ranked.length){
     html += `<div class="row">` + ranked.map(r => {
       const g5 = r.glow_ha >= 1 ? ' g5' : '';
@@ -440,10 +462,13 @@ function renderTopSpots(){
   } else {
     html += `<span class="none">no stretch has meaningful reachable habitat for this species today</span>`;
   }
+  // the unverified-survey caveat lives in "how to read this" (declutter round 2) — still stated,
+  // just not permanently on the main screen
   const unv = MAN.top_spots._unranked_unverified || [];
-  if(unv.length && !ts.weak_cue){
-    html += `<span class="cav" style="opacity:.75">not ranked (unverified survey): ${esc(unv.map(n=>n.split('/')[0].trim()).join(', '))}</span>`;
-  }
+  const unvEl = document.getElementById('unvnote');
+  if(unvEl) unvEl.innerHTML = unv.length
+    ? `Not ranked (unverified survey): <b>${esc(unv.map(n=>n.split('/')[0].trim()).join(', '))}</b> — sparse soundings; shown on the map as indicative only, never recommended.`
+    : '';
   // active run windows (surfaced prominently for the weak-cue migratory species)
   const runs = (MAN.top_spots._active_runs)||[];
   if(ts.weak_cue){
@@ -521,8 +546,15 @@ const map = new maplibregl.Map({
   container: 'map',
   style: {
     version: 8,
+    // glyphs: needed only by the chart-view depth labels; if the font server is unreachable the
+    // labels are skipped but contour lines still draw (MapLibre degrades per-tile).
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
     sources: { sat: { type:'raster', tiles:[ESRI], tileSize:256, attribution: ESRI_ATTR, maxzoom:19 } },
-    layers: [{ id:'sat', type:'raster', source:'sat' }]
+    layers: [
+      // chart-view ground: hidden under the satellite until the user flips the basemap toggle
+      { id:'chartbg', type:'background', paint:{ 'background-color':'#0d1b2e' }, layout:{ visibility:'none' } },
+      { id:'sat', type:'raster', source:'sat' }
+    ]
   },
   center: [-89.11, 48.46], zoom: 10.4, maxZoom: 16, minZoom: 8, attributionControl: false
 });
@@ -628,9 +660,12 @@ map.on('load', async () => {
     // fresh, it's untrustworthy, and must read STALE too (rule 5; stress-test 2026-08).
     const stale = h > 30 || h < -1;   // stale = a build was MISSED, not "it's night"
     const days = h >= 48 ? ` (${(h/24).toFixed(1)} days)` : '';
+    // mobile drops the issue-date prefix (redundant with the age + the Today tick) — but never
+    // the STALE warnings (rule 5: staleness is loud on every screen size)
+    const pre = MOB ? '' : `issue ${man.issue} · `;
     age.textContent = h < -1
       ? `issue ${man.issue} · dated in the future ⚠ STALE`
-      : `issue ${man.issue} · ${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
+      : `${pre}${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
     age.classList.toggle('stale', stale);
     if(man.bias && man.bias.source && man.bias.source !== 'live')
       age.textContent += ' · ⚠ degraded bias';
@@ -670,8 +705,53 @@ map.on('load', async () => {
       return `<span data-i="${i}">${today?'Today':esc(d.label.split(' ')[0])}</span>`;
     }).join('');
   t.addEventListener('input', e => setDay(+e.target.value));
-  document.getElementById('op').addEventListener('input', paintFills);
   document.getElementById('play').addEventListener('click', togglePlay);
+
+  // ---- settings sheet (ADR-041): operator controls off the main screen ----
+  const setEl = document.getElementById('settings');
+  document.getElementById('gear').addEventListener('click', () => {
+    setEl.style.display = setEl.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('setclose').addEventListener('click', () => { setEl.style.display = 'none'; });
+  const op = document.getElementById('op');
+  const savedOp = +localStorage.getItem('fc_op');
+  if(savedOp >= 20 && savedOp <= 100) op.value = savedOp;
+  op.addEventListener('input', () => { localStorage.setItem('fc_op', op.value); paintFills(); });
+  paintFills();
+
+  // CHART VIEW: swap the satellite for the CHS isobath chart. Contours are STATIC bathymetry —
+  // same smoothed NONNA field the gold is computed on — loaded lazily on first toggle.
+  let ctrLoaded = false;
+  function loadContours(){
+    ctrLoaded = true;
+    man.stretches.forEach((s, i) => {
+      if(!s.contours) return;
+      map.addSource('ctr'+i, { type:'geojson', data: s.contours + V });
+      map.addLayer({ id:'ctr'+i, type:'line', source:'ctr'+i,
+        layout:{ visibility:'visible' },
+        paint:{ 'line-color':'#8fa9c4',
+                // index contours (10/20 m) heavier, like a real chart
+                'line-width':['case', ['any',['==',['get','d'],10],['==',['get','d'],20]], 1.5, 0.7],
+                'line-opacity':0.85 } });
+      map.addLayer({ id:'ctrlab'+i, type:'symbol', source:'ctr'+i,
+        layout:{ visibility:'visible', 'symbol-placement':'line',
+                 'text-field':['concat',['to-string',['get','d']],' m'],
+                 'text-font':['Open Sans Semibold'], 'text-size':10, 'symbol-spacing':320 },
+        paint:{ 'text-color':'#b9cde2', 'text-halo-color':'#0d1b2e', 'text-halo-width':1.3 } });
+    });
+  }
+  function setChart(on){
+    map.setLayoutProperty('sat', 'visibility', on ? 'none' : 'visible');
+    map.setLayoutProperty('chartbg', 'visibility', on ? 'visible' : 'none');
+    if(on && !ctrLoaded) loadContours();
+    man.stretches.forEach((s, i) => ['ctr'+i, 'ctrlab'+i].forEach(id => {
+      if(map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    }));
+    localStorage.setItem('fc_chart', on ? '1' : '0');
+  }
+  const cv = document.getElementById('chartview');
+  cv.addEventListener('change', () => setChart(cv.checked));
+  if(localStorage.getItem('fc_chart') === '1'){ cv.checked = true; setChart(true); }
   // open on the frame you're DECIDING on: the first snapshot still in the future
   // (walkthrough finding #3 — Friday 9 pm should land on Saturday dawn, not this morning)
   let start0 = 0;

@@ -22,6 +22,7 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 | Glow RAMP band edges (display) | 13 edges, 0.716 (p75) → 3.258 (p99) | **DATA** | p75,77,79,…,95,97,99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_pcts`, ADR-039/040) — nested cumulative bands; brightness = measured regional rank |
 | Break bars (ranking: break / strong / top) | 1.384 / 1.907 / 3.258 | **DATA** | the p90 / p95 / p99 entries of the SAME ladder (`strength_bands`) — "Best spots" boolean intersections use ONLY these; sub-p90 ramp shading never scores |
 | Temp-field render resolution | σ = ½ median LSOFS node spacing (≤300 m), per stretch | **DATA-derived scale** | `_iso_field` low-pass: linear griddata over sparse nodes is piecewise-planar; smoothing at the field's own sampling scale removes triangle-facet artifacts (ADR-040) |
+| Chart-view isobaths | 2–25 m ladder, 9 levels | **DATA** | contours of the SAME native-smoothed CHS NONNA depth the structure marks use (ADR-041) — one bathymetry, two views; level choice is presentation (nearshore-weighted, index at 10/20 m) |
 | "in range" (fair) boundary | `suit > 0` | **DEFINITIONAL** | = the species' preferred **range_c** — the literature band edge, not a picked cutoff |
 | "optimal" (good) boundary | `suit ≥ 1` (plateau) | **DEFINITIONAL** | = the species' **optimal_c** core — the literature band |
 | Species thermal range / optimal | per species | **LITERATURE** | stations.yaml, tier T2/T3 with citations (Edsall & Cleland 2000; coaster telemetry; GLFC) |
