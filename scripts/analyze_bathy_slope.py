@@ -86,14 +86,14 @@ def main() -> int:
     # picked multipliers. (break = the p90 reference ~1.0; strong/exceptional = p95/p99.)
     strength = np.maximum(alls / s_bar, allr / r_bar)
     # FULL percentile ladder of the pooled strength — anchors for the continuous glow RAMP
-    # (ADR-039: 3 bands read as on/off; a measured p75..p99 ladder renders as a true gradient).
-    strength_pcts = {str(q): round(float(np.percentile(strength, q)), 2)
-                     for q in (50, 60, 70, 75, 80, 85, 90, 95, 99)}
-    strength_bands = {
-        "break": round(float(np.percentile(strength, 90)), 2),
-        "strong": round(float(np.percentile(strength, 95)), 2),
-        "exceptional": round(float(np.percentile(strength, 99)), 2),
-    }
+    # (ADR-039: 3 bands read as on/off; a FINE measured p75..p99 ladder renders as a true
+    # gradient — 13 bands keep each opacity step below the visible-banding threshold).
+    strength_pcts = {str(q): round(float(np.percentile(strength, q)), 3)
+                     for q in (50, 60, 70, 75, 77, 79, 81, 83, 85, 87, 89, 90, 92, 95, 97, 99)}
+    # ranking bars = the p90/p95/p99 entries OF THE SAME LADDER (identical rounding, so the
+    # build's ranking bars and the display ramp can never drift by a rounding step)
+    strength_bands = {"break": strength_pcts["90"], "strong": strength_pcts["95"],
+                      "exceptional": strength_pcts["99"]}
     print(f"\nPOOLED n={alls.size} reachable px across {len(per_stretch)} surveyed stretches")
     print("slope percentiles:", s_pcts)
     print("relief percentiles (m):", r_pcts)

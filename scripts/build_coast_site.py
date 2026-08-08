@@ -90,10 +90,12 @@ LOW_CONFIDENCE = {"little_trout_bay"}
 # are map-derived mouth locations (tier T4, field_verify: replace with field GPS before any
 # access claim). `species` = the species each mouth most helps (drives the popup copy).
 RIVER_MOUTHS = [
-    # Coords are the LAKE-ENTRY (mouth) points traced from OSM river geometry (waterway=river
-    # downstream ends), 2026-08 — the earlier values were map-guessed and sat up-river/inland
-    # (Kam was ~2.5 km too far west). Still coord_tier T4 (field-verify the exact plume edge).
-    {"id": "kam", "name": "Kaministiquia R. mouth", "lat": 48.3772, "lon": -89.2126,
+    # Coords are the LAKE-ENTRY points: where the OSM waterway CENTERLINE crosses the Lake
+    # Superior water-polygon BOUNDARY (computed 2026-08-08). NOT the downstream way end — OSM
+    # continues rivers as flowlines INSIDE the lake polygon, so "last vertex" sat km out in the
+    # harbour (the Kam pin was 3.4 km up its flowline by the Mission Is. lagoons; the floodway
+    # pin 1.9 km off — both user-caught). Still coord_tier T4 (field-verify the plume edge).
+    {"id": "kam", "name": "Kaministiquia R. mouth", "lat": 48.3661, "lon": -89.2525,
      "note": "Delta channels + warm plume — prime chinook/coho staging (late summer–fall). "
              "Temperature is a minor cue here; fish the plume edge and current seams.",
      "species": ["salmon", "steelhead"]},
@@ -101,8 +103,9 @@ RIVER_MOUTHS = [
      "note": "North-shore plume below Boulevard Lake — steelhead/salmon staging; lake trout "
              "hold where the plume meets the cold shelf.",
      "species": ["steelhead", "salmon", "lake_trout"]},
-    {"id": "neebing", "name": "Neebing–McIntyre Floodway mouth", "lat": 48.3829, "lon": -89.2112,
-     "note": "Mission Marsh outlet — plume + forage; secondary structure to the Kam delta.",
+    {"id": "neebing", "name": "Neebing–McIntyre Floodway mouth", "lat": 48.3995, "lon": -89.2191,
+     "note": "Floodway outlet into the harbour — plume + forage; secondary structure to the Kam "
+             "delta.",
      "species": ["salmon", "steelhead"]},
 ]
 
@@ -330,11 +333,37 @@ def _iso_field(gx, gy, iso_pts, vals):
         return out
 
     iso = _grid(rp, rv)                            # depth from REAL crossings only (no 5->999 ramp)
+    # RENDER AT THE FIELD'S OWN RESOLUTION (2026-08 visual review): linear griddata over sparse
+    # LSOFS nodes is piecewise-PLANAR — temperature bands contoured from it inherit long straight
+    # triangle-facet edges (isolated facets even appear as detached angular blobs). Below the node
+    # spacing the model carries NO information, so those edges are interpolation artifacts, not
+    # data. Low-pass the field at HALF THE MEASURED MEDIAN NODE SPACING (data-derived scale, not a
+    # picked look): the bands become smooth curves at the model's honest effective resolution.
+    # Consistent with the stated edge uncertainty (~100-300 m) in the UI.
+    sig_px = _node_scale_px(rp, gx)
+    if sig_px > 0:
+        from scipy.ndimage import gaussian_filter
+        iso = gaussian_filter(iso, sig_px)
     if sentinel.any():
         # fraction of surrounding nodes that never reach the target; >0.5 => below-bottom here
         frac = _grid(pts, sentinel.astype(float))
+        if sig_px > 0:
+            from scipy.ndimage import gaussian_filter
+            frac = gaussian_filter(frac, sig_px)
         iso = np.where(frac > 0.5, 999.0, iso)
     return iso
+
+
+def _node_scale_px(rp, gx):
+    """Smoothing sigma (in grid px) = half the median nearest-neighbour LSOFS node spacing —
+    the field's own sampling scale, measured per stretch, bounded to [0, 300 m] for safety."""
+    if len(rp) < 2 or gx.shape[1] < 2:
+        return 0.0
+    from scipy.spatial import cKDTree
+    d, _ = cKDTree(rp).query(rp, k=2)
+    sig_m = min(0.5 * float(np.median(d[:, 1])), 300.0)
+    res_m = float(abs(gx[0, 1] - gx[0, 0]))
+    return sig_m / res_m if res_m > 0 else 0.0
 
 
 def _bottom_temp_field(iso_fields, targets, depth):
@@ -421,19 +450,14 @@ SUIT_LEVELS = [
     ("s2", "optimal temp"),  # temperature wash: optimal core (optimal_c)
 ]
 # STRUCTURE RAMP (ADR-039): three steps read as on/off ("is the gold just on or off?"). The marks
-# are now a fine ramp of nested bands whose edges are the MEASURED percentiles of the pooled
+# are a FINE ramp of nested cumulative bands whose edges are the MEASURED percentiles of the pooled
 # regional strength distribution (strength_pcts in bathy_slope.json) — faint amber at p75 rising to
-# bright gold at p99, so intensity IS the regional rank of the break. Data-derived edges, not a
-# styling gradient. The "real break" definition for RANKING is unchanged: p90/p95/p99 (ADR-029).
-STRUCT_LEVELS = [
-    ("g75", "faint structure"),   # p75 of pooled regional strength — static
-    ("g80", "structure"),         # p80 — static
-    ("g85", "notable structure"), # p85 — static
-    ("g90", "break"),             # p90 — the ADR-029 "real break" bar — static
-    ("g95", "strong break"),      # p95 — static
-    ("g99", "top break"),         # p99 — static, rare
-]
-_RAMP_QS = (75, 80, 85, 90, 95, 99)   # ladder anchors; tags are f"g{q}"
+# bright gold at p99, so intensity IS the regional rank of the break. 13 bands, ~2-percentile steps:
+# coarse 6-band ladders still showed visible "stacked" contour edges; at 13 the per-band opacity
+# increment (~0.05) sits below the visible-banding threshold and the ramp reads smooth. Data-derived
+# edges, not a styling gradient. The "real break" bar for RANKING is unchanged: p90/p95/p99 (ADR-029).
+_RAMP_QS = (75, 77, 79, 81, 83, 85, 87, 89, 90, 92, 95, 97, 99)   # ladder anchors; tags f"g{q}"
+STRUCT_LEVELS = [(f"g{q}", f"structure ≥ regional p{q}") for q in _RAMP_QS]
 IN_RANGE_SUIT = 0.0            # fair = strictly inside the preferred range (suit > this)
 OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
 # Structure bars + glow bands are LOADED from the calibration record at runtime (single source of
@@ -460,12 +484,14 @@ def _load_struct_calib():
         # be kept in lockstep with data/calib/bathy_slope.json — a stale fallback silently applies
         # old bars when the json is unreadable (caught in the 2026-08 stress-test pass).
         print(f"⚠ bathy_slope.json unreadable ({e}) — using fallback structure bars")
-        return (0.123, 1.43, (0.72, 0.87, 1.08, 1.38, 1.91, 3.26))
+        return (0.123, 1.43, (0.716, 0.773, 0.836, 0.906, 0.987, 1.08, 1.185,
+                              1.313, 1.384, 1.551, 1.907, 2.285, 3.258))
 
 
 (STRUCT_SLOPE_ABS, STRUCT_RELIEF_ABS, STRENGTH_RAMP) = _load_struct_calib()
+_RAMP_BY_Q = dict(zip(_RAMP_QS, STRENGTH_RAMP))
 # The ADR-029 "real break" bars for RANKING (unchanged by the display ramp): p90 / p95 / p99.
-STRENGTH_BREAK, STRENGTH_STRONG, STRENGTH_TOP = STRENGTH_RAMP[3], STRENGTH_RAMP[4], STRENGTH_RAMP[5]
+STRENGTH_BREAK, STRENGTH_STRONG, STRENGTH_TOP = _RAMP_BY_Q[90], _RAMP_BY_Q[95], _RAMP_BY_Q[99]
 
 # CLAMP-EXTENSION isotherms (°C). _bottom_temp_field clamps water beyond the coldest/warmest target
 # to that target's temperature. If the coldest target equals a species' band edge (6 °C == laker

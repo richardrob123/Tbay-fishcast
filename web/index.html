@@ -146,10 +146,11 @@
     .daylab .d{font-size:12.5px}
     .daylab .ha,.daylab .wind{font-size:10.5px}
     .daylab .wind{margin-left:0}
-    /* mobile-declutter (2026-08): Play + overlay-opacity are operator controls, not fishing
-       info — off the phone screen entirely. The hidden slider keeps its default value, so
-       paintFills still reads a sane opacity. */
-    .row2{display:none}
+    /* mobile-declutter (2026-08): the overlay-opacity slider is an operator control, not fishing
+       info — off the phone screen (the hidden input keeps its default value, so paintFills still
+       reads a sane opacity). Play STAYS — the user likes stepping the forecast (user 2026-08-08). */
+    .row2{margin-top:7px}
+    .row2 label{display:none}
     button{padding:5px 9px;font-size:12px}
   }
 </style>
@@ -237,20 +238,28 @@ const SUIT = [
   {suf:'s1', op:0.16, col:'#7fe0cb'},   // temperature wash: in range
   {suf:'s2', op:0.34, col:'#28b58c'},   // temperature wash: optimal core
 ];
-// ADR-039: a TRUE gradient, not 3 on/off steps. Six NESTED CUMULATIVE bands (g<q> = everything at
-// or above the MEASURED regional strength percentile p<q>) stacked as translucent fills — standard
-// filled-contour rendering, so opacity accumulates and brightness IS the break's regional rank.
-// Nested solid regions, not disjoint rings: rings shred into sliver fragments ("detached blobs").
-// Per-layer op values are solved so the STACKED opacity hits ~.14/.22/.32/.44/.60/.80 at each
-// level (1−Π(1−op)); the brightest gold (p99) stays genuinely rare by construction.
-const STRUCT = [
-  {suf:'g75', op:0.14, col:'#c8963a'},  // p75 — faint context        (stack ≈ .14)
-  {suf:'g80', op:0.09, col:'#d5a139'},  // p80                        (stack ≈ .22)
-  {suf:'g85', op:0.13, col:'#e1ad39'},  // p85                        (stack ≈ .32)
-  {suf:'g90', op:0.18, col:'#edb93a'},  // p90 — a regionally-real break (stack ≈ .44)
-  {suf:'g95', op:0.29, col:'#f6c63f'},  // p95 — strong               (stack ≈ .60)
-  {suf:'g99', op:0.50, col:'#ffd75e'},  // p99 — top, rare            (stack ≈ .80)
-];
+// ADR-039: a TRUE gradient, not on/off steps. THIRTEEN nested cumulative bands (g<q> = everything
+// at or above the MEASURED regional strength percentile p<q>, ~2-percentile ladder p75→p99)
+// stacked as translucent fills — standard filled-contour rendering, so opacity accumulates and
+// brightness IS the break's regional rank. 13 fine bands keep each step (~.05 opacity, tiny hue
+// shift) below the visible-banding threshold, so the ramp reads smooth, not "stacked". Per-layer
+// op is solved so the STACKED opacity climbs ~linearly from .14 (p75) to .80 (p99): the brightest
+// gold stays genuinely rare by construction. Nested solid regions, not disjoint rings (rings
+// shred into sliver fragments — "detached blobs").
+const STRUCT = (() => {
+  const qs = [75, 77, 79, 81, 83, 85, 87, 89, 90, 92, 95, 97, 99];   // must match the build's _RAMP_QS
+  const c0 = [0xc8, 0x96, 0x3a], c1 = [0xff, 0xd7, 0x5e];            // faint amber -> bright gold
+  const T0 = 0.14, T1 = 0.80;                                        // stacked-opacity endpoints
+  let prev = 0;
+  return qs.map((q, i) => {
+    const t = i / (qs.length - 1);
+    const T = T0 + (T1 - T0) * t;
+    const op = (T - prev) / (1 - prev);
+    prev = T;
+    const col = '#' + c0.map((c, k) => Math.round(c + (c1[k] - c) * t).toString(16).padStart(2, '0')).join('');
+    return {suf: 'g' + q, op: +op.toFixed(3), col};
+  });
+})();
 const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
 const GF = (id,suf) => ['==', ['get','temp'], 'sp:'+id+':'+suf];   // structure: species only, no lead
 function buildSpeciesChips(){

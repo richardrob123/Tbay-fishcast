@@ -22,20 +22,27 @@
  },
  "n_pixels": 463960,
  "strength_bands": {
-  "break": 1.38,
-  "strong": 1.91,
-  "exceptional": 3.26
+  "break": 1.384,
+  "strong": 1.907,
+  "exceptional": 3.258
  },
  "strength_pcts": {
-  "50": 0.27,
-  "60": 0.4,
-  "70": 0.59,
-  "75": 0.72,
-  "80": 0.87,
+  "50": 0.274,
+  "60": 0.397,
+  "70": 0.587,
+  "75": 0.716,
+  "77": 0.773,
+  "79": 0.836,
+  "81": 0.906,
+  "83": 0.987,
   "85": 1.08,
-  "90": 1.38,
-  "95": 1.91,
-  "99": 3.26
+  "87": 1.185,
+  "89": 1.313,
+  "90": 1.384,
+  "92": 1.551,
+  "95": 1.907,
+  "97": 2.285,
+  "99": 3.258
  },
  "per_stretch": {
   "chippewa": {
@@ -87,5 +94,5 @@
   "silver_islet"
  ],
  "definition": "Absolute structure bars, both the pXX percentile pooled over reachable water across all surveyed stretches (CHS NONNA-10): slope = |grad depth| (drop-off flanks); relief = neighbourhood-mean depth \u2212 depth (shoal tops / point tips / crests the slope misses). Reproducible, not picked constants.",
- "retrieved_utc": "2026-08-08T14:49:17Z"
+ "retrieved_utc": "2026-08-08T15:36:54Z"
 }

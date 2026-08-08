@@ -41,7 +41,11 @@ def test_species_bands_valid(path):
     if not ids:
         pytest.skip("no species in manifest")
     fc = json.load(open(path))
-    levels = {"s1", "s2", "g75", "g80", "g85", "g90", "g95", "g99"}
+    # valid levels = the temperature wash + whatever structure ramp the manifest declares
+    # (struct_levels is the build's own contract — ADR-039 ladder, no hardcoded copy here)
+    m = json.load(open(MANIFEST))
+    levels = {"s1", "s2"} | {lv["tag"] for lv in m.get("struct_levels", [])}
+    assert len(levels) > 4, "manifest declares no structure levels"
     seen_default = False
     for f in fc["features"]:
         tag = f["properties"].get("temp", "")

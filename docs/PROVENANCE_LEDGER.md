@@ -19,8 +19,9 @@ Regenerate the DATA rows from their scripts; the classification is reviewed when
 |---|---|---|---|
 | Structure = a real break (slope bar) | `STRUCT_SLOPE_ABS` 0.123 | **DATA** | p90 of pooled \|∇depth\| over reachable water, 9 stretches, n=464k px, computed on depth **smoothed to NONNA's native ~10 m** (removes the 4 m upsampling-step speckle — ADR-036) — `analyze_bathy_slope.py` → `data/calib/bathy_slope.json` |
 | Structure = a shoal/point (relief bar) | `STRUCT_RELIEF_ABS` 1.43 m | **DATA** | p90 of pooled local relief, same (smoothed) measurement |
-| Glow RAMP band edges (display) | 0.72 / 0.87 / 1.08 / 1.38 / 1.91 / 3.26 | **DATA** | p75/p80/p85/p90/p95/p99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_pcts`, ADR-039) — brightness = measured regional rank |
-| Break bars (ranking: break / strong / top) | 1.38 / 1.91 / 3.26 | **DATA** | p90 / p95 / p99 of the same distribution (`strength_bands`) — "Best spots" boolean intersections use ONLY these; sub-p90 ramp shading never scores |
+| Glow RAMP band edges (display) | 13 edges, 0.716 (p75) → 3.258 (p99) | **DATA** | p75,77,79,…,95,97,99 of the pooled regional structure-*strength* distribution on the smoothed field (`strength_pcts`, ADR-039/040) — nested cumulative bands; brightness = measured regional rank |
+| Break bars (ranking: break / strong / top) | 1.384 / 1.907 / 3.258 | **DATA** | the p90 / p95 / p99 entries of the SAME ladder (`strength_bands`) — "Best spots" boolean intersections use ONLY these; sub-p90 ramp shading never scores |
+| Temp-field render resolution | σ = ½ median LSOFS node spacing (≤300 m), per stretch | **DATA-derived scale** | `_iso_field` low-pass: linear griddata over sparse nodes is piecewise-planar; smoothing at the field's own sampling scale removes triangle-facet artifacts (ADR-040) |
 | "in range" (fair) boundary | `suit > 0` | **DEFINITIONAL** | = the species' preferred **range_c** — the literature band edge, not a picked cutoff |
 | "optimal" (good) boundary | `suit ≥ 1` (plateau) | **DEFINITIONAL** | = the species' **optimal_c** core — the literature band |
 | Species thermal range / optimal | per species | **LITERATURE** | stations.yaml, tier T2/T3 with citations (Edsall & Cleland 2000; coaster telemetry; GLFC) |

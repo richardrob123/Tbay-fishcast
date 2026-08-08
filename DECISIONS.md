@@ -101,6 +101,23 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-040 — Visual-truth pass (user review of the live map).** Three user-caught issues, each root-caused:
+  (1) *"Still looks stacked"* — 6 ramp bands left visible contour steps; the ladder is now THIRTEEN
+  measured percentiles (p75,77,79,…,95,97,99 from `strength_pcts`), each stacked step ~0.05 opacity +
+  a tiny hue shift — below the visible-banding threshold, so the gold reads as a continuous gradient
+  while every edge stays a measured number. (2) *Angular "CAD-facet" teal* — `griddata(linear)` over
+  the sparse LSOFS nodes is piecewise-planar, so temperature-band contours inherited straight
+  triangle-facet edges (isolated facets even rendered as detached angular blobs). The model carries no
+  information below its node spacing, so `_iso_field` now low-passes the interpolated field at HALF THE
+  MEASURED MEDIAN NODE SPACING per stretch (data-derived scale, capped 300 m) — the bands render at the
+  field's honest effective resolution, consistent with the stated ~100–300 m edge uncertainty. Facet
+  edges were interpolation artifacts, not data; nothing about the underlying field changed. (3) *River
+  pins off* — OSM continues rivers as flowlines INSIDE the lake polygon; the "downstream way end"
+  tracing put the Kam pin 3.4 km out (by the Mission Is. lagoons) and the floodway pin 1.9 km off. The
+  mouth is now the crossing of the waterway centerline with the Lake Superior water-polygon boundary:
+  Kam (48.3661, −89.2525), floodway (48.3995, −89.2191); Current R. was already correct. Play button
+  restored on mobile (user request); only the overlay-opacity slider stays hidden.
+
 - **ADR-039 — Structure marks as a measured percentile RAMP (g75…g99), not three near-binary steps.**
   User review of the ADR-038 render: "is this truly a heat map at this point? Like we have the 'gold' but
   is it just on or off?" — correct: three steps starting at p90 read as on/off at map scale. The marks are
