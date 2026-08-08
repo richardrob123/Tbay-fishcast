@@ -112,6 +112,13 @@ RIVER_MOUTHS = [
 OUT = Path(__file__).resolve().parents[1] / "web" / "data"
 FAVOR_CALIB = Path(__file__).resolve().parents[1] / "data" / "calib" / "upwelling_favorability.json"
 
+# Observation-ledger species (as researched sources name them) -> the map's modelled species.
+# The three Pacific salmon collapse to the one 'salmon' layer the map draws (ADR-042).
+LEDGER_SPECIES_TO_APP = {
+    "chinook": "salmon", "coho": "salmon", "pink": "salmon",
+    "steelhead": "steelhead", "lake_trout": "lake_trout", "brook_trout": "brook_trout",
+}
+
 # Depth-contour CHART VIEW (ADR-041): static isobath polylines per stretch, drawn from the SAME
 # native-smoothed CHS NONNA field the structure marks are computed on — one bathymetry, two views.
 # Nearshore-weighted ladder: fine where casting happens, coarser past reach (max reach is 22 m).
@@ -1114,6 +1121,18 @@ def main(argv) -> int:
                 print(f"river flow {_mid} unavailable: {str(e)[:50]}")
     except Exception as e:  # noqa: BLE001
         print(f"river discharge layer unavailable: {str(e)[:60]}")
+    # LEDGER CONFIRMATIONS (ADR-042): the run calendar states the TYPICAL window; a researched,
+    # dated, schema-validated report says the run is ACTUALLY on. This is a deterministic read of
+    # the validated ledger inside the build — no LLM in the heartbeat (ADR-001). The claim is never
+    # bare: the date + source domain travel with it, and it decays out of the window on its own.
+    try:
+        from tbay_fishcast.knowledge import observations as _obs
+        _confirm = _obs.confirmations(issue)
+        if _confirm:
+            print(f"ledger confirmations active: {len(_confirm)} (place:species keys)")
+    except Exception as e:  # noqa: BLE001 - a ledger problem must never break the map
+        print(f"observation confirmations unavailable: {str(e)[:60]}")
+        _confirm = {}
     markers_out = []
     for m in RIVER_MOUTHS:
         if not _regs_ok(m["name"]):
@@ -1121,7 +1140,25 @@ def main(argv) -> int:
         mm = dict(m)
         mm["run"] = _runcal.marker_status(issue, m.get("species", []))
         mm["flow"] = _flow_by_id.get(m["id"])
+        # Attach confirmations for THIS mouth, plus region-scope reports for a species this mouth
+        # actually stages (a locationless "salmon are in" is honest evidence the run is on, and is
+        # LABELLED regional — it never pretends the report named this river).
+        _hits = []
+        for _c in _confirm.values():
+            _app_sp = LEDGER_SPECIES_TO_APP.get(_c["species"])
+            if _app_sp is None or _app_sp not in m.get("species", []):
+                continue
+            if _c.get("place_id") == m["id"] or _c.get("place_id") is None:
+                _hits.append({**_c, "app_species": _app_sp})
+        if _hits:
+            # placed reports first, then most recent — the strongest evidence leads
+            _hits.sort(key=lambda c: (c.get("place_id") is None, c["date"]), reverse=False)
+            _hits.sort(key=lambda c: (c.get("place_id") is not None, c["date"]), reverse=True)
+            mm["confirmed"] = _hits[:3]
         markers_out.append(mm)
+    _n_conf = sum(1 for m in markers_out if m.get("confirmed"))
+    if _n_conf:
+        print(f"run markers with LEDGER-CONFIRMED activity: {_n_conf}")
     _n_active = sum(1 for m in markers_out if m["run"]["active"])
     _n_fresh = sum(1 for m in markers_out if (m.get("flow") or {}).get("freshet"))
     print(f"run markers: {_n_active}/{len(markers_out)} in a run window; {_n_fresh} freshet on {issue}")

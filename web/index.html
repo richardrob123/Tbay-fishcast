@@ -813,6 +813,17 @@ function markerHTML(m){
   } else {
     runLine = `<div class="nt" style="color:#999">no spawning-run window open now (typical dates)</div>`;
   }
+  // LEDGER CONFIRMATION (ADR-042): a researched, dated report that the run is ACTUALLY on —
+  // shown ABOVE the typical-window line, never instead of it, and never bare: the date and the
+  // source come with it. A regional report is labelled regional (it didn't name this river).
+  const conf = m.confirmed || [];
+  if(conf.length){
+    const c = conf[0];
+    const reg = c.place_id ? '' : ' <span style="font-weight:400">(regional report — not this river specifically)</span>';
+    const more = conf.length > 1 ? ` <span style="font-weight:400;opacity:.8">+${conf.length-1} more</span>` : '';
+    runLine = `<div class="sp" style="color:#1a7a3a">✓ reported active — ${esc(c.species.replace(/_/g,' '))} `+
+              `${esc(c.date)} · ${esc(c.source_domain)}${reg}${more}</div>` + runLine;
+  }
   // live river discharge + trend (plume strength — the real driver for the run species)
   const f = m.flow;
   let flowLine = '';
