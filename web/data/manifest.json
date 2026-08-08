@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-07",
  "issued_utc": "2026-08-07T12:00:00Z",
- "built_utc": "2026-08-08T00:29:14Z",
- "age_h": 12.5,
+ "built_utc": "2026-08-08T01:00:52Z",
+ "age_h": 13.0,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -203,37 +203,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 18.2
+     "reach_ha": 32.0
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 26.6
+     "reach_ha": 40.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 19.9
+     "reach_ha": 33.8
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 24.8
+     "reach_ha": 38.6
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 65.8
+     "reach_ha": 79.6
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 65.8
+     "reach_ha": 79.6
     }
    ],
    "degraded": false,
@@ -275,7 +275,7 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 12.7
+     "reach_ha": 12.9
     },
     {
      "label": "Sat Aug 8",
@@ -347,13 +347,13 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 24.5
+     "reach_ha": 24.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 18.5
+     "reach_ha": 18.7
     },
     {
      "label": "Sun Aug 9",
@@ -419,37 +419,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 23.6
+     "reach_ha": 33.5
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 27.6
+     "reach_ha": 33.5
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 30.0
+     "reach_ha": 33.5
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 30.0
+     "reach_ha": 33.5
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 30.0
+     "reach_ha": 33.5
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 30.0
+     "reach_ha": 33.5
     }
    ],
    "degraded": false,
@@ -491,37 +491,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 8.6
+     "reach_ha": 15.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.1
+     "reach_ha": 15.4
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 2.8
+     "reach_ha": 15.4
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 2.3
+     "reach_ha": 15.4
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 2.8
+     "reach_ha": 15.4
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 2.7
+     "reach_ha": 15.4
     }
    ],
    "degraded": false,
@@ -563,37 +563,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 0.2
+     "reach_ha": 1.4
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.3
+     "reach_ha": 1.2
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 0.1
+     "reach_ha": 0.6
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 0.1
+     "reach_ha": 0.6
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 0.2
+     "reach_ha": 0.6
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 0.1
+     "reach_ha": 0.6
     }
    ],
    "degraded": false,
@@ -713,31 +713,31 @@
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 3.0
+     "reach_ha": 4.6
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 5.6
+     "reach_ha": 5.7
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 5.4
+     "reach_ha": 5.7
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 5.2
+     "reach_ha": 5.7
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 3.5
+     "reach_ha": 7.0
     }
    ],
    "degraded": false,
@@ -771,7 +771,7 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-06",
+   "anchor_day": "2026-08-05",
    "survey_cov": 0.16,
    "low_confidence": false,
    "days": [
@@ -779,37 +779,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 5.2
+     "reach_ha": 14.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 7.5
+     "reach_ha": 14.7
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 7.6
+     "reach_ha": 14.4
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 6.3
+     "reach_ha": 15.1
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 9.5
+     "reach_ha": 15.4
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 6.9
+     "reach_ha": 15.5
     }
    ],
    "degraded": false,
@@ -851,37 +851,37 @@
      "label": "Fri Aug 7",
      "lead": 0,
      "valid_utc": "2026-08-07T12:00:00Z",
-     "reach_ha": 15.8
+     "reach_ha": 24.6
     },
     {
      "label": "Sat Aug 8",
      "lead": 24,
      "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 8.1
+     "reach_ha": 28.0
     },
     {
      "label": "Sun Aug 9",
      "lead": 48,
      "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 12.2
+     "reach_ha": 25.0
     },
     {
      "label": "Mon Aug 10",
      "lead": 72,
      "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 7.6
+     "reach_ha": 28.0
     },
     {
      "label": "Tue Aug 11",
      "lead": 96,
      "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.0
+     "reach_ha": 28.0
     },
     {
      "label": "Wed Aug 12",
      "lead": 120,
      "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 12.5
+     "reach_ha": 28.0
     }
    ],
    "degraded": false,
@@ -1219,11 +1219,11 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.086,
-    "trend_pct": -21.0,
+    "q_cms": 0.083,
+    "trend_pct": -23.0,
     "state": "falling",
     "freshet": false,
-    "note": "0.09 m\u00b3/s and dropping (-21% / 3d) \u2014 plume easing."
+    "note": "0.08 m\u00b3/s and dropping (-23% / 3d) \u2014 plume easing."
    }
   },
   {
@@ -1279,41 +1279,41 @@
      "id": "mckellar_harbour",
      "name": "McKellar / north harbour",
      "score": 100,
-     "opt_ha": 20.5,
-     "glow_ha": 1.0,
-     "reason": "21 ha optimal temp over 1 ha of structure (breaks/points)"
+     "opt_ha": 30.3,
+     "glow_ha": 1.2,
+     "reason": "30 ha optimal temp over 1 ha of structure (breaks/points)"
     },
     {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
-     "score": 83,
-     "opt_ha": 16.0,
-     "glow_ha": 0.0,
-     "reason": "16 ha of optimal-temperature water"
+     "id": "little_trout_bay",
+     "name": "Little Trout Bay / Cloud Bay",
+     "score": 68,
+     "opt_ha": 5.8,
+     "glow_ha": 7.7,
+     "reason": "6 ha optimal temp over 8 ha of structure (breaks/points)"
     },
     {
      "id": "silver_islet",
      "name": "Silver Islet / Sleeping Giant tip",
-     "score": 49,
-     "opt_ha": 1.0,
-     "glow_ha": 4.7,
-     "reason": "1 ha optimal temp over 5 ha of structure (breaks/points)"
+     "score": 64,
+     "opt_ha": 7.6,
+     "glow_ha": 6.6,
+     "reason": "8 ha optimal temp over 7 ha of structure (breaks/points)"
+    },
+    {
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 55,
+     "opt_ha": 15.4,
+     "glow_ha": 0.0,
+     "reason": "15 ha of optimal-temperature water"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 34,
-     "opt_ha": 7.5,
-     "glow_ha": 0.1,
-     "reason": "7 ha of optimal-temperature water"
-    },
-    {
-     "id": "chippewa",
-     "name": "Chippewa / Sturgeon River shore",
-     "score": 28,
-     "opt_ha": 3.7,
+     "score": 46,
+     "opt_ha": 14.2,
      "glow_ha": 0.3,
-     "reason": "4 ha optimal temp over 0 ha of structure (breaks/points)"
+     "reason": "14 ha optimal temp over 0 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1338,6 +1338,14 @@
      "reason": "15 ha optimal temp over 4 ha of structure (breaks/points)"
     },
     {
+     "id": "shipyard_mackenzie",
+     "name": "Shipyard / MacKenzie approach",
+     "score": 64,
+     "opt_ha": 13.8,
+     "glow_ha": 0.9,
+     "reason": "14 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
      "score": 58,
@@ -1346,20 +1354,12 @@
      "reason": "15 ha optimal temp over 0 ha of structure (breaks/points)"
     },
     {
-     "id": "chippewa",
-     "name": "Chippewa / Sturgeon River shore",
-     "score": 49,
-     "opt_ha": 11.3,
-     "glow_ha": 0.5,
-     "reason": "11 ha optimal temp over 0 ha of structure (breaks/points)"
-    },
-    {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
-     "score": 38,
-     "opt_ha": 6.7,
-     "glow_ha": 0.1,
-     "reason": "7 ha of optimal-temperature water"
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 54,
+     "opt_ha": 13.6,
+     "glow_ha": 0.4,
+     "reason": "14 ha optimal temp over 0 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1368,25 +1368,25 @@
   "salmon": {
    "ranked": [
     {
+     "id": "shipyard_mackenzie",
+     "name": "Shipyard / MacKenzie approach",
+     "score": 100,
+     "opt_ha": 15.2,
+     "glow_ha": 0.0,
+     "reason": "21 ha in preferred temperature"
+    },
+    {
      "id": "kam_mission",
      "name": "Kam mouth / Mission Island",
-     "score": 100,
+     "score": 85,
      "opt_ha": 12.3,
      "glow_ha": 0.0,
      "reason": "19 ha in preferred temperature"
     },
     {
-     "id": "shipyard_mackenzie",
-     "name": "Shipyard / MacKenzie approach",
-     "score": 70,
-     "opt_ha": 8.5,
-     "glow_ha": 0.0,
-     "reason": "14 ha in preferred temperature"
-    },
-    {
      "id": "chippewa",
      "name": "Chippewa / Sturgeon River shore",
-     "score": 46,
+     "score": 39,
      "opt_ha": 4.2,
      "glow_ha": 0.0,
      "reason": "12 ha in preferred temperature"
@@ -1394,15 +1394,15 @@
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 25,
-     "opt_ha": 2.3,
+     "score": 26,
+     "opt_ha": 3.2,
      "glow_ha": 0.0,
-     "reason": "6 ha in preferred temperature"
+     "reason": "7 ha in preferred temperature"
     },
     {
      "id": "current_barepoint",
      "name": "Current River / Trowbridge shore",
-     "score": 23,
+     "score": 20,
      "opt_ha": 2.7,
      "glow_ha": 0.0,
      "reason": "5 ha in preferred temperature"

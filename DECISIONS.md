@@ -128,7 +128,20 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   on the per-lead OPTIMAL-temperature core, so a STATIC break drifted as the coarse thermal field shifted.
   Fix: gate the glow on the STABLE in-RANGE mask (`fair`), so a real break glows in the same place every
   day while its water stays in the species' preferred range; the optimal core is still emphasized (s2)
-  where there is no break. All deterministic, all validated pre-rebuild; 296 tests pass.
+  where there is no break. (5) **The self-audit (`audit_coast_output.py`, added this pass) then caught
+  that the glow STILL drifted — and tracing it found the real root:** `_bottom_temp_field`'s clamp keyed
+  off the EXTREME target isotherms (18 °C / 4 °C), but at a cold nearshore stretch the column never
+  reaches 18 °C (nor 4 °C absent strong upwelling), so those were sentinel everywhere and the clamp
+  silently failed — leaving MOST of the reachable band as NaN. Which isotherms crossed shifted between
+  forecast leads, so the NaN COVERAGE swung and the shaded area flickered ~3× day to day (the raw
+  bottom temps were stable ~7 °C; only the valid coverage swung — Silver Islet valid-coverage was
+  39/10/55% across leads). Fix: clamp to the WARMEST/COLDEST isotherm that ACTUALLY crosses, so the
+  whole band gets a stable bottom temperature (valid coverage → 100% at every lead); when water genuinely
+  reaches 4 °C that isotherm is used (T1a preserved). Regression-tested (`test_bottom_temp_cold_lake_
+  clamps_to_crossing_not_extreme_target`). The RESIDUAL glow movement that remains is now REAL thermal
+  (the forecast warming crossing the range edge, amplified by the near-planar few-node bottom_c — the
+  documented coupling limit), not an artifact. All deterministic; 297 tests pass. The self-audit is the
+  lasting guard so these don't silently return.
 
 - **ADR-035 — The temporal layer: WHEN, added as honestly-labelled priors beside the spatial map (audit T2/T3/T4).**
   The comprehensive live-UI+data+behavior audit found the map answered WHERE but nothing answered

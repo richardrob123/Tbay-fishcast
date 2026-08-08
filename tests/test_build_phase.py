@@ -47,6 +47,26 @@ def test_bottom_temp_inversion():
     assert np.isnan(b3[0, 0])
 
 
+def test_bottom_temp_cold_lake_clamps_to_crossing_not_extreme_target():
+    """Regression (ADR-036): at a cold stretch the extreme targets (18/4 °C) never cross, so the
+    clamp must key off the WARMEST/COLDEST isotherm that ACTUALLY crosses — not the fixed extreme.
+    The old code clamped only on the 18/4 fields; when those were sentinel it left the reachable
+    band NaN, and the NaN coverage swung between forecast leads (the "blobs moving between days").
+    Here only 10/8/6 °C cross (a 6–10 °C column); every water pixel must get a finite bottom temp."""
+    import numpy as np
+    S = 999.0
+    targets = [18.0, 16.0, 14.0, 12.0, 10.0, 8.0, 6.0, 4.0]
+    iso = {18.0: np.full((1, 4), S), 16.0: np.full((1, 4), S), 14.0: np.full((1, 4), S),
+           12.0: np.full((1, 4), S), 10.0: np.full((1, 4), 2.0), 8.0: np.full((1, 4), 6.0),
+           6.0: np.full((1, 4), 10.0), 4.0: np.full((1, 4), S)}
+    depth = np.array([[1.0, 4.0, 8.0, 14.0]])   # shallower / mid / mid / deeper than crossings
+    b = bcs._bottom_temp_field(iso, targets, depth)
+    assert np.isfinite(b).all(), f"cold-lake band left NaN gaps: {b}"   # the core fix
+    assert b[0, 0] == 10.0                       # above the 10 °C crossing -> warmest crossing
+    assert b[0, 3] == 6.0                        # below the 6 °C crossing -> coldest crossing
+    assert 6.0 <= b[0, 1] <= 10.0 and 6.0 <= b[0, 2] <= 10.0   # interpolated within the crossings
+
+
 def test_markers_well_formed():
     sp_ids = {"lake_trout", "brook_trout", "salmon", "steelhead"}
     assert bcs.RIVER_MOUTHS, "no river-mouth markers"

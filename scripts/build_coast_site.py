@@ -339,13 +339,32 @@ def _bottom_temp_field(iso_fields, targets, depth):
         with np.errstate(invalid="ignore", divide="ignore"):
             frac = np.where(valid & (dl > dh), (depth - dh) / (dl - dh), 0.0)
         b = np.where(m, T[k] + (T[k + 1] - T[k]) * frac, b)
-    # CLAMP: water shallower than the warmest isotherm pins to the warmest T; deeper than the
-    # coldest pins to the coldest T. This is a floor/ceiling, NOT interpolation — genuinely colder
-    # or warmer water reads as exactly the extreme target, so the extreme targets must sit OUTSIDE
-    # every species band (CLAMP_EXTEND adds 4 °C / 18 °C) or cold water would pin to a species'
-    # optimum and over-shade (validation T1a). Callers pass the extended target set.
-    b = np.where(np.isnan(b) & np.isfinite(D[0]) & (depth < D[0]), T[0], b)
-    b = np.where(np.isnan(b) & np.isfinite(D[-1]) & (depth > D[-1]), T[-1], b)
+    # CLAMP to the WARMEST / COLDEST isotherm that ACTUALLY CROSSES here — not the fixed extreme
+    # target. At a cold nearshore stretch the column never reaches 18 °C (nor, absent strong
+    # upwelling, 4 °C), so those extreme isotherms are sentinel everywhere and the old clamp
+    # (keyed to D[0]=18 / D[-1]=4) silently failed — leaving MOST of the reachable band NaN, and
+    # the NaN coverage swung between forecast leads as different isotherms crossed, which flickered
+    # the shaded area 3× day to day (operator-caught "blobs moving between days"; root cause traced
+    # to here — the bottom_c VALUES were stable ~8 °C, only the valid COVERAGE swung). Clamping to
+    # the shallowest/deepest FINITE isotherm gives the whole band a stable bottom temperature; when
+    # genuinely cold water DOES reach 4 °C that isotherm becomes finite and is used (T1a preserved).
+    Dstack = np.stack(D)                                     # (nT, H, W), warm->cold, NaN=sentinel
+    finite = np.isfinite(Dstack)
+    any_fin = finite.any(axis=0)
+    warm_k = np.argmax(finite, axis=0)                      # first (warmest) finite isotherm index
+    cold_k = (len(T) - 1) - np.argmax(finite[::-1], axis=0)  # last (coldest) finite isotherm index
+    ii, jj = np.indices(depth.shape)
+    warm_d = Dstack[warm_k, ii, jj]; warm_t = np.asarray(T)[warm_k]
+    cold_d = Dstack[cold_k, ii, jj]; cold_t = np.asarray(T)[cold_k]
+    wet = np.isfinite(depth)                                # never fill land (NaN depth) — stays NaN
+    b = np.where(np.isnan(b) & any_fin & wet & (depth < warm_d), warm_t, b)   # above warmest crossing
+    b = np.where(np.isnan(b) & any_fin & wet & (depth > cold_d), cold_t, b)   # below coldest crossing
+    # a bracketed-but-unfilled WATER pixel (a gap between non-adjacent finite isotherms): pin to the
+    # nearer of the warmest/coldest crossing by depth, so a deep gap-pixel doesn't read warm.
+    gap = np.isnan(b) & any_fin & wet
+    nearer_cold = np.abs(depth - cold_d) < np.abs(depth - warm_d)
+    b = np.where(gap & nearer_cold, cold_t, b)
+    b = np.where(gap & ~nearer_cold, warm_t, b)
     return b
 
 
