@@ -1,8 +1,8 @@
 {
  "issue": "2026-08-08",
  "issued_utc": "2026-08-08T12:00:00Z",
- "built_utc": "2026-08-08T16:04:16Z",
- "age_h": 4.1,
+ "built_utc": "2026-08-08T17:10:53Z",
+ "age_h": 5.2,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -177,46 +177,46 @@
  },
  "forecast_error": {
   "source": "data/forecast_gate_log.csv",
-  "n": 25,
+  "n": 30,
   "chains": [
    "45216",
    "llo1"
   ],
   "chains_with_moving_obs": [],
   "n_effective_chains": 0,
-  "pooled_mae_m": 1.789,
-  "pooled_p90_m": 3.84,
+  "pooled_mae_m": 1.547,
+  "pooled_p90_m": 3.5,
   "per_lead": {
    "24": {
-    "n": 5,
-    "mae_m": 1.762,
-    "p90_m": 4.61
+    "n": 6,
+    "mae_m": 1.565,
+    "p90_m": 2.9
    },
    "48": {
-    "n": 5,
-    "mae_m": 1.498,
-    "p90_m": 3.5
+    "n": 6,
+    "mae_m": 1.322,
+    "p90_m": 2.52
    },
    "72": {
-    "n": 5,
-    "mae_m": 2.23,
-    "p90_m": 4.55
+    "n": 6,
+    "mae_m": 1.9,
+    "p90_m": 3.45
    },
    "96": {
-    "n": 5,
-    "mae_m": 1.724,
-    "p90_m": 2.8
+    "n": 6,
+    "mae_m": 1.485,
+    "p90_m": 2.74
    },
    "120": {
-    "n": 5,
-    "mae_m": 1.732,
-    "p90_m": 3.84
+    "n": 6,
+    "mae_m": 1.462,
+    "p90_m": 1.91
    }
   },
   "skill_vs_persistence": null,
-  "lead_slope_m_per_h": 0.00069,
+  "lead_slope_m_per_h": -0.00018,
   "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.789 m over leads 24-120 h. Lead trend NOT detected (OLS slope +0.0007 m/h; per-lead means span 0.73 m). CAVEAT: n=25, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.547 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0002 m/h; per-lead means span 0.58 m). CAVEAT: n=30, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
  },
  "stretches": [
   {
@@ -289,7 +289,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/little_trout_bay.geojson"
+   "area": "data/areas/little_trout_bay.geojson",
+   "contours": "data/contours/little_trout_bay.geojson"
   },
   {
    "id": "chippewa",
@@ -361,7 +362,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/chippewa.geojson"
+   "area": "data/areas/chippewa.geojson",
+   "contours": "data/contours/chippewa.geojson"
   },
   {
    "id": "kam_mission",
@@ -390,7 +392,7 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-06",
    "survey_cov": 0.19,
    "low_confidence": false,
    "days": [
@@ -433,7 +435,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/kam_mission.geojson"
+   "area": "data/areas/kam_mission.geojson",
+   "contours": "data/contours/kam_mission.geojson"
   },
   {
    "id": "mckellar_harbour",
@@ -505,7 +508,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/mckellar_harbour.geojson"
+   "area": "data/areas/mckellar_harbour.geojson",
+   "contours": "data/contours/mckellar_harbour.geojson"
   },
   {
    "id": "marina_mcvicar",
@@ -577,7 +581,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/marina_mcvicar.geojson"
+   "area": "data/areas/marina_mcvicar.geojson",
+   "contours": "data/contours/marina_mcvicar.geojson"
   },
   {
    "id": "boulevard_current",
@@ -649,7 +654,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/boulevard_current.geojson"
+   "area": "data/areas/boulevard_current.geojson",
+   "contours": "data/contours/boulevard_current.geojson"
   },
   {
    "id": "current_barepoint",
@@ -721,7 +727,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/current_barepoint.geojson"
+   "area": "data/areas/current_barepoint.geojson",
+   "contours": "data/contours/current_barepoint.geojson"
   },
   {
    "id": "shipyard_mackenzie",
@@ -793,7 +800,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/shipyard_mackenzie.geojson"
+   "area": "data/areas/shipyard_mackenzie.geojson",
+   "contours": "data/contours/shipyard_mackenzie.geojson"
   },
   {
    "id": "mackenzie_silver",
@@ -865,7 +873,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/mackenzie_silver.geojson"
+   "area": "data/areas/mackenzie_silver.geojson",
+   "contours": "data/contours/mackenzie_silver.geojson"
   },
   {
    "id": "silver_islet",
@@ -937,7 +946,8 @@
    ],
    "degraded": false,
    "anchor_stale": false,
-   "area": "data/areas/silver_islet.geojson"
+   "area": "data/areas/silver_islet.geojson",
+   "contours": "data/contours/silver_islet.geojson"
   }
  ],
  "stations": [
@@ -1222,9 +1232,9 @@
   },
   "daily_wind": {
    "0": {
-    "dir_deg": 256,
-    "mean_kn": 6,
-    "max_kn": 9
+    "dir_deg": 255,
+    "mean_kn": 7,
+    "max_kn": 14
    },
    "24": {
     "dir_deg": 303,
@@ -1273,7 +1283,7 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 21.2,
+    "q_cms": 21.0,
     "trend_pct": 0.0,
     "state": "steady",
     "freshet": false,
@@ -1301,13 +1311,13 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.087,
-    "trend_pct": -8.0,
+    "q_cms": 0.089,
+    "trend_pct": -5.0,
     "state": "steady",
     "freshet": false,
-    "note": "0.09 m\u00b3/s, steady (-8% / 3d).",
-    "pct": 20,
-    "pct_label": "\u224820th %ile",
+    "note": "0.09 m\u00b3/s, steady (-5% / 3d).",
+    "pct": 21,
+    "pct_label": "\u224821st %ile",
     "clim_years": "1972-2016",
     "clim_n": 951
    }
@@ -1329,10 +1339,10 @@
    },
    "flow": {
     "q_cms": 0.195,
-    "trend_pct": 10.0,
-    "state": "steady",
-    "freshet": false,
-    "note": "0.20 m\u00b3/s, steady (+10% / 3d).",
+    "trend_pct": 12.0,
+    "state": "rising",
+    "freshet": true,
+    "note": "0.20 m\u00b3/s and rising (+12% / 3d) \u2014 freshet pulls staging fish in.",
     "pct": 46,
     "pct_label": "\u224846th %ile",
     "clim_years": "1972-2025",

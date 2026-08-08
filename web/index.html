@@ -722,22 +722,35 @@ map.on('load', async () => {
   // CHART VIEW: swap the satellite for the CHS isobath chart. Contours are STATIC bathymetry —
   // same smoothed NONNA field the gold is computed on — loaded lazily on first toggle.
   let ctrLoaded = false;
-  function loadContours(){
+  async function loadContours(){
     ctrLoaded = true;
+    // Depth LABELS need glyphs from the font server. A failed/hanging glyph fetch stalls the
+    // whole TILE of the source a symbol layer sits on — which silently blanked the contour
+    // LINES too (found headless, where the font host is unreachable). So: labels live on a
+    // SEPARATE source, added only if the glyph server answers — lines can never be hostage.
+    let glyphsOk = false;
+    try {
+      const r = await fetch('https://demotiles.maplibre.org/font/Open%20Sans%20Semibold/0-255.pbf');
+      glyphsOk = r.ok;
+    } catch(e){ /* offline/blocked font host: lines only */ }
     man.stretches.forEach((s, i) => {
       if(!s.contours) return;
       map.addSource('ctr'+i, { type:'geojson', data: s.contours + V });
       map.addLayer({ id:'ctr'+i, type:'line', source:'ctr'+i,
         layout:{ visibility:'visible' },
-        paint:{ 'line-color':'#8fa9c4',
-                // index contours (10/20 m) heavier, like a real chart
-                'line-width':['case', ['any',['==',['get','d'],10],['==',['get','d'],20]], 1.5, 0.7],
-                'line-opacity':0.85 } });
-      map.addLayer({ id:'ctrlab'+i, type:'symbol', source:'ctr'+i,
-        layout:{ visibility:'visible', 'symbol-placement':'line',
-                 'text-field':['concat',['to-string',['get','d']],' m'],
-                 'text-font':['Open Sans Semibold'], 'text-size':10, 'symbol-spacing':320 },
-        paint:{ 'text-color':'#b9cde2', 'text-halo-color':'#0d1b2e', 'text-halo-width':1.3 } });
+        paint:{ 'line-color':'#c3d8ee',
+                // index contours (10/20 m) heavier, like a real chart; bright enough to read
+                // OVER the teal/gold fills, which cover most of the surveyed band
+                'line-width':['case', ['any',['==',['get','d'],10],['==',['get','d'],20]], 1.8, 1.0],
+                'line-opacity':0.9 } });
+      if(glyphsOk){
+        map.addSource('ctrs'+i, { type:'geojson', data: s.contours + V });
+        map.addLayer({ id:'ctrlab'+i, type:'symbol', source:'ctrs'+i,
+          layout:{ visibility:'visible', 'symbol-placement':'line',
+                   'text-field':['concat',['to-string',['get','d']],' m'],
+                   'text-font':['Open Sans Semibold'], 'text-size':10, 'symbol-spacing':320 },
+          paint:{ 'text-color':'#b9cde2', 'text-halo-color':'#0d1b2e', 'text-halo-width':1.3 } });
+      }
     });
   }
   function setChart(on){
