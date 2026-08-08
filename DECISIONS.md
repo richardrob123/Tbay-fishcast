@@ -101,6 +101,23 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-038 — Bivariate display: temperature and structure in SEPARATE visual channels (supersedes the
+  ADR-037 product).** Operator review: multiplying the uncertain thermal curve into the measured structure
+  percentile — even weightlessly — "feels arbitrary… doing too much"; show them "separately but at the same
+  time." That instinct is standard bivariate cartography, and it is the more honest design: it removes the
+  LAST picked method (the combine form) from the display entirely. The render is now two independent layers
+  in two channels: the TEMPERATURE WASH (teal; s1 in-range ring / s2 optimal core — the cited bands, moving
+  with the forecast because the water does) and the STRUCTURE MARKS (amber/gold; g3/g4/g5 = regional
+  p90/p95/p99, emitted ONCE per stretch with NO lead property, so they are static across forecast days BY
+  CONSTRUCTION — the self-audit hard-fails if a structure feature ever carries a lead). The conjunction is
+  read by eye — a gold mark inside bright teal — with zero fusion math. Structure marks now show for ALL
+  species within their depth band (the bottom is a fact; the weak-cue caveat stays on the wash + ranking,
+  and the marks fade for plume-followers). The only place needing an ordering — "Best spots today" — uses
+  plain BOOLEAN INTERSECTIONS (area of breaks within in-range/optimal water; set logic, no scalar product).
+  Side benefits: structure geometry is emitted once instead of six times (smaller geojson), phase-suppression
+  dims only the wash (geology doesn't get cold-shocked), and "does the glow move?" is no longer an empirical
+  question the audit must watch — it is impossible.
+
 - **ADR-037 — Continuous-conjunction heatmap: glow = thermal_suitability × structure (no fitted weights).**
   After ADR-036 fixed the data bugs, the residual "structure moves between days" traced to a design
   error, not a bug: the render used the LEAST-certain, coarsest signal (temperature — a few LSOFS nodes,

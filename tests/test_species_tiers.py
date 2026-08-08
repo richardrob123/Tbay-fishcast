@@ -47,38 +47,37 @@ def test_depth_gate_excludes_shallow_for_min_depth_species():
     assert tiers["s2"][0, 2] and not tiers["s2"][0, 0]
 
 
-def test_structure_glow_bands_are_ordered_and_disjoint():
-    # all optimal temp + reachable + deep enough; increasing structure strength across pixels
-    bottom_c = _row([8, 8, 8, 8])
+def test_structure_marks_are_ordered_disjoint_and_temperature_free():
+    """ADR-038: structure marks are a SEPARATE static channel — pure bathymetry, no temperature
+    input at all. Levels are the regional percentiles, disjoint."""
     strength = _row([0.5, _bcs.STRENGTH_BREAK, _bcs.STRENGTH_STRONG, _bcs.STRENGTH_TOP])
     within = _row([1, 1, 1, 1]).astype(bool)
     depth = _row([8, 8, 8, 8])
     lt = _Sp("lake_trout", (6, 12), (6, 10))
-    tiers, _ = _species_and_check(bottom_c, strength, within, depth, lt)
-    assert tiers["s2"][0, 0]   # below the break bar -> optimal-temp base only
-    assert tiers["s3"][0, 1]   # break
-    assert tiers["s4"][0, 2]   # strong
-    assert tiers["s5"][0, 3]   # top break
-    # disjoint: exactly one tier true per pixel
+    g = _bcs._species_structure(strength, within, depth, lt, _Prod())
+    assert not g["g3"][0, 0] and not g["g4"][0, 0] and not g["g5"][0, 0]   # below the bar: no mark
+    assert g["g3"][0, 1] and g["g4"][0, 2] and g["g5"][0, 3]
     for j in range(4):
-        assert sum(int(tiers[t][0, j]) for t in ("s1", "s2", "s3", "s4", "s5")) == 1
+        assert sum(int(g[t][0, j]) for t in ("g3", "g4", "g5")) <= 1        # disjoint
+    # temperature-free by construction: the function takes no bottom_c at all — and the marks are
+    # identical whatever the thermal field does (static across forecast days by construction)
+    g2 = _bcs._species_structure(strength, within, depth, lt, _Prod())
+    for t in g:
+        assert (g[t] == g2[t]).all()
 
 
-def test_glow_is_continuous_product_dims_with_temperature():
-    """Glow = thermal_suitability × structure (ADR-037), a conjunction with NO fitted weights. The
-    SAME static strong break glows at optimal temperature but DIMS THROUGH THE LEVELS as its water
-    becomes marginal — it does not blink off at a hard threshold and it never relocates. Here a
-    strong break sits in 8 °C (optimal, suit=1) vs 11 °C (in range, suit=0.5 for laker 4–12/6–10)."""
+def test_temperature_wash_is_pure_cited_bands():
+    """ADR-038: the temperature tiers are the cited-band wash ONLY (s1 in-range ring, s2 optimal
+    core) — no structure mixed in. A strong break under the pixel changes nothing in the wash."""
     lt = _Sp("lake_trout", (4, 12), (6, 10))
     within = _row([1, 1]).astype(bool)
     depth = _row([8, 8])
-    strong = _row([_bcs.STRENGTH_STRONG, _bcs.STRENGTH_STRONG])
+    strong = _row([_bcs.STRENGTH_STRONG, 0.0])
     t_opt, _ = _species_and_check(_row([8, 8]), strong, within, depth, lt)
-    assert t_opt["s4"][0, 0]                         # optimal temp: full structure score -> strong glow
+    assert t_opt["s2"][0, 0] and t_opt["s2"][0, 1]   # both optimal — structure irrelevant to the wash
     t_marg, fair = _species_and_check(_row([11, 11]), strong, within, depth, lt)
-    # intensity = 0.5 * STRENGTH_STRONG < STRENGTH_BREAK -> the SAME break dims out of the glow...
-    assert not t_marg["s3"][0, 0] and not t_marg["s4"][0, 0] and not t_marg["s5"][0, 0]
-    assert fair[0, 0] and t_marg["s1"][0, 0]         # ...but the water is still shown as in-range
+    assert t_marg["s1"][0, 0] and t_marg["s1"][0, 1] # both in-range ring
+    assert fair.all()
 
 
 def test_out_of_range_temperature_is_floor_blank():
@@ -88,9 +87,10 @@ def test_out_of_range_temperature_is_floor_blank():
     depth = _row([8, 8])
     lt = _Sp("lake_trout", (6, 12), (6, 10))
     tiers, fair = _species_and_check(bottom_c, strength, within, depth, lt)
-    # the floor: no temperature match => nothing shades, structure alone never glows
+    # the floor: no temperature match => no WASH (the static structure marks are a separate
+    # channel and legitimately still show — the bottom exists; the absent wash says "wrong temp")
     assert not fair.any()
-    assert not any(tiers[t].any() for t in ("s1", "s2", "s3", "s4", "s5"))
+    assert not any(tiers[t].any() for t in ("s1", "s2"))
 
 
 def _species_and_check(bottom_c, strength, within, depth, sp):

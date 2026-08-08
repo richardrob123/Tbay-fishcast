@@ -38,9 +38,9 @@
   #legend .key i.sw:first-child{margin-left:0}
   #legend .sw.s1{background:#7fe0cb}
   #legend .sw.s2{background:#28b58c}
-  #legend .sw.s3{background:#3fae3f}
-  #legend .sw.s4{background:#9bd837}
-  #legend .sw.s5{background:#ffcf3f}
+  #legend .sw.g3{background:#e8b23a}
+  #legend .sw.g4{background:#f4c430}
+  #legend .sw.g5{background:#ffd75e}
   #legend .lmut{color:var(--muted)}
   #legend .lwarn{color:#e0a53a;font-weight:600}
   #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
@@ -168,16 +168,16 @@
   <div id="mapkey"></div>
   <details id="legnote">
     <summary>how to read this · ⓘ</summary>
-    <div class="more"><b>One heat map, two measured ingredients.</b> The brightness of a spot is
-      <b>structure × temperature</b> — a straight product, no invented weights. <b>Structure</b>
-      (drop-offs, shoal tops, point tips in the CHS survey soundings) is the fixed skeleton: it
-      never moves day to day, and how strong a break is gets judged against the whole shore
-      (regional 90th/95th/99th percentile), so <b>flat featureless water never glows</b> and
-      <b>gold — the strongest breaks — is genuinely rare</b>. <b>Temperature</b> (the species'
-      published preferred bands) is the dimmer: the same break shines brightest when its water is
-      optimal and <b>fades in place</b> — not jumps elsewhere — as the water goes marginal; faint
-      teal marks water that's merely in the right range. All within a ~75&nbsp;m cast
-      (≤22&nbsp;m deep). It's a ranking, not a catch percentage — that would need logged trips. The
+    <div class="more"><b>Two measured signals, kept visibly separate.</b> The <b>teal wash</b> is
+      <b>temperature</b> — the species' published preferred bands (faint = in range, brighter =
+      optimal). It moves with the forecast, because the water does. The <b>gold marks</b> are
+      <b>structure</b> — real drop-offs, shoal tops and point tips measured in the CHS survey
+      soundings, graded against the whole shore (regional 90th/95th/99th percentile) so <b>flat
+      water gets no mark and the brightest gold is genuinely rare</b>. The marks <b>never move</b> —
+      the bottom doesn't. Nothing is blended: <b>fish where a gold mark sits inside bright teal</b> —
+      right structure in right-temperature water, read directly off two honest layers. All within a
+      ~75&nbsp;m cast (≤22&nbsp;m deep). It's a ranking, not a catch percentage — that would need
+      logged trips. The
       banner up top is the <b>upwelling phase</b> — the timing layer:
       a west-quadrant blow first drives cold water to shore (<b>setup/peak</b> — a cold shock that
       slows the bite), then as it <b>relaxes</b> the front sharpens and the bite turns on — that
@@ -223,19 +223,21 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
 // DISJOINT (outer fair ring / good ring / prime core, no overlap), so these translucent fills
 // read as a light graded wash you can see the water through — not a compounded opaque slab.
 // A light→dark ramp keeps prime distinct. Not fused with phase — phase is the separate banner.
-// Heatmap ramp: temperature base (teal) -> structure glow (green -> gold). Cool teal = right
-// temperature; the hotter/gold the fill, the stronger the MEASURED break there (s3<s4<s5). Opacity
-// rises with the ramp so the best breaks pop. s1/s2 = temperature (cited bands); s3/s4/s5 = the
-// continuous structure glow at regional p90/p95/p99 (data-derived).
+// BIVARIATE channels (ADR-038): TEMPERATURE is a teal wash that moves with the forecast;
+// STRUCTURE is a separate set of amber/gold MARKS that are static by construction (the build
+// emits them once, with no lead property — same place, same brightness, every day). The
+// conjunction is read by eye: a gold mark inside bright teal. No fusion math anywhere.
 const SUIT = [
-  {suf:'s1', op:0.14, col:'#7fe0cb'},   // in range
-  {suf:'s2', op:0.30, col:'#28b58c'},   // optimal temp
-  {suf:'s3', op:0.46, col:'#3fae3f'},   // break
-  {suf:'s4', op:0.64, col:'#9bd837'},   // strong break
-  {suf:'s5', op:0.82, col:'#ffcf3f'},   // top break (best spots)
+  {suf:'s1', op:0.16, col:'#7fe0cb'},   // temperature wash: in range
+  {suf:'s2', op:0.34, col:'#28b58c'},   // temperature wash: optimal core
 ];
-const GLOW = ['s3','s4','s5'];          // the structure-glow tiers (hidden for weak-cue species)
+const STRUCT = [
+  {suf:'g3', op:0.42, col:'#e8b23a'},   // measured break (regional p90) — static
+  {suf:'g4', op:0.60, col:'#f4c430'},   // strong break (p95) — static
+  {suf:'g5', op:0.80, col:'#ffd75e'},   // top break (p99) — static, rare
+];
 const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
+const GF = (id,suf) => ['==', ['get','temp'], 'sp:'+id+':'+suf];   // structure: species only, no lead
 function buildSpeciesChips(){
   const el = document.getElementById('species'); if(!el) return;
   el.innerHTML = SPECIES.map(s =>
@@ -255,7 +257,12 @@ function applyLayers(){
       const id = 'arfill'+k+'_'+z.suf;
       map.getLayer(id) && map.setFilter(id, SF(day.lead, curSp.id, z.suf));
     });
-    map.getLayer('arln'+k) && map.setFilter('arln'+k, SF(day.lead, curSp.id, 's5'));
+    // structure marks: species-only filter, NO lead — they are static across the forecast
+    STRUCT.forEach(z => {
+      const id = 'arstr'+k+'_'+z.suf;
+      map.getLayer(id) && map.setFilter(id, GF(curSp.id, z.suf));
+    });
+    map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g5'));
   });
   paintFills();
   renderLegend();
@@ -288,14 +295,20 @@ function paintFills(){
     SUIT.forEach(z => {
       const id = 'arfill'+k+'_'+z.suf;
       if(!map.getLayer(id)) return;
-      let op = o * z.op * suppress;
-      // weak-cue species (salmon/steelhead): temperature AND structure barely locate them (they
-      // follow plumes), so hide the confident structure GLOW entirely and fade the temp base.
-      if(weak) op = GLOW.includes(z.suf) ? 0 : op*0.5;
+      // weak-cue species (salmon/steelhead) follow plumes — fade the temperature wash to context
+      let op = o * z.op * suppress * (weak ? 0.5 : 1.0);
       map.setPaintProperty(id, 'fill-opacity', op);
     });
+    // STRUCTURE marks are measured bottom — they do not dim with phase or forecast (the bottom
+    // doesn't move). Weak-cue species still see them slightly faded (structure is a minor cue
+    // for plume-followers, but the breaks near a mouth are real and useful).
+    STRUCT.forEach(z => {
+      const id = 'arstr'+k+'_'+z.suf;
+      if(!map.getLayer(id)) return;
+      map.setPaintProperty(id, 'fill-opacity', o * z.op * (weak ? 0.45 : 1.0));
+    });
     const ln = 'arln'+k;
-    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', (weak ? 0 : o*0.7) * suppress);
+    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', o * 0.7 * (weak ? 0.45 : 1.0));
   });
 }
 function renderLegend(){
@@ -309,14 +322,15 @@ function renderLegend(){
   if(weak){
     // no structure glow for plume-driven species — just the temperature base
     el.innerHTML =
-      `<span class="key"><i class="sw s2"></i>optimal<i class="sw s1"></i>in&nbsp;range</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C · weak temp cue</span>`;
+      `<span class="key"><i class="sw s2"></i>optimal<i class="sw s1"></i>in&nbsp;range`+
+      `<i class="sw g4"></i>breaks</span>`+
+      `<span class="lmut">${opt[0]}–${opt[1]}°C · weak temp cue — mouths &gt; map</span>`;
   } else {
-    // ramp: optimal temp (teal) -> stronger measured breaks glow gold. Compact, not five labels.
+    // two channels, named as channels: the moving temp wash vs the fixed structure marks
     el.innerHTML =
-      `<span class="key"><i class="sw s1"></i><i class="sw s2"></i>right temp`+
-      `<i class="sw s3"></i><i class="sw s4"></i><i class="sw s5"></i>best breaks</span>`+
-      `<span class="lmut">${opt[0]}–${opt[1]}°C core · gold = strongest structure</span>`;
+      `<span class="key"><i class="sw s1"></i><i class="sw s2"></i>right temp (moves)`+
+      `<i class="sw g3"></i><i class="sw g4"></i><i class="sw g5"></i>breaks (fixed)</span>`+
+      `<span class="lmut">${opt[0]}–${opt[1]}°C core · gold mark in bright teal = the spot</span>`;
   }
   // Measured thermal-field uncertainty stays DISCOVERABLE on hover, not crowding the bar.
   // Honest about what it is: an absolute isotherm-depth error vs a STABLE reference (0 moving-obs
@@ -516,13 +530,18 @@ map.on('load', async () => {
   man.stretches.forEach((s, i) => {
     if(s.area){
       map.addSource('ar'+i, { type:'geojson', data: s.area + V });
-      SUIT.forEach(z => {                       // disjoint: fair ring -> good ring -> prime core
+      SUIT.forEach(z => {                       // temperature wash (moves with the forecast)
         map.addLayer({ id:'arfill'+i+'_'+z.suf, type:'fill', source:'ar'+i,
           filter:SF(lead0, curSp.id, z.suf),
           paint:{ 'fill-color':z.col, 'fill-opacity':z.op } });
       });
+      STRUCT.forEach(z => {                     // STATIC measured-structure marks (never move)
+        map.addLayer({ id:'arstr'+i+'_'+z.suf, type:'fill', source:'ar'+i,
+          filter:GF(curSp.id, z.suf),
+          paint:{ 'fill-color':z.col, 'fill-opacity':z.op } });
+      });
       // thin outline on the PRIME core only — marks the best spots without adding blob weight
-      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:SF(lead0, curSp.id, 's5'),
+      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:GF(curSp.id, 'g5'),
         layout:{ 'line-join':'round' },
         paint:{ 'line-color':'#053d2a', 'line-width':1.1, 'line-opacity':0.7 } });
     }

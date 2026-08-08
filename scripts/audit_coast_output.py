@@ -99,7 +99,7 @@ def main() -> int:
         # default species for the land/speckle check
         for sp in species:
             polys = [f for f in feats
-                     if f["properties"].get("lead") == 0
+                     if (f["properties"].get("lead") == 0 or "lead" not in f["properties"])
                      and f["properties"].get("temp", "").startswith(f"sp:{sp}:")]
             if not polys:
                 continue
@@ -129,23 +129,14 @@ def main() -> int:
                 print(f"  {sid:18s}/{sp:11s} polys={len(polys):3d} tiny={tiny_frac:4.0%} "
                       f"area={sum(areas)/1e4:5.1f}ha land={bleed:4.1f}%{tag}")
 
-        # STATIC GLOW across leads (default species)
-        sp0 = species[0]
-        by_lead = {}
+        # STRUCTURE STATIC-BY-CONSTRUCTION check (ADR-038): every g-layer feature must carry NO
+        # lead property — a lead on a structure mark means the build regressed to per-day emission
+        # and the marks could move again. Hard FAIL, not a warn.
         for f in feats:
             p = f["properties"]; t = p.get("temp", "")
-            if t.startswith(f"sp:{sp0}:") and t.split(":")[2] in ("s3", "s4", "s5"):
-                by_lead.setdefault(p["lead"], 0.0)
-                by_lead[p["lead"]] += _ring_area_m2(f["geometry"]["coordinates"][0]) / 1e4
-        if len(by_lead) >= 3:
-            vals = np.array(list(by_lead.values()))
-            cv = float(vals.std() / max(vals.mean(), 1e-6))
-            if cv > GLOW_CV_WARN:
-                # NOTE: under the continuous product (ADR-037) glow AREA legitimately breathes as
-                # temperature dims a break through the levels IN PLACE — this warn flags the
-                # magnitude for an eyeball (is it dimming, or relocating?), it is not a FAIL.
-                warns.append(f"{sid}/{sp0}: glow area breathes {cv:.0%} across leads "
-                             f"(expected=thermal dimming in place; eyeball that it isn't relocating)")
+            if ":g" in t and "lead" in p:
+                fails.append(f"{sid}: structure feature {t} carries lead={p['lead']} (must be static)")
+                break
 
     # COVERAGE per species (all stretches, lead 0)
     print("\n  coverage (lead 0, all stretches):")

@@ -242,21 +242,6 @@ def _merc_to_ll(x, y):
     return lon, lat
 
 
-def _ring_area_m2(ring):
-    """Planar area (m²) of a lon/lat ring via the shoelace formula on a local equirectangular
-    projection (x = lon·cos(lat̄)·111320, y = lat·110540). Exact enough for a habitat RANKING over
-    ~km-scale polygons at 48°N — this drives ordering, not a survey measurement."""
-    if len(ring) < 3:
-        return 0.0
-    lat0 = math.radians(sum(p[1] for p in ring) / len(ring))
-    kx = 111320.0 * math.cos(lat0)
-    ky = 110540.0
-    xy = [(lon * kx, lat * ky) for lon, lat in ring]
-    s = 0.0
-    for (x1, y1), (x2, y2) in zip(xy, xy[1:] + xy[:1]):
-        s += x1 * y2 - x2 * y1
-    return abs(s) / 2.0
-
 
 def _resolve_issue(cfg, issue, max_back=3):
     """Most recent issue day whose t12z nowcast is actually posted.
@@ -407,12 +392,18 @@ def _bottom_temp_field(iso_fields, targets, depth):
 #   STRUCTURE (CONTINUOUS glow): within the optimal zone, the measured break STRENGTH grades the
 #     fill so the strongest breaks glow brightest — no binary "prime" blob. This is the hybrid the
 #     user chose: temperature discrete-and-cited, structure continuous, hard floor below.
+# BIVARIATE levels (ADR-038): the two signals are SEPARATE layers in separate visual channels.
+# s* = the TEMPERATURE wash (moves with the forecast); g* = the STATIC measured-structure marks
+# (never move — pure bathymetry, emitted once per stretch, no lead). The conjunction is read by
+# eye: a gold mark inside bright teal. No combine math anywhere in the display.
 SUIT_LEVELS = [
-    ("s1", "in range"),      # fair: acceptable temperature (range_c)
-    ("s2", "optimal temp"),  # good: optimal-temperature core (optimal_c), little structure
-    ("s3", "break"),         # optimal temp + a real measured break (regional structure p90)
-    ("s4", "strong break"),  # optimal temp + strong structure (p95)
-    ("s5", "top break"),     # optimal temp + exceptional structure (p99) — the best spots, rare
+    ("s1", "in range"),      # temperature wash: acceptable (range_c)
+    ("s2", "optimal temp"),  # temperature wash: optimal core (optimal_c)
+]
+STRUCT_LEVELS = [
+    ("g3", "break"),         # measured break (regional structure p90) — static
+    ("g4", "strong break"),  # strong structure (p95) — static
+    ("g5", "top break"),     # exceptional structure (p99) — static, rare
 ]
 IN_RANGE_SUIT = 0.0            # fair = strictly inside the preferred range (suit > this)
 OPTIMAL_PLATEAU = 1.0 - 1e-6   # good = the optimal_c plateau (suit at/above ~1.0)
@@ -481,29 +472,40 @@ def _species_tiers(bottom_c, strength, within, depth, sp, prod, season=None):
     suit = _np.where(within_sp, suit, 0.0)
     fair = suit > IN_RANGE_SUIT                                # inside the preferred range (range_c)
     good = suit >= OPTIMAL_PLATEAU                             # the optimal-core plateau (optimal_c)
-    # CONTINUOUS CONJUNCTION (ADR-037). A spot's value = right STRUCTURE and right TEMPERATURE, and
-    # a conjunction is a PRODUCT — which carries NO fitted weights (rule 7, no catch data to fit).
-    # `intensity` grades each measured break by how suitable its water is: at optimal temperature it
-    # scores its full measured structure percentile; the SAME static break in marginal water scores
-    # lower on the SAME data-derived p90/p95/p99 scale and DIMS THROUGH THE LEVELS IN PLACE rather
-    # than blinking off at a hard threshold (the old gate flipped the glow on/off as the coarse,
-    # uncertain thermal field crossed an edge — user-caught "blobs moving between days"). Structure
-    # (precise, static) sets WHERE the bright spots are; temperature (uncertain) sets HOW BRIGHT.
-    intensity = suit * strength                               # thermal[0,1] × measured structure
-    g_break = intensity >= STRENGTH_BREAK                    # break, weighted by thermal suitability
-    g_strong = intensity >= STRENGTH_STRONG                  # strong
-    g_top = intensity >= STRENGTH_TOP                        # exceptional
-    # DISJOINT levels (each pixel painted once): faint temperature-context base (s1 in-range /
-    # s2 optimal core, the cited thermal wash for cruising/holding water) with the structure-driven
-    # glow (s3/s4/s5) taking precedence. Because the levels are crossings of a CONTINUOUS product,
-    # a change in temperature moves them smoothly instead of flipping a hard tier.
-    tiers = {"s1": fair & ~good & ~g_break, "s2": good & ~g_break,
-             "s3": g_break & ~g_strong, "s4": g_strong & ~g_top, "s5": g_top}
+    # BIVARIATE display (ADR-038, supersedes the ADR-037 product): the TEMPERATURE tiers are the
+    # cited-band wash only — s1 in-range ring, s2 optimal core — with NO structure mixed in. The
+    # structure marks are a SEPARATE, lead-independent layer (_species_structure below). Operator
+    # call: multiplying the uncertain thermal curve into the measured structure percentile was still
+    # a combine-form choice; showing each signal in its own channel removes the last picked method —
+    # the eye reads the conjunction (a gold break-mark inside bright teal) with zero fusion math.
+    tiers = {"s1": fair & ~good, "s2": good}
     return tiers, fair
 
 
+def _species_structure(strength, within, depth, sp, prod, season=None):
+    """STATIC measured-structure marks for one species — pure bathymetry, NO temperature input.
+
+    Gated only on reachability + the species' depth band, so the marks sit in the SAME place at the
+    same level on every forecast day by construction (they are emitted once per stretch, not per
+    lead). Levels are the data-derived regional percentiles: g3 break (p90) / g4 strong (p95) /
+    g5 top (p99), disjoint. The temperature wash next to them says whether that water is right
+    TODAY; the marks say where the bottom structure IS, period (ADR-038 bivariate display)."""
+    import numpy as _np
+    lo_d = sp.min_depth_m if sp.min_depth_m is not None else 0.0
+    hi_d = sp.max_depth_m if sp.max_depth_m is not None else prod.max_reach_depth_m
+    if season == "fall" and sp.id == "lake_trout":
+        lo_d = 0.0                                             # fall shoal-staging (T1d)
+    within_sp = within & (depth >= lo_d) & (depth <= hi_d)
+    s = _np.where(within_sp, strength, 0.0)
+    g3 = s >= STRENGTH_BREAK
+    g4 = s >= STRENGTH_STRONG
+    g5 = s >= STRENGTH_TOP
+    return {"g3": g3 & ~g4, "g4": g4 & ~g5, "g5": g5}
+
+
 def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857, res, prod,
-             targets=(), species=(), own_m=None, others_m=(), season=None):
+             targets=(), species=(), own_m=None, others_m=(), season=None,
+             include_structure=False):
     """Return (area_features, reach_px) for one lead, or (None, 0.0).
 
     Signal: graded per-species suitability AREA fills — for each species, the reachable water
@@ -536,7 +538,7 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
             zc = thermocline.isotherm_band(depths, raw, bm, t)["central"]
             tvals[t].append(zc if zc is not None else 999.0)
     if len(iso_pts) < 3:
-        return None, 0.0
+        return None, 0.0, {}
     iso_pts = np.array(iso_pts)
     # min_reach_px small + min_area small: the old speckle those filters guarded against
     # came from the no-data-apron heuristic, which the authoritative water mask removed —
@@ -581,11 +583,11 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     area_feats = []
     reach_px_primary = 0.0
 
-    def _emit(geom, tag):
+    def _emit(geom, tag, static=False):
         for gg in _polys(geom):
             rings = [[list(c) for c in gg.exterior.coords]]
             rings += [[list(c) for c in r.coords] for r in gg.interiors]
-            area_feats.append((tag, rings))
+            area_feats.append((tag, rings, static))
 
     # GRADED SUITABILITY model (docs/FISH_BEHAVIOR_REVIEW.md): rather than a flat in/out band,
     # grade each reachable pixel by how close its BOTTOM temperature is to where the species
@@ -646,25 +648,39 @@ def _overlay(depth, dist, gx, gy, inbox, node_xy, cols, g_sst, bias, bounds_3857
     strength = np.maximum(s_norm, r_norm)                    # continuous structure strength
 
     default_id = None
+    inter_area = {}   # {species: {tier: px}} — set-INTERSECTION tiers at this lead, for ranking only
     for sp in species:
         tiers, fair = _species_tiers(bottom_c, strength, within, depth, sp, prod, season=season)
-        # WEAK-CUE species (salmon/steelhead) are plume/season driven — temperature AND structure
-        # barely locate them — so the DATA does not emit the confident structure glow for them
-        # (honesty in the artifact, not just the UI hiding it; a non-web consumer sees the truth).
-        weak = getattr(sp, "temp_cue", "strong") == "weak"
-        emit_tags = ["s1", "s2"] if weak else [t for t, _ in SUIT_LEVELS]
-        emitted_any = False
-        for tag in emit_tags:
+        for tag in ("s1", "s2"):                             # temperature wash, per lead
             mask = tiers[tag]
             if mask.any():
                 _emit(_shape(mask), f"sp:{sp.id}:{tag}")
-                emitted_any = True
-        if not emitted_any:
-            continue
+        # STATIC structure marks: emitted ONCE per stretch (include_structure = lead-0 call only),
+        # tagged WITHOUT a lead so they render identically on every forecast day by construction.
+        # Shown for all species within their depth band — the marks are measured bottom, a fact;
+        # the weak-cue caveat (temperature/structure are minor cues for salmon/steelhead) stays on
+        # the wash + ranking, not on the existence of the bottom (ADR-038).
+        gtier = _species_structure(strength, within, depth, sp, prod, season=season)
+        if include_structure:
+            for tag, mask in gtier.items():
+                if mask.any():
+                    _emit(_shape(mask), f"sp:{sp.id}:{tag}", static=True)
+        # RANKING sample: plain BOOLEAN INTERSECTIONS (no product scalar) — how much in-range /
+        # optimal water, and how much measured break sits INSIDE each (the conjunction as set
+        # logic). Pixel counts here; converted to m² by the caller (res is uniform per stretch).
+        good = tiers["s2"]
+        anyg = gtier["g3"] | gtier["g4"] | gtier["g5"]
+        strong = gtier["g4"] | gtier["g5"]
+        inter_area[sp.id] = {
+            "s1": float(tiers["s1"].sum()), "s2": float((good & ~anyg).sum()),
+            "s3": float((fair & gtier["g3"]).sum()),
+            "s4": float((fair & strong & ~gtier["g5"]).sum()),
+            "s5": float((fair & gtier["g5"]).sum()),
+        }
         if sp.default or (default_id is None and sp is species[0]):
             reach_px_primary = float(fair.sum())             # total-zone (in-range) area
             default_id = sp.id
-    return area_feats, reach_px_primary
+    return area_feats, reach_px_primary, inter_area
 
 
 def main(argv) -> int:
@@ -784,30 +800,30 @@ def main(argv) -> int:
             vt = valid_time_from_dataset(ds)
             cols = extract_native_columns(ds, {str(int(nd)): int(nd) for nd in inbox})
             ds.close()
-            area, reach_px = _overlay(depth, dist, gx, gy, inbox, node_xy,
+            area, reach_px, inter = _overlay(depth, dist, gx, gy, inbox, node_xy,
                                       cols, g_sst, bias, patch.bounds_3857, res,
                                       cfg.product, targets=_clamp_targets(cfg.band_temps),
                                       species=cfg.species,
                                       own_m=centers_m[si],
                                       others_m=[c for j, c in enumerate(centers_m) if j != si],
-                                      season=_issue_season)
+                                      season=_issue_season,
+                                      include_structure=(lead == 0))
             if area is None:
                 continue
             days.append({"label": f"{vt:%a %b %-d}", "lead": lead,
                          "valid_utc": vt.strftime("%Y-%m-%dT%H:%M:%SZ"),
                          "reach_ha": round(reach_px * res * res / 1e4, 1)})
-            for temp, rings in area:
+            for temp, rings, static in area:
                 coords = [[[round(lon, 6), round(lat, 6)] for lon, lat in ring] for ring in rings]
-                area_feats.append({"type": "Feature",
-                                   "properties": {"lead": lead, "temp": temp},
+                # STATIC structure marks carry NO lead — they render on every forecast day
+                props = {"temp": temp} if static else {"lead": lead, "temp": temp}
+                area_feats.append({"type": "Feature", "properties": props,
                                    "geometry": {"type": "Polygon", "coordinates": coords}})
-                # accumulate real per-tier habitat AREA at lead 0 for the top-spots ranking:
-                # outer ring positive, holes negative (temp = 'sp:<species>:<tier>')
-                if lead == 0 and temp.startswith("sp:"):
-                    _, _sp, _tier = temp.split(":")
-                    a = _ring_area_m2(rings[0]) - sum(_ring_area_m2(r) for r in rings[1:])
-                    tier_area.setdefault(_sp, {})
-                    tier_area[_sp][_tier] = tier_area[_sp].get(_tier, 0.0) + max(0.0, a)
+            # RANKING areas at lead 0: boolean-INTERSECTION pixel counts from _overlay (set logic,
+            # no product) converted to m² — replaces the old polygon-shoelace accumulation.
+            if lead == 0 and inter:
+                for _sp, tiers_px in inter.items():
+                    tier_area[_sp] = {t: px * res * res for t, px in tiers_px.items()}
         if not days:
             print(f"skip {sid}: no frames"); continue
         if not lead_valid:
@@ -1028,7 +1044,8 @@ def main(argv) -> int:
                     for sp in cfg.species],
         "nearshore_delta_by_class": {c: {"delta_c": d, "n": n} for c, (d, n) in ns_by.items()},
         "suit_levels": [{"tag": t, "label": lb} for t, lb in SUIT_LEVELS],
-        "combine": "cited temperature bands (fair=range, good=optimal) × CONTINUOUS measured structure glow (strength = max slope/relief, normalized to regional p90; glow bands at regional p90/p95/p99) — conjunction, no fitted weights",
+        "struct_levels": [{"tag": t, "label": lb} for t, lb in STRUCT_LEVELS],
+        "combine": "BIVARIATE display (ADR-038): cited temperature bands as a moving wash (s1 range / s2 optimal) + STATIC measured-structure marks (g3/g4/g5 = regional p90/p95/p99, lead-independent) in separate visual channels — no fusion math; ranking uses boolean intersections only",
         "favor_calibrated": bool(favor_calib),  # False = physics prior (see suitability.py)
         "n_leads": len(LEADS),
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
