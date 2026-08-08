@@ -119,8 +119,11 @@ CONTOUR_DEPTHS_M = (2, 4, 6, 8, 10, 12, 15, 20, 25)
 
 
 def _depth_contours(depth, res, bounds_3857):
-    """Isobath LineString features (lon/lat) on the native-smoothed depth. contourpy handles the
-    NaN mask, so lines END at the survey/data edge — no artificial strokes along the box border."""
+    """Isobath LineString features (lon/lat) on the native-smoothed depth, PLUS the water polygon
+    of the box (property w=1). The chart view paints ONLY those water polygons dark and leaves the
+    satellite LAND visible (operator request 2026-08-08) — the frozen OSM water mask is the same
+    authority the land-clip uses, so chart water and painted water can never disagree. contourpy
+    handles the NaN mask, so lines END at the survey/data edge — no strokes along the box border."""
     from contourpy import contour_generator
     from shapely.geometry import LineString
     from tbay_fishcast.features import suitability as _su
@@ -141,6 +144,18 @@ def _depth_contours(depth, res, bounds_3857):
             coords = [[round(v, 6) for v in _merc_to_ll(x, y)] for x, y in ls.coords]
             feats.append({"type": "Feature", "properties": {"d": d},
                           "geometry": {"type": "LineString", "coordinates": coords}})
+    # WATER POLYGONS for the chart ground (frozen OSM mask; graceful skip if absent)
+    try:
+        from tbay_fishcast.features.overlay import reachable_area_features
+        from tbay_fishcast.ingest.watermask import water_mask
+        wm = water_mask(bounds_3857, depth.shape)
+        for rings in reachable_area_features(wm, bounds_3857, res, min_area_m2=5000.0,
+                                             smooth_iters=1):
+            coords = [[[round(v, 6) for v in ring_pt] for ring_pt in ring] for ring in rings]
+            feats.append({"type": "Feature", "properties": {"w": 1},
+                          "geometry": {"type": "Polygon", "coordinates": coords}})
+    except Exception as e:  # noqa: BLE001 - chart ground degrades to lines-on-satellite
+        print(f"    chart water polygons unavailable ({str(e)[:50]})")
     return feats
 
 

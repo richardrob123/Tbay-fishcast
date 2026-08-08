@@ -229,7 +229,7 @@
 
 <div class="card" id="settings" style="display:none">
   <div class="strow"><b>Settings</b><button id="setclose" title="close">✕</button></div>
-  <label class="strow"><span>Depth-contour chart<br><small>swap satellite for isobath lines (CHS survey)</small></span>
+  <label class="strow"><span>Depth-contour chart<br><small>water becomes a depth chart (CHS survey); land stays satellite</small></span>
     <input type="checkbox" id="chartview" /></label>
   <label class="strow"><span>Overlay strength</span>
     <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
@@ -736,7 +736,15 @@ map.on('load', async () => {
     man.stretches.forEach((s, i) => {
       if(!s.contours) return;
       map.addSource('ctr'+i, { type:'geojson', data: s.contours + V });
+      // chart WATER: dark fill over the water polygons only — the satellite LAND stays visible
+      // (operator request). Inserted beneath the first overlay layer so teal/gold ride on top.
+      const firstOverlay = (map.getStyle().layers.find(l => /^ar(fill|str)/.test(l.id)) || {}).id;
+      map.addLayer({ id:'ctrw'+i, type:'fill', source:'ctr'+i,
+        filter:['==', ['geometry-type'], 'Polygon'],
+        layout:{ visibility:'visible' },
+        paint:{ 'fill-color':'#0d1b2e', 'fill-opacity':0.92 } }, firstOverlay);
       map.addLayer({ id:'ctr'+i, type:'line', source:'ctr'+i,
+        filter:['==', ['geometry-type'], 'LineString'],
         layout:{ visibility:'visible' },
         paint:{ 'line-color':'#c3d8ee',
                 // index contours (10/20 m) heavier, like a real chart; bright enough to read
@@ -746,6 +754,7 @@ map.on('load', async () => {
       if(glyphsOk){
         map.addSource('ctrs'+i, { type:'geojson', data: s.contours + V });
         map.addLayer({ id:'ctrlab'+i, type:'symbol', source:'ctrs'+i,
+          filter:['==', ['geometry-type'], 'LineString'],
           layout:{ visibility:'visible', 'symbol-placement':'line',
                    'text-field':['concat',['to-string',['get','d']],' m'],
                    'text-font':['Open Sans Semibold'], 'text-size':10, 'symbol-spacing':320 },
@@ -754,10 +763,10 @@ map.on('load', async () => {
     });
   }
   function setChart(on){
-    map.setLayoutProperty('sat', 'visibility', on ? 'none' : 'visible');
-    map.setLayoutProperty('chartbg', 'visibility', on ? 'visible' : 'none');
+    // satellite STAYS: the chart water-fill covers only water, land keeps the imagery.
+    // chartbg remains as the offline/basemap-failure ground beneath everything.
     if(on && !ctrLoaded) loadContours();
-    man.stretches.forEach((s, i) => ['ctr'+i, 'ctrlab'+i].forEach(id => {
+    man.stretches.forEach((s, i) => ['ctrw'+i, 'ctr'+i, 'ctrlab'+i].forEach(id => {
       if(map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
     }));
     localStorage.setItem('fc_chart', on ? '1' : '0');
