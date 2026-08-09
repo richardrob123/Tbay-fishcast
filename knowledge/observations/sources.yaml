@@ -125,6 +125,8 @@ agency:
       content: "EXACTLY our water's assessment data; all access_level=under_review, zero resources today"
       tier: "T1 when released"
       priority: "3 (watch quarterly; operator data request to MNRF is the unlock)"
+      verified_2026_08_09: "Re-checked FOUR ways, not taken on one agent's word. (1) CKAN package_show for all four datasets: access_level=under_review, state=active, resources=0 - catalogued but unpublished. (2) ArcGIS Online/GeoHub search: only the Fish Stocking services (already mined); no assessment/creel/netting service exists. (3) GLFC hosts management-unit annual reports at /loc_mgmt_unit/ - Lake ONTARIO's unit publishes there (LOA 20.01.pdf, 16.5 MB, HTTP 200) but there is NO Lake Superior equivalent (404). (4) GLFC Special Pub 'The State of Lake Superior in 2011' is a 114-page lakewide synthesis with 2 Thunder Bay mentions and zero index-netting/creel content. CONCLUSION: the data exists and is catalogued; it is simply not published yet. 'under_review' is a publication-pipeline state, not a refusal."
+      operator_ammunition: "The Lake Ontario Management Unit publishes equivalent annual reports (index netting, creel) openly via GLFC. A sister OMNRF unit on another Great Lake already does exactly what we are asking for - useful precedent to cite in the data request."
       slices: ["mnrf_lsmu:index_netting (future)", "mnrf_lsmu:creel_black_bay (future)", "mnrf_lsmu:derby_monitoring (future)"]
   dead_ends:
     - {name: Ontario BsM, reason: "inland-lakes program; no Lake Superior coverage"}
