@@ -100,6 +100,27 @@ community:
       reporting, not scraping. Hand-entered reports land in the same candidate queue as the Reddit sweep and
       pass the same schema/gazetteer/dedup gate, stamped entry:"manual" so an audit can always separate
       testimony from machine-fetched text (a manual row cannot be re-verified by re-fetching a URL).'
+    sanctioned_route_investigated_2026_08_09: 'META CONTENT LIBRARY (MCL) — the CrowdTangle successor
+      (CrowdTangle itself shut down 2024-08-14). This IS a real, sanctioned route and it DOES cover public
+      group posts, so it deserves a recorded verdict rather than a shrug. It still cannot serve this project,
+      for three INDEPENDENT reasons, any one of which is fatal:
+        1. ELIGIBILITY — vetted academic/nonprofit researchers only, applying through ICPSR (U. Michigan),
+           for scientific or public-interest research. A personal shore-fishing forecast is not that.
+        2. EXPORT — decisive. "Raw data files, data extracts, and codebooks will NOT be released"; analysis
+           happens inside a secure environment (Meta SRE, or SOMAR VDE at $371/mo + $1,000 project-start fee
+           from Jan 2026) and only vetted aggregate output for papers/presentations may leave. Per-post rows
+           are exactly what the ledger needs and exactly what may not come out.
+        3. CADENCE — output vetting wants >=10 business days notice per export. Daily updates are structurally
+           impossible even if 1 and 2 were solved.
+      CONCLUSION: the sanctioned route exists, and it is the wrong shape for us. Not a gap in our effort.'
+    still_technically_works: 'Browser extensions operating inside a human''s own logged-in session survived the
+      API deprecation precisely because they are not API-based. Recorded for completeness; NOT built and NOT
+      recommended — it is still automated collection under Meta''s terms. If the operator chooses to gather
+      from their own membership by hand, add_report.py is the intake.'
+    better_path: 'ASK THE ADMIN. This already worked twice on this project (the blog owner at the boat launch;
+      NSSA''s 19-year newsletter archive, the single biggest find of the coverage audit). A group whose members
+      like the tool is an AUDIENCE that can report into it directly — which beats scraping on every axis:
+      consented, structured at entry, dated correctly, and no ToS question at all.'
   - name: Fishbrain
     reason: robots.txt disallows /catches/ and /posts/ (the dated pages); detail auth-walled
   - name: Lake-Link
