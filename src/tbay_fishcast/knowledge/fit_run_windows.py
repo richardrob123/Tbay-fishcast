@@ -78,6 +78,14 @@ def _report_doys(rows, species: str, win_start: str, win_end: str, tol_days: int
     for r in rows:
         if r.get("species") != species:
             continue
+        # ANALOG ROWS NEVER FIT OUR WINDOWS. The ledger deliberately carries out-of-area
+        # covariates (e.g. the MN DNR Knife River trap, ~200 km southwest across the lake, a
+        # different watershed and thermal regime). They are genuinely useful for CONTEXT and
+        # comparison, but fitting Thunder Bay's phenology with Minnesota's run dates would be
+        # exactly the silent substitution this project exists to avoid — the window would claim
+        # to be "measured locally" while describing another jurisdiction's fish.
+        if r.get("analog"):
+            continue
         if r.get("kind") not in ("catch", "sighting", "run_status"):
             continue
         if r.get("date_precision", "day") not in ("day", "week"):

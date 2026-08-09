@@ -116,3 +116,18 @@ def test_two_stage_bar_computes_but_does_not_ship_thin_fits():
         dates += [f"{yr}-09-02", f"{yr}-09-12"]        # -> 25 reports over 5 years
     f2 = frw.fit_entry(CHINOOK_ENTRY, _rows("chinook", dates))
     assert f2["n"] == 25 and f2["applied"] is True
+
+
+def test_analog_rows_never_fit_local_windows():
+    """The ledger carries out-of-area covariates (MN DNR Knife River trap, ~200 km southwest
+    across the lake). They must NEVER fit Thunder Bay's windows, or a window would claim to be
+    'measured locally' while describing Minnesota's fish."""
+    local = [f"{yr}-09-{d:02d}" for yr in (2021, 2022, 2023, 2024) for d in (5, 8, 11)]
+    analog = [f"{yr}-08-{d:02d}" for yr in (2015, 2016, 2017, 2018, 2019, 2020)
+              for d in (1, 3, 5, 7, 9)]        # 30 rows, much earlier - would drag the window
+    rows = _rows("chinook", local)
+    rows += [{**r, "analog": True} for r in _rows("chinook", analog)]
+    f = frw.fit_entry(CHINOOK_ENTRY, rows)
+    assert f is not None
+    assert f["n"] == len(local), "analog rows must be excluded from n entirely"
+    assert f["applied"] is False, "12 local reports alone must not ship a window"

@@ -153,6 +153,8 @@ media:
       priority: 1
       slices: ["tbf_rss:daily_poll (ongoing, not a backfill)"]
       notes: "the board's TOPIC PAGES are auth-walled (see dead_ends); the RSS is the only guest-readable body text and it is legitimately public"
+    - name: TBNewsWatch RSS archive index (LOW YIELD - verified 2026-08-09)
+      yield_note: "MINED: 256 page fetches -> 110 keyword hits -> only 3 usable rows (TBSA derby announcements, no counts/weights in metadata). Archive stops at ~page 5001 = June 2014 (5002+ HTTP 500), NOT 2004 as first estimated. NAMESPACE TRAPS confirmed empirically: 'Kam River Fighting Walleye' is a JUNIOR HOCKEY TEAM and dominates every walleye hit; 'Sleeping Giant' hits a brewery, a ski loppet and an exotic-animal rescue; fish/fisher hit surnames and obituaries; derby hits soap-box derbies; stocking hits food-bank shelves. Do not re-mine without article bodies (CI-side)."
     - name: TBNewsWatch RSS archive index
       url: "https://www.tbnewswatch.com/rss?page=N (200 + paginates whole archive; last page ~5736, ~143k items to ~2004)"
       content: "titles/pubDates/descriptions incl. derby stories (2022: ~125 salmon weighed, 9.8 lb winner); article BODIES 403 from container (Cloudflare) - fetch bodies CI-side; robots.txt is Allow:/ so the 403 is technical, not ToS"
