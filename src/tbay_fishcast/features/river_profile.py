@@ -317,3 +317,89 @@ def holding_water_below(reaches, max_gap_m: float = 150.0):
                 out[bi] = pi
                 break
     return out
+
+
+# --- HYDRAULICS: the variable that actually makes rivers comparable ---------------------------
+# WHY THIS REPLACES RAW SLOPE. The first build classified reaches by percentiles of slope pooled
+# across all five rivers, copying ADR-039's regional-percentile discipline. That import was wrong,
+# and the measurement showed it: the pooled "rapid" bar came out at 10.73 m/km while the
+# Kaministiquia's MEAN gradient is 1.86 m/km — 0.17x the bar. A big river is flat by construction
+# (hydraulic geometry: gradient falls as discharge rises), so the Kam could never register a rapid
+# no matter how fast its water actually ran. Recall showed exactly that: 100% on the Current
+# (mean gradient 8.73, near the bar) against 25% on the Kam.
+#
+# Unit stream power is the physically correct variable for "fast, broken water":
+#     omega = rho * g * Q * S / w        [W/m^2]
+# It rises with discharge and slope and falls with width, so a wide low-gradient river carrying a
+# lot of water and a narrow steep creek become directly comparable. Crucially, that restores the
+# regional-percentile method: pooling is valid on omega precisely because omega IS comparable
+# across rivers, which raw slope is not.
+#
+# It also makes the layer LIVE. Q is measured daily (ECCC gauges 02AB006 Kam, 02AB014 Current,
+# 02AB008 Neebing floodway), so a seam at spring freshet is not the same seam in August low water —
+# which is true of real rivers and is exactly what an angler needs to know.
+RHO = 1000.0        # kg/m^3
+G = 9.81            # m/s^2
+
+
+def unit_stream_power(slope_m_km: float, q_cms: float, width_m: float) -> float | None:
+    """omega = rho*g*Q*S/w in W/m^2. None if any input is missing or non-physical."""
+    if slope_m_km is None or q_cms is None or width_m is None:
+        return None
+    if not all(math.isfinite(v) for v in (slope_m_km, q_cms, width_m)):
+        return None
+    if width_m <= 0 or q_cms < 0:
+        return None
+    s = max(0.0, slope_m_km) / 1000.0          # m/km -> m/m; negative slope is survey noise
+    return RHO * G * q_cms * s / width_m
+
+
+# --- BARRIERS: absolute physics, never a percentile -------------------------------------------
+# A percentile ALWAYS returns its quantile. Run p99 over McIntyre's 0.03 m/km floodway and it will
+# dutifully manufacture "barriers" out of survey noise. But passability is not relative: a 2 m
+# vertical step stops a steelhead on any river, in any region, whatever the local distribution
+# says. So barriers are tested against fish capability in metres.
+#
+# Leap capability is species-specific, and that is a FEATURE rather than a complication — it means
+# the upstream limit differs by species, which is precisely what a per-species app should say. The
+# heights below are the conventional design values used in fish-passage engineering; they are
+# stated as a JUDGMENT (tier T3), not measured here, and the barrier call is reported with the
+# height that produced it so a reader can disagree with the number without re-deriving the method.
+LEAP_M = {
+    "steelhead": 1.5,      # strongest leaper of the four; ascends substantial falls with a pool
+    "chinook": 1.2,
+    "coho": 1.2,
+    "salmon": 1.2,         # app-level grouping
+    "brook_trout": 0.6,    # weak leaper — coasters are stopped by steps others clear
+    "lake_trout": 0.3,     # essentially a non-leaper; enters only the lowest reaches
+}
+# A step needs water below it to jump from. Without a plunge pool the same height is impassable,
+# so a drop concentrated in a very short distance is treated as a barrier for everything.
+CHUTE_LEN_M = 15.0
+
+
+def barrier_for(drop_m: float, length_m: float, species: str) -> bool:
+    """Is this step impassable for `species`? Absolute geometry vs leap capability."""
+    if drop_m is None or not math.isfinite(drop_m) or drop_m <= 0:
+        return False
+    leap = LEAP_M.get(species, 1.0)
+    if length_m <= CHUTE_LEN_M:
+        return drop_m > leap                        # near-vertical step
+    # A sustained steep chute is passable only if no single leap within it exceeds capability;
+    # approximate that by the drop over one chute-length of the reach.
+    per_chute = drop_m * (CHUTE_LEN_M / max(length_m, 1e-6))
+    return per_chute > leap
+
+
+def upstream_limit(reaches, species: str):
+    """Index of the first reach (from the mouth upstream) that stops `species`, or None.
+
+    THE FISHING-RELEVANT OUTPUT. Migratory fish run until something stops them and then hold
+    below it — which is why the NSSA built a fishway on the Current rather than writing that
+    stretch off. Reaches are expected in downstream order, so this walks from the mouth back up.
+    """
+    for i in range(len(reaches) - 1, -1, -1):
+        r = reaches[i]
+        if barrier_for(r.drop_m, r.length_m, species):
+            return i
+    return None

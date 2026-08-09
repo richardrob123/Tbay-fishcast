@@ -151,3 +151,118 @@ def datum_check(z_downstream_end: float | None) -> dict:
     err = abs(z_downstream_end - LAKE_SUPERIOR_DATUM_M)
     return {"ok": err <= 1.5, "measured_m": round(z_downstream_end, 2),
             "datum_m": LAKE_SUPERIOR_DATUM_M, "error_m": round(err, 2)}
+
+
+# --- CHANNEL WIDTH ---------------------------------------------------------------------------
+# Width is measured, not assumed, because it turned out to drive two things at once: the slope
+# window and the reach-length floor are both expressed in channel widths, so a guessed width
+# corrupts both. Checking the guesses against lidar found three of five materially wrong (Kam
+# 80 -> 116 m, Neebing 20 -> 12 m, McIntyre 15 -> 54 m), while the Current matched (25 -> 28 m),
+# which is what makes the method credible rather than merely convenient.
+#
+# WHAT THIS MEASURES, precisely: the WETTED width on the acquisition date (2024-05-06), not
+# bankfull width. May is post-freshet here so the two are probably close, but they are not the
+# same thing and the output says so rather than quietly borrowing bankfull's authority.
+WIDTH_SEARCH_HALF_M = 150.0
+WIDTH_STEP_M = 2.0
+WIDTH_TOL_M = 0.60          # water is flat: within this of the channel's own surface level
+
+
+def measure_widths(points, *, url: str = DTM_URL, stride: int = 1):
+    """Wetted width (m) at each station, or None where the transect saturates.
+
+    A saturated transect — wet all the way to the search limit — does NOT mean a very wide river.
+    It means the station is not in a channel at all: an impoundment, a wetland, or the river mouth
+    opening into the lake. Averaging those in would inflate width exactly where the channel
+    concept stops applying, so they are returned as None for the caller to interpolate across.
+    Usefully, saturation is itself evidence of standing water.
+    """
+    import rasterio
+    from rasterio.warp import transform as warp_transform
+
+    os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
+    pts = list(points)
+    if len(pts) < 2:
+        return [None] * len(pts)
+    offs = [(-WIDTH_SEARCH_HALF_M + i * WIDTH_STEP_M)
+            for i in range(int(2 * WIDTH_SEARCH_HALF_M / WIDTH_STEP_M) + 1)]
+    idx = list(range(0, len(pts), max(1, stride)))
+    query, groups = [], []
+    for i in idx:
+        a, b = pts[max(0, i - 1)], pts[min(len(pts) - 1, i + 1)]
+        dlat, dlon = _transect_offsets(a, b)
+        g = []
+        for d in offs:
+            g.append(len(query))
+            query.append((pts[i][0] + dlat * d, pts[i][1] + dlon * d))
+        groups.append(g)
+
+    with rasterio.open(url) as ds:
+        xs, ys = warp_transform("EPSG:4326", ds.crs,
+                                [q[1] for q in query], [q[0] for q in query])
+        raw = [v[0] for v in ds.sample(list(zip(xs, ys)))]
+
+    out_sparse = []
+    n = len(offs)
+    for g in groups:
+        prof = [None if (raw[k] is None or float(raw[k]) == NODATA
+                         or not math.isfinite(float(raw[k]))) else float(raw[k]) for k in g]
+        c = n // 2
+        near = [v for v in prof[max(0, c - 4):c + 5] if v is not None]
+        if not near:
+            out_sparse.append(None)
+            continue
+        base = min(near)
+        wet = [v is not None and v <= base + WIDTH_TOL_M for v in prof]
+        if not wet[c]:
+            cand = [k for k, w in enumerate(wet) if w]
+            if not cand:
+                out_sparse.append(None)
+                continue
+            c = min(cand, key=lambda k: abs(k - n // 2))
+        lo = c
+        while lo - 1 >= 0 and wet[lo - 1]:
+            lo -= 1
+        hi = c
+        while hi + 1 < n and wet[hi + 1]:
+            hi += 1
+        if lo == 0 or hi == n - 1:
+            out_sparse.append(None)          # saturated: not a channel here
+        else:
+            out_sparse.append((hi - lo) * WIDTH_STEP_M)
+
+    if stride == 1:
+        return out_sparse
+    full = [None] * len(pts)
+    for k, i in enumerate(idx):
+        full[i] = out_sparse[k]
+    return full
+
+
+def reach_width(widths, dist_m, smooth_m: float = 1000.0):
+    """Reach-scale width: a running median over `smooth_m`, with saturated gaps filled.
+
+    WHY SMOOTHED, and this is the subtle part. If the slope window scaled with the LOCAL width,
+    then a wide slow pool would be smoothed harder than a narrow riffle — the classifier's own
+    resolution tracking the very property it is trying to classify, a feedback that makes pools
+    look flatter and reinforces its own answer. Smoothing width over a scale much longer than a
+    pool-riffle unit (~5-7 widths) breaks that loop while keeping the genuine downstream
+    widening, which is the part that actually varies with position on the river.
+    """
+    n = len(widths)
+    out = [None] * n
+    for i in range(n):
+        lo, hi = dist_m[i] - smooth_m / 2, dist_m[i] + smooth_m / 2
+        vals = [widths[j] for j in range(n)
+                if widths[j] is not None and lo <= dist_m[j] <= hi]
+        if vals:
+            vals.sort()
+            out[i] = vals[len(vals) // 2]
+    known = [i for i in range(n) if out[i] is not None]
+    if not known:
+        return out
+    for i in range(n):                       # carry the nearest measured value into the gaps
+        if out[i] is None:
+            j = min(known, key=lambda k: abs(k - i))
+            out[i] = out[j]
+    return out
