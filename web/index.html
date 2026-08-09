@@ -405,6 +405,20 @@ function renderPhase(lead){
   if(!ph){ box.style.display='none'; return; }
   const m = PHASE_META[ph.phase] || PHASE_META.unknown;
   box.style.display = 'flex';
+  // OBSERVED corroboration (ADR-043): the phase is inferred from WIND; the CHS shore gauge
+  // measures the response (offshore blow -> shore level draws down as the thermocline tilts up).
+  // Shown as agreement/disagreement, never as proof - the anomaly also carries seiche + pressure.
+  const wlv = (MAN.phase && MAN.phase.water_level) || null;
+  let wlLine = '';
+  if(wlv && wlv.trend && wlv.trend !== 'unknown'){
+    const ok = wlv.agrees_with_wind_phase;
+    const cm = Math.round((wlv.anomaly_m||0)*100);
+    wlLine = `<div class="det" style="color:${ok===false?'#e0a53a':'#9aa4ae'}" title="`+
+      `Shore water level vs the preceding 30 h. An offshore blow draws the level down as the `+
+      `thermocline tilts up. Also responds to seiche and barometric pressure - corroboration, `+
+      `not proof.">gauge: ${esc(wlv.trend)} ${cm>0?'+':''}${cm} cm`+
+      (ok===false?' &middot; \u26a0 disagrees with the wind read':' &middot; consistent')+`</div>`;
+  }
   box.style.borderLeftColor = m.col;
   const obs = (ph.source||'').startsWith('observed');
   const srcName = obs ? (esc(MAN.phase.obs_station||'obs')+' obs') : 'forecast';
@@ -412,7 +426,7 @@ function renderPhase(lead){
   box.innerHTML =
     `<span class="ic">${m.ic}</span>`+
     `<span class="txt"><div class="lab" style="color:${m.col}">${m.lab}</div>`+
-    `<div class="det">${esc(ph.detail||'')}</div></span>`+
+    `<div class="det">${esc(ph.detail||'')}</div>${wlLine}</span>`+
     `<span class="src">${obs?'🛰 ':''}${srcName}${conf?'<br>'+conf+' conf.':''}</span>`;
 }
 

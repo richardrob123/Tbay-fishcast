@@ -1064,6 +1064,20 @@ def main(argv) -> int:
         phase = _build_phase(lead_valid, ens_w)
         if phase and phase.get("now"):
             print(f"phase now: {phase['now']['phase']} ({phase['now'].get('detail','')})")
+        # OBSERVED corroboration (ADR-043): the phase above is inferred from WIND alone. The CHS
+        # shore gauge measures the RESPONSE — an offshore blow draws the shoreline level down as
+        # the thermocline tilts up. Agreement raises confidence; disagreement is stated, not
+        # hidden. Never overrides the phase; a dead gauge just omits the line (rule 5).
+        if phase is not None:
+            from tbay_fishcast.ingest import water_level as _wl
+            _lv = _wl.observed_state("thunder_bay").as_dict()
+            phase["water_level"] = _lv
+            if _lv.get("trend") != "unknown":
+                _p = (phase.get("now") or {}).get("phase", "")
+                _agrees = (_lv["upwelling_favorable"] == (_p in ("setup", "peak")))
+                phase["water_level"]["agrees_with_wind_phase"] = _agrees
+                print(f"shore gauge: {_lv['trend']} ({_lv['anomaly_m']:+.3f} m) — "
+                      f"{'agrees with' if _agrees else 'DISAGREES with'} wind phase '{_p}'")
     except Exception as e:  # noqa: BLE001
         print(f"phase unavailable: {str(e)[:60]}")
 
