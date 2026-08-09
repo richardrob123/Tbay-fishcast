@@ -35,6 +35,28 @@ from tbay_fishcast.ingest import hrdem                    # noqa: E402
 CALIB = ROOT / "data" / "calib" / "river_reach_calib.json"
 GEOJSON = ROOT / "web" / "data" / "rivers.geojson"
 CACHE = ROOT / "data" / "hrdem_cache"
+OSM_CACHE = ROOT / "data" / "osm_cache"
+
+
+def _cached(name: str, fetch):
+    """Cache OSM geometry on disk.
+
+    Overpass rate-limits, and this build asks it for five centrelines plus the barrier set every
+    run. Mid-development that got the build stalled behind a 180 s curl timeout with nothing to
+    show; in CI it would be a flaky external dependency on a step that has no business being
+    flaky. River centrelines change on the order of never, so cache them and let a human delete
+    the directory to refresh.
+    """
+    OSM_CACHE.mkdir(parents=True, exist_ok=True)
+    f = OSM_CACHE / f"{name}.json"
+    if f.exists():
+        try:
+            return json.loads(f.read_text())
+        except ValueError:
+            pass
+    out = fetch()
+    f.write_text(json.dumps(out))
+    return out
 
 # The rivers that carry runs to this shore. Each is matched by OSM name inside its own box, so a
 # same-named watercourse elsewhere in the domain cannot bleed in.
@@ -78,6 +100,10 @@ def _overpass(query: str, timeout: int = 180):
 
 
 def fetch_centreline(r):
+    return _cached(f"centreline_{r['id']}", lambda: _fetch_centreline(r))
+
+
+def _fetch_centreline(r):
     s, w, n, e = r["bbox"]
     q = (f'[out:json][timeout:120];'
          f'(way["waterway"~"river|stream"]["name"="{r["osm"]}"]({s},{w},{n},{e}););out geom;')
@@ -88,6 +114,10 @@ def fetch_centreline(r):
 
 
 def fetch_barriers():
+    return _cached("barriers", _fetch_barriers)
+
+
+def _fetch_barriers():
     q = ('[out:json][timeout:180];('
          'node["waterway"="waterfall"](48.0,-89.95,48.9,-87.95);'
          'node["natural"="waterfall"](48.0,-89.95,48.9,-87.95);'
