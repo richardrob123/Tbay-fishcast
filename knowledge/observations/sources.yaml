@@ -1,211 +1,341 @@
 # SOURCE REGISTRY for the research agent (ADR-042) — every source we can find, verified.
+#
+# COVERAGE AUDIT 2026-08-09 (answering "have we pulled in and are we scanning everything?"):
+#   MINED so far: iNaturalist, GBIF, GLFC lamprey reports, MN DNR Knife River trap, USGS RVCAT +
+#     GLSC reports, MN DNR creel, Lakehead theses, TB forum RSS, TBNewsWatch RSS.
+#   NOT YET MINED at audit time: North Shore Steelhead Association (P1 — the Current River fishway
+#     COUNTER, direct run counts on a mapped mouth; the biggest miss), Pautzke (P2), Northern Wilds
+#     (P2), Arctic Shift Reddit (P3), GLFC harvest + commercial-production DBs (P3).
+#   DAILY SCANNING is narrower than "everything": the coast_site workflow refreshes iNaturalist
+#     only; GBIF and the PDF/agency sources are episodic by nature (annual reports, museum
+#     accessions) and are re-mined on demand, not nightly. The research Routine (21:30 UTC) is the
+#     one component that walks this whole file — its coverage per night depends on its own budget.
+#
 # The daily Routine and backfill agents work FROM THIS FILE: mine `usable` sources by priority,
 # never touch `dead_ends` (the reason is recorded so nobody re-litigates), retry `unreachable`
-# occasionally. Community/citizen-science category verified 2026-08-08; agency and media
-# categories from their sweeps. Verification = an agent SAW dated observation data there.
+# occasionally. Verification = an agent SAW dated observation data there.
 # Rules baked in: robots.txt and ToS respected absolutely (rule 12) — a source that requires
 # violating either is a dead end BY DEFINITION, however rich.
-
 community:
   usable:
-    - name: iNaturalist API
-      url: https://api.inaturalist.org/v1/observations
-      params: "place_id=133230 (Thunder Bay District), taxon_id=47520 (Salmonidae)"
-      content: "456 salmonid obs (371 research-grade), day-dated, GPS, photo-verified; usable density 2017+ (25-55/yr)"
-      species_counts: "brook_trout 105, steelhead 82, lake_trout 73, pink 39, chinook 15, coho 10"
-      access: "open JSON API, no key; ~1 req/s etiquette, <=10k/day"
-      tos: clean (API provided, CC-licensed)
-      tier: T3
-      priority: 1
-      slices: ["inat:2016 through inat:2026 (one slice per year; one request per year-month)"]
-      notes: "record positional_accuracy + obscured flags into confidence"
-    - name: GBIF occurrence API
-      url: https://api.gbif.org/v1/occurrence/search
-      params: "familyKey=8615, bbox 48.0-49.2N / -89.9--88.0"
-      content: "1,871 salmonid occurrences 1922-2024+; USGS GLSC trawl RVCAT 1,147 (T1 dated survey catches w/ effort), museums 429, iNat mirror 209 (dedupe by iNat id)"
-      access: "open API; bulk downloads with free account"
-      tos: clean (open-data mandate)
-      tier: "T1 (RVCAT/museum) / T3 (iNat mirror)"
-      priority: 2
-      slices: ["gbif:bulk"]
-    - name: Reddit via Arctic Shift public archive (NO KEY NEEDED)
-      url: "https://arctic-shift.photon-reddit.com/api/posts/search?subreddit=<sub>&query=<q>"
-      content: "third-party academic redistribution of Reddit dumps; VERIFIED working, current through 2026-07. r/ThunderBay hits: 'Are the Steelhead and smelt running yet?' (2023-04-16), shore-fishing spot threads (2026-07). VOLUME IS THIN: query 'salmon' returned 0 rows for r/ThunderBay"
-      access: "open JSON API, no key, no account; arctic-shift robots.txt = 'Disallow:' (allow all). We never touch reddit.com, so reddit's Disallow:/ is not engaged"
-      tos: "we honor arctic-shift's robots; content is Reddit's Public Content Policy material - non-commercial research use"
-      tier: T4
-      priority: 3
-      slices: ["arctic_shift:r_ThunderBay_fishing_terms", "arctic_shift:r_OntarioFishing_thunder_bay"]
-      notes: "resolves the 'no API key' question: reddit.com/robots.txt IS Disallow:/ for all agents (re-verified 2026-08-08), and developers.reddit.com's 'no API key' line describes DEVVIT apps that run on Reddit's own infra installed in a subreddit - not external fetching. Arctic Shift is the keyless path; low yield, so P3"
-    - name: Reddit official Data API (alternative to Arctic Shift)
-      url: "r/ThunderBay, r/OntarioFishing, r/FishingOntario"
-      content: "same content, fresher; volume equally thin per the Arctic Shift probe"
-      access: "OAuth app at reddit.com/prefs/apps (free, 100 QPM, non-commercial) - operator action; never scrape reddit.com directly"
-      tos: "conditional: needs registered app"
-      tier: T3
-      priority: 3
-      slices: ["reddit_api:<sub>:<year> if operator registers an app"]
-    - name: YouTube Data API v3
-      content: "dated Thunder Bay steelhead/salmon uploads, ~10-30/yr; upload date != catch date (week/month precision, low confidence)"
-      access: "Data API v3 only (free key, 10k units/day); oEmbed lacks dates; no scraping"
-      tos: "conditional: needs API key"
-      tier: T3
-      priority: 3
-      slices: ["youtube:historical-search once key provisioned"]
+  - name: iNaturalist API
+    url: https://api.inaturalist.org/v1/observations
+    params: place_id=133230 (Thunder Bay District), taxon_id=47520 (Salmonidae)
+    content: 456 salmonid obs (371 research-grade), day-dated, GPS, photo-verified; usable density 2017+ (25-55/yr)
+    species_counts: brook_trout 105, steelhead 82, lake_trout 73, pink 39, chinook 15, coho 10
+    access: open JSON API, no key; ~1 req/s etiquette, <=10k/day
+    tos: clean (API provided, CC-licensed)
+    tier: T3
+    priority: 1
+    slices:
+    - inat:2016 through inat:2026 (one slice per year; one request per year-month)
+    notes: record positional_accuracy + obscured flags into confidence
+  - name: GBIF occurrence API
+    url: https://api.gbif.org/v1/occurrence/search
+    params: familyKey=8615, bbox 48.0-49.2N / -89.9--88.0
+    content: 1,871 salmonid occurrences 1922-2024+; USGS GLSC trawl RVCAT 1,147 (T1 dated survey catches w/ effort), museums
+      429, iNat mirror 209 (dedupe by iNat id)
+    access: open API; bulk downloads with free account
+    tos: clean (open-data mandate)
+    tier: T1 (RVCAT/museum) / T3 (iNat mirror)
+    priority: 2
+    slices:
+    - gbif:bulk
+  - name: Reddit via Arctic Shift public archive (NO KEY NEEDED)
+    url: https://arctic-shift.photon-reddit.com/api/posts/search?subreddit=<sub>&query=<q>
+    content: 'third-party academic redistribution of Reddit dumps; VERIFIED working, current through 2026-07. r/ThunderBay
+      hits: ''Are the Steelhead and smelt running yet?'' (2023-04-16), shore-fishing spot threads (2026-07). VOLUME IS THIN:
+      query ''salmon'' returned 0 rows for r/ThunderBay'
+    access: open JSON API, no key, no account; arctic-shift robots.txt = 'Disallow:' (allow all). We never touch reddit.com,
+      so reddit's Disallow:/ is not engaged
+    tos: we honor arctic-shift's robots; content is Reddit's Public Content Policy material - non-commercial research use
+    tier: T4
+    priority: 3
+    slices:
+    - arctic_shift:r_ThunderBay_fishing_terms
+    - arctic_shift:r_OntarioFishing_thunder_bay
+    notes: 'resolves the ''no API key'' question: reddit.com/robots.txt IS Disallow:/ for all agents (re-verified 2026-08-08),
+      and developers.reddit.com''s ''no API key'' line describes DEVVIT apps that run on Reddit''s own infra installed in
+      a subreddit - not external fetching. Arctic Shift is the keyless path; low yield, so P3'
+  - name: Reddit official Data API (alternative to Arctic Shift)
+    url: r/ThunderBay, r/OntarioFishing, r/FishingOntario
+    content: same content, fresher; volume equally thin per the Arctic Shift probe
+    access: OAuth app at reddit.com/prefs/apps (free, 100 QPM, non-commercial) - operator action; never scrape reddit.com
+      directly
+    tos: 'conditional: needs registered app'
+    tier: T3
+    priority: 3
+    slices:
+    - reddit_api:<sub>:<year> if operator registers an app
+  - name: YouTube Data API v3
+    content: dated Thunder Bay steelhead/salmon uploads, ~10-30/yr; upload date != catch date (week/month precision, low confidence)
+    access: Data API v3 only (free key, 10k units/day); oEmbed lacks dates; no scraping
+    tos: 'conditional: needs API key'
+    tier: T3
+    priority: 3
+    slices:
+    - youtube:historical-search once key provisioned
   dead_ends:
-    - {name: Facebook groups (incl. TBSA page), reason: "rule 12 categorical: auth-walled + ToS-prohibited. TBSA dated derby results live here - accepted loss"}
-    - {name: Fishbrain, reason: "robots.txt disallows /catches/ and /posts/ (the dated pages); detail auth-walled"}
-    - {name: Lake-Link, reason: "robots.txt explicitly blocks ClaudeBot/anthropic-ai UAs; also WI/MI-focused"}
-    - {name: greatlakesfisherman.com, reason: "NAMESPACE TRAP: their 'Thunder Bay' is Thunder Bay MICHIGAN (Alpena). Warning for all keyword extraction: 'Thunder Bay' is ambiguous across the Great Lakes"}
-    - {name: Angler's Atlas / MyCatch, reason: "catch records deliberately non-public (researcher data-sharing agreements only). Opening: formal research-partner agreement - operator decision, not scraping"}
-    - {name: eBird-equivalent for fish, reason: "does not exist; iNaturalist+GBIF is the fish citizen-science layer"}
-    - {name: Discord archives, reason: "auth-walled by design; no legitimately public archives found"}
-    - {name: myccr.com, reason: "reachable+permissive but ~zero Thunder Bay fishing volume (2007-era single threads)"}
-    - {name: thunderbaysalmonassociation.com, reason: "JS-rendered, zero static content; results live on their Facebook (blocked). Derby results via news coverage instead"}
+  - name: Facebook groups (incl. TBSA page)
+    reason: 'rule 12 categorical: auth-walled + ToS-prohibited. TBSA dated derby results live here - accepted loss'
+  - name: Fishbrain
+    reason: robots.txt disallows /catches/ and /posts/ (the dated pages); detail auth-walled
+  - name: Lake-Link
+    reason: robots.txt explicitly blocks ClaudeBot/anthropic-ai UAs; also WI/MI-focused
+  - name: greatlakesfisherman.com
+    reason: 'NAMESPACE TRAP: their ''Thunder Bay'' is Thunder Bay MICHIGAN (Alpena). Warning for all keyword extraction: ''Thunder
+      Bay'' is ambiguous across the Great Lakes'
+  - name: Angler's Atlas / MyCatch
+    reason: 'catch records deliberately non-public (researcher data-sharing agreements only). Opening: formal research-partner
+      agreement - operator decision, not scraping'
+  - name: eBird-equivalent for fish
+    reason: does not exist; iNaturalist+GBIF is the fish citizen-science layer
+  - name: Discord archives
+    reason: auth-walled by design; no legitimately public archives found
+  - name: myccr.com
+    reason: reachable+permissive but ~zero Thunder Bay fishing volume (2007-era single threads)
+  - name: thunderbaysalmonassociation.com
+    reason: JS-rendered, zero static content; results live on their Facebook (blocked). Derby results via news coverage instead
   unreachable:
-    - {name: ofncommunity.com, note: "proxy CONNECT 502 every attempt; historically the main Ontario forum with NW Ontario reports - manual/operator check worthwhile"}
-    - {name: ontariofishingforums.com, note: "Cloudflare challenge + egress block; challenge suggests automation unwelcome - likely dead end under rule 12; confirm robots manually"}
-
+  - name: ofncommunity.com
+    note: proxy CONNECT 502 every attempt; historically the main Ontario forum with NW Ontario reports - manual/operator check
+      worthwhile
+  - name: ontariofishingforums.com
+    note: Cloudflare challenge + egress block; challenge suggests automation unwelcome - likely dead end under rule 12; confirm
+      robots manually
 agency:
-  tooling_note: "WebFetch egress blocks most domains in this category; mine via Bash/curl through the session proxy (+pypdf for PDFs). Verified 2026-08-08."
+  tooling_note: WebFetch egress blocks most domains in this category; mine via Bash/curl through the session proxy (+pypdf
+    for PDFs). Verified 2026-08-08.
   usable:
-    - name: GLFC Sea Lamprey Control annual reports
-      url: "https://www.glfc.org/pubs/slcp/annual_reports/ANNUAL_REPORT_<YYYY>.pdf (2018-2025 verified 200; mirror sealamprey.org)"
-      content: "adult trap counts by stream (Neebing barrier trap; permanent trap first fished 2025), Kaministiquia lampricide treatments (~6.6M larvae est.), dated larval surveys"
-      tier: T1
-      priority: 1
-      slices: ["glfc:annual_reports_2018_2020_neebing_kam_traps", "glfc:annual_reports_2022_2023_2025_neebing_kam_traps"]
-    - name: MN DNR Knife River fish trap reports (North Shore ANALOG)
-      url: "https://files.dnr.state.mn.us/areas/fisheries/lakesuperior/<year>-knife-river-fish-trap-report.pdf (2014-2024 verified)"
-      content: "weekly adult steelhead run counts ice-out-July since ~1996, fall salmonids, juveniles; multi-year tables"
-      tier: T1
-      analog: true
-      priority: 1
-      slices: ["mndnr:knife_river_trap_reports_2014_2024"]
-      notes: "regional run-timing covariate for OUR streams, not local truth - key run-calendar input"
-    - name: USGS GLSC Lake Superior fish community survey reports
-      url: "glfc.org/pubs/lake_committees/common_docs/ (2018-2024 verified, surveys since 1978)"
-      content: "annual June bottom-trawl, 72 fixed stations incl. Black Bay South; species counts/biomass"
-      tier: T1
-      priority: 2
-      slices: ["usgs_glsc:ls_fish_survey_reports_2018_2024_black_bay_stations"]
-    - name: USGS RVCAT raw trawl data (ScienceBase)
-      url: "sciencebase.gov items 57e185c8e4b0908250033a54 + 60d23de3d34e86b938ae1b57 (1958-2018, CSV)"
-      content: "station-level dated trawl catches - filter to Thunder Bay/Black Bay bbox"
-      tier: T1
-      priority: 2
-      slices: ["usgs_rvcat:trawl_ops_1958_2018_tbay_bbox"]
-    - name: MN DNR Lake Superior creel surveys (ANALOG)
-      url: "files.dnr.state.mn.us/areas/fisheries/lakesuperior/ (spring 2017-2024; summer series since 1969)"
-      content: "17-stream spring steelhead creel (harvest+effort by stream); summer boat creel (laker/chinook/coho)"
-      tier: T1
-      analog: true
-      priority: 2
-      slices: ["mndnr:north_shore_spring_creel_2017_2024", "mndnr:ls_summer_creel_2017_2024"]
-    - name: GLFC LSC Recreational & Commercial Harvest report
-      url: "glfc.org/pubs/lake_committees/superior/Lake_Superior_Harvest_Report_2026.pdf (1995-2024)"
-      content: "annual harvest by jurisdiction; NOTE Ontario recreational harvest NOT estimated - context only"
-      tier: T1
-      priority: 3
-      slices: ["glfc_lsc:harvest_report_1995_2024_ontario_commercial"]
-    - name: GLFC commercial production database 1867-2020
-      url: "glfc.org/great-lakes-databases.php (per-lake XLSX)"
-      content: "annual commercial production, Ontario Superior column; no sub-lake geography"
-      tier: T1
-      priority: 3
-      slices: ["glfc:commercial_production_superior_ontario_1867_2020"]
-    - name: Lakehead University Knowledge Commons theses
-      url: "knowledgecommons.lakeheadu.ca (DSpace API verified)"
-      content: "Black Bay steelhead population thesis 2019, migratory rainbow 2017, Nipigon tribs brook/rainbow 2001, salmonid thermal habitats 2020 - embed dated trap/netting/telemetry tables"
-      tier: "T1/T2"
-      priority: 2
-      slices: ["lakehead_kc:black_bay_steelhead_thesis_2019", "lakehead_kc:migratory_rainbow_trout_2017", "lakehead_kc:nscstreams_misc_theses"]
-    - name: Ontario Data Catalogue LSMU datasets (WATCH - not yet open)
-      url: "data.ontario.ca CKAN: lake-superior-fish-community-index-netting-data, -recreational-creel-survey-data (Black Bay!), -commercial-catch-sampling, -fish-derby-monitoring-data"
-      content: "EXACTLY our water's assessment data; all access_level=under_review, zero resources today"
-      tier: "T1 when released"
-      priority: "3 (watch quarterly; operator data request to MNRF is the unlock)"
-      verified_2026_08_09: "Re-checked FOUR ways, not taken on one agent's word. (1) CKAN package_show for all four datasets: access_level=under_review, state=active, resources=0 - catalogued but unpublished. (2) ArcGIS Online/GeoHub search: only the Fish Stocking services (already mined); no assessment/creel/netting service exists. (3) GLFC hosts management-unit annual reports at /loc_mgmt_unit/ - Lake ONTARIO's unit publishes there (LOA 20.01.pdf, 16.5 MB, HTTP 200) but there is NO Lake Superior equivalent (404). (4) GLFC Special Pub 'The State of Lake Superior in 2011' is a 114-page lakewide synthesis with 2 Thunder Bay mentions and zero index-netting/creel content. CONCLUSION: the data exists and is catalogued; it is simply not published yet. 'under_review' is a publication-pipeline state, not a refusal."
-      operator_ammunition: "The Lake Ontario Management Unit publishes equivalent annual reports (index netting, creel) openly via GLFC. A sister OMNRF unit on another Great Lake already does exactly what we are asking for - useful precedent to cite in the data request."
-      slices: ["mnrf_lsmu:index_netting (future)", "mnrf_lsmu:creel_black_bay (future)", "mnrf_lsmu:derby_monitoring (future)"]
+  - name: GLFC Sea Lamprey Control annual reports
+    url: https://www.glfc.org/pubs/slcp/annual_reports/ANNUAL_REPORT_<YYYY>.pdf (2018-2025 verified 200; mirror sealamprey.org)
+    content: adult trap counts by stream (Neebing barrier trap; permanent trap first fished 2025), Kaministiquia lampricide
+      treatments (~6.6M larvae est.), dated larval surveys
+    tier: T1
+    priority: 1
+    slices:
+    - glfc:annual_reports_2018_2020_neebing_kam_traps
+    - glfc:annual_reports_2022_2023_2025_neebing_kam_traps
+  - name: MN DNR Knife River fish trap reports (North Shore ANALOG)
+    url: https://files.dnr.state.mn.us/areas/fisheries/lakesuperior/<year>-knife-river-fish-trap-report.pdf (2014-2024 verified)
+    content: weekly adult steelhead run counts ice-out-July since ~1996, fall salmonids, juveniles; multi-year tables
+    tier: T1
+    analog: true
+    priority: 1
+    slices:
+    - mndnr:knife_river_trap_reports_2014_2024
+    notes: regional run-timing covariate for OUR streams, not local truth - key run-calendar input
+  - name: USGS GLSC Lake Superior fish community survey reports
+    url: glfc.org/pubs/lake_committees/common_docs/ (2018-2024 verified, surveys since 1978)
+    content: annual June bottom-trawl, 72 fixed stations incl. Black Bay South; species counts/biomass
+    tier: T1
+    priority: 2
+    slices:
+    - usgs_glsc:ls_fish_survey_reports_2018_2024_black_bay_stations
+  - name: USGS RVCAT raw trawl data (ScienceBase)
+    url: sciencebase.gov items 57e185c8e4b0908250033a54 + 60d23de3d34e86b938ae1b57 (1958-2018, CSV)
+    content: station-level dated trawl catches - filter to Thunder Bay/Black Bay bbox
+    tier: T1
+    priority: 2
+    slices:
+    - usgs_rvcat:trawl_ops_1958_2018_tbay_bbox
+  - name: MN DNR Lake Superior creel surveys (ANALOG)
+    url: files.dnr.state.mn.us/areas/fisheries/lakesuperior/ (spring 2017-2024; summer series since 1969)
+    content: 17-stream spring steelhead creel (harvest+effort by stream); summer boat creel (laker/chinook/coho)
+    tier: T1
+    analog: true
+    priority: 2
+    slices:
+    - mndnr:north_shore_spring_creel_2017_2024
+    - mndnr:ls_summer_creel_2017_2024
+  - name: GLFC LSC Recreational & Commercial Harvest report
+    url: glfc.org/pubs/lake_committees/superior/Lake_Superior_Harvest_Report_2026.pdf (1995-2024)
+    content: annual harvest by jurisdiction; NOTE Ontario recreational harvest NOT estimated - context only
+    tier: T1
+    priority: 3
+    slices:
+    - glfc_lsc:harvest_report_1995_2024_ontario_commercial
+  - name: GLFC commercial production database 1867-2020
+    url: glfc.org/great-lakes-databases.php (per-lake XLSX)
+    content: annual commercial production, Ontario Superior column; no sub-lake geography
+    tier: T1
+    priority: 3
+    slices:
+    - glfc:commercial_production_superior_ontario_1867_2020
+  - name: Lakehead University Knowledge Commons theses
+    url: knowledgecommons.lakeheadu.ca (DSpace API verified)
+    content: Black Bay steelhead population thesis 2019, migratory rainbow 2017, Nipigon tribs brook/rainbow 2001, salmonid
+      thermal habitats 2020 - embed dated trap/netting/telemetry tables
+    tier: T1/T2
+    priority: 2
+    slices:
+    - lakehead_kc:black_bay_steelhead_thesis_2019
+    - lakehead_kc:migratory_rainbow_trout_2017
+    - lakehead_kc:nscstreams_misc_theses
+  - name: Ontario Data Catalogue LSMU datasets (WATCH - not yet open)
+    url: 'data.ontario.ca CKAN: lake-superior-fish-community-index-netting-data, -recreational-creel-survey-data (Black Bay!),
+      -commercial-catch-sampling, -fish-derby-monitoring-data'
+    content: EXACTLY our water's assessment data; all access_level=under_review, zero resources today
+    tier: T1 when released
+    priority: 3 (watch quarterly; operator data request to MNRF is the unlock)
+    verified_2026_08_09: 'Re-checked FOUR ways, not taken on one agent''s word. (1) CKAN package_show for all four datasets:
+      access_level=under_review, state=active, resources=0 - catalogued but unpublished. (2) ArcGIS Online/GeoHub search:
+      only the Fish Stocking services (already mined); no assessment/creel/netting service exists. (3) GLFC hosts management-unit
+      annual reports at /loc_mgmt_unit/ - Lake ONTARIO''s unit publishes there (LOA 20.01.pdf, 16.5 MB, HTTP 200) but there
+      is NO Lake Superior equivalent (404). (4) GLFC Special Pub ''The State of Lake Superior in 2011'' is a 114-page lakewide
+      synthesis with 2 Thunder Bay mentions and zero index-netting/creel content. CONCLUSION: the data exists and is catalogued;
+      it is simply not published yet. ''under_review'' is a publication-pipeline state, not a refusal.'
+    operator_ammunition: The Lake Ontario Management Unit publishes equivalent annual reports (index netting, creel) openly
+      via GLFC. A sister OMNRF unit on another Great Lake already does exactly what we are asking for - useful precedent to
+      cite in the data request.
+    slices:
+    - mnrf_lsmu:index_netting (future)
+    - mnrf_lsmu:creel_black_bay (future)
+    - mnrf_lsmu:derby_monitoring (future)
   dead_ends:
-    - {name: Ontario BsM, reason: "inland-lakes program; no Lake Superior coverage"}
-    - {name: Fish ON-Line / GeoHub non-stocking layers, reason: "web-map + admin polygons; stocking already mined; no further dated obs"}
-    - {name: GLATOS detection portal, reason: "member-login only (rule 12); use published papers instead"}
-    - {name: TrackdAT, reason: "JS story-map inventory; no downloadable detections"}
-    - {name: GLOS, reason: "physical/observing data only, no fish catalogue"}
-    - {name: Great Lakes Fishery Trust, reason: "grant-maker, Michigan corpus"}
-    - {name: EPA GLNPO/GLFMSP, reason: "US-site contaminant composites; no relevant dated catches"}
-    - {name: DFO standalone, reason: "sea-lamprey data flows into GLFC reports; nothing independent found; waves-vagues search 404"}
-    - {name: AOFRC, reason: "2011-2013 sturgeon/walleye updates for Pic/Michipicoten/Nipigon - outside our tributaries"}
+  - name: Ontario BsM
+    reason: inland-lakes program; no Lake Superior coverage
+  - name: Fish ON-Line / GeoHub non-stocking layers
+    reason: web-map + admin polygons; stocking already mined; no further dated obs
+  - name: GLATOS detection portal
+    reason: member-login only (rule 12); use published papers instead
+  - name: TrackdAT
+    reason: JS story-map inventory; no downloadable detections
+  - name: GLOS
+    reason: physical/observing data only, no fish catalogue
+  - name: Great Lakes Fishery Trust
+    reason: grant-maker, Michigan corpus
+  - name: EPA GLNPO/GLFMSP
+    reason: US-site contaminant composites; no relevant dated catches
+  - name: DFO standalone
+    reason: sea-lamprey data flows into GLFC reports; nothing independent found; waves-vagues search 404
+  - name: AOFRC
+    reason: 2011-2013 sturgeon/walleye updates for Pic/Michipicoten/Nipigon - outside our tributaries
   unreachable:
-    - {name: fsis.glfc.org (Great Lakes stocking DB), note: "gateway allowlist 403, http-only"}
-    - {name: pubs.usgs.gov, note: "504 via proxy; content mirrored on glfc.org + ScienceBase"}
-    - {name: michigan.gov MI DNR, note: "403 bot-block; weakest analog anyway"}
-    - {name: rap.infosuperior.com, note: "unverified this sweep; root domain curl-200 - re-check via curl next tranche"}
-
+  - name: fsis.glfc.org (Great Lakes stocking DB)
+    note: gateway allowlist 403, http-only
+  - name: pubs.usgs.gov
+    note: 504 via proxy; content mirrored on glfc.org + ScienceBase
+  - name: michigan.gov MI DNR
+    note: 403 bot-block; weakest analog anyway
+  - name: rap.infosuperior.com
+    note: unverified this sweep; root domain curl-200 - re-check via curl next tranche
 media:
-  tooling_note: "WebFetch blocks most domains here; mine via Bash/curl with browser UA. Wayback SNAPSHOT content (web.archive.org + CDX) TLS-resets through this container's proxy - all snapshot mining must run CI-side; the availability API works locally. Verified 2026-08-08."
+  tooling_note: WebFetch blocks most domains here; mine via Bash/curl with browser UA. Wayback SNAPSHOT content (web.archive.org
+    + CDX) TLS-resets through this container's proxy - all snapshot mining must run CI-side; the availability API works locally.
+    Verified 2026-08-08.
   usable:
-    - name: Thunder Bay Fishing Message Board - RSS FEED ONLY
-      url: "https://fishingboard.thunderbayfishing.com/index.php?/forum/2-general-fishing.xml/"
-      content: "guest-readable RSS carrying FULL first-post text via CDATA - but only the current ~25 latest topics. No historical depth; value is FORWARD-GOING daily collection of local catch/run reports"
-      access: "plain RSS, no auth; poll daily"
-      tier: T4
-      priority: 1
-      slices: ["tbf_rss:daily_poll (ongoing, not a backfill)"]
-      notes: "the board's TOPIC PAGES are auth-walled (see dead_ends); the RSS is the only guest-readable body text and it is legitimately public"
-      measured_yield: "TESTED 2026-08-09: feed carries 25 items spanning Dec 2025 - Jul 2026 (8 months, not 25 days). Of 25 items, 12 mention a species, but only ~2 are actual dated OBSERVATIONS - first posts on a fishing board are mostly QUESTIONS ('are they running yet?'); the actual reports live in the REPLIES, which RSS does not carry. Expect ~2-4 rows per full-feed snapshot; real value is the DAILY poll accumulating new topics over a season."
-      exhaustive_no_login_check: "2026-08-09, all closed: sitemap.xml has 8 locs and NO forum content sub-sitemaps (so topics were never submitted for indexing) -> not in any search-engine cache; Wayback has zero snapshots of topic pages; IPS4 REST API returns 404 (disabled); /rss/forums/ empty; /discover/all.xml only 4 items; feed does not paginate (301). The 2006-2026 archive was never published to the public web, so no public copy of it exists anywhere to read."
-    - name: TBNewsWatch RSS archive index (LOW YIELD - verified 2026-08-09)
-      yield_note: "MINED: 256 page fetches -> 110 keyword hits -> only 3 usable rows (TBSA derby announcements, no counts/weights in metadata). Archive stops at ~page 5001 = June 2014 (5002+ HTTP 500), NOT 2004 as first estimated. NAMESPACE TRAPS confirmed empirically: 'Kam River Fighting Walleye' is a JUNIOR HOCKEY TEAM and dominates every walleye hit; 'Sleeping Giant' hits a brewery, a ski loppet and an exotic-animal rescue; fish/fisher hit surnames and obituaries; derby hits soap-box derbies; stocking hits food-bank shelves. Do not re-mine without article bodies (CI-side)."
-    - name: TBNewsWatch RSS archive index
-      url: "https://www.tbnewswatch.com/rss?page=N (200 + paginates whole archive; last page ~5736, ~143k items to ~2004)"
-      content: "titles/pubDates/descriptions incl. derby stories (2022: ~125 salmon weighed, 9.8 lb winner); article BODIES 403 from container (Cloudflare) - fetch bodies CI-side; robots.txt is Allow:/ so the 403 is technical, not ToS"
-      tier: T2
-      priority: 1
-      slices: ["tbnw_rss:index_pages_1_5736_in_500p_chunks", "tbnw:bodies_via_ci_for_keyword_hits"]
-      notes: "covers CKPR/Newswatch radio (same Dougall Media newsroom)"
-    - name: North Shore Steelhead Association
-      url: "https://www.northshoresteelhead.com/ (curl OK)"
-      content: "Current River FISHWAY COUNTER + cameras (installed May 7), tagged-fish program, McVicar's Creek project, 2023 newsletter PDF (likely counter numbers)"
-      access: "robots blocks only /application/*"
-      tier: "T2 (counter data near-T1)"
-      priority: 1
-      slices: ["nssa:news_and_newsletters", "nssa:wayback_older_newsletters (CI)"]
-      notes: "OPERATOR ACTION: email the club for the historical Current River counter series - direct run-timing gold for our #1 steelhead water"
-    - name: Pautzke Bait blog (Tom Armstrong reports)
-      url: "https://pautzke.com/?s=thunder+bay (~10 articles)"
-      content: "dated first-person TB reports: 'Steelhead Run Starting Early This Spring' (2017-04-18), 'Tough Year For Thunder Bay Chinooks', ice/lake-trout"
-      tier: T3
-      priority: 2
-      slices: ["pautzke:thunder_bay_articles_one_pass"]
-    - name: Northern Wilds magazine
-      url: "https://northernwilds.com (non-www; www redirect-loops)"
-      content: "'Points North' dated run-status pieces, mostly MN North Shore analog, some TB"
-      tier: T3
-      priority: 2
-      slices: ["northernwilds:steelhead_salmon_searches"]
-    - name: TBSA site pre-2019 via Wayback
-      content: "current site fully enumerated (tranche 1 + this sweep): 2017+ posts are poster images, results pages empty shells; only remaining angle is pre-2019 snapshots"
-      tier: T2
-      priority: 3
-      slices: ["tbsa:wayback_pre2019 (CI)"]
+  - name: Thunder Bay Fishing Message Board - RSS FEED ONLY
+    url: https://fishingboard.thunderbayfishing.com/index.php?/forum/2-general-fishing.xml/
+    content: guest-readable RSS carrying FULL first-post text via CDATA - but only the current ~25 latest topics. No historical
+      depth; value is FORWARD-GOING daily collection of local catch/run reports
+    access: plain RSS, no auth; poll daily
+    tier: T4
+    priority: 1
+    slices:
+    - tbf_rss:daily_poll (ongoing, not a backfill)
+    notes: the board's TOPIC PAGES are auth-walled (see dead_ends); the RSS is the only guest-readable body text and it is
+      legitimately public
+    measured_yield: 'TESTED 2026-08-09: feed carries 25 items spanning Dec 2025 - Jul 2026 (8 months, not 25 days). Of 25
+      items, 12 mention a species, but only ~2 are actual dated OBSERVATIONS - first posts on a fishing board are mostly QUESTIONS
+      (''are they running yet?''); the actual reports live in the REPLIES, which RSS does not carry. Expect ~2-4 rows per
+      full-feed snapshot; real value is the DAILY poll accumulating new topics over a season.'
+    exhaustive_no_login_check: '2026-08-09, all closed: sitemap.xml has 8 locs and NO forum content sub-sitemaps (so topics
+      were never submitted for indexing) -> not in any search-engine cache; Wayback has zero snapshots of topic pages; IPS4
+      REST API returns 404 (disabled); /rss/forums/ empty; /discover/all.xml only 4 items; feed does not paginate (301). The
+      2006-2026 archive was never published to the public web, so no public copy of it exists anywhere to read.'
+  - name: TBNewsWatch RSS archive index (LOW YIELD - verified 2026-08-09)
+    url: https://www.tbnewswatch.com/rss?page=N (200 + paginates whole archive; last page ~5736, ~143k items to ~2004)
+    content: 'titles/pubDates/descriptions incl. derby stories (2022: ~125 salmon weighed, 9.8 lb winner); article BODIES
+      403 from container (Cloudflare) - fetch bodies CI-side; robots.txt is Allow:/ so the 403 is technical, not ToS'
+    tier: T2
+    priority: 1
+    slices:
+    - tbnw_rss:index_pages_1_5736_in_500p_chunks
+    - tbnw:bodies_via_ci_for_keyword_hits
+    notes: covers CKPR/Newswatch radio (same Dougall Media newsroom)
+    yield_note: 'MINED: 256 page fetches -> 110 keyword hits -> only 3 usable rows (TBSA derby announcements, no counts/weights
+      in metadata). Archive stops at ~page 5001 = June 2014 (5002+ HTTP 500), NOT 2004 as first estimated. NAMESPACE TRAPS
+      confirmed empirically: ''Kam River Fighting Walleye'' is a JUNIOR HOCKEY TEAM and dominates every walleye hit; ''Sleeping
+      Giant'' hits a brewery, a ski loppet and an exotic-animal rescue; fish/fisher hit surnames and obituaries; derby hits
+      soap-box derbies; stocking hits food-bank shelves. Do not re-mine without article bodies (CI-side).'
+  - name: North Shore Steelhead Association
+    url: https://www.northshoresteelhead.com/ (curl OK)
+    content: Current River FISHWAY COUNTER + cameras (installed May 7), tagged-fish program, McVicar's Creek project, 2023
+      newsletter PDF (likely counter numbers)
+    access: robots blocks only /application/*
+    tier: T2 (counter data near-T1)
+    priority: 1
+    slices:
+    - nssa:news_and_newsletters
+    - nssa:wayback_older_newsletters (CI)
+    notes: 'OPERATOR ACTION: email the club for the historical Current River counter series - direct run-timing gold for our
+      #1 steelhead water'
+  - name: Pautzke Bait blog (Tom Armstrong reports)
+    url: https://pautzke.com/?s=thunder+bay (~10 articles)
+    content: 'dated first-person TB reports: ''Steelhead Run Starting Early This Spring'' (2017-04-18), ''Tough Year For Thunder
+      Bay Chinooks'', ice/lake-trout'
+    tier: T3
+    priority: 2
+    slices:
+    - pautzke:thunder_bay_articles_one_pass
+  - name: Northern Wilds magazine
+    url: https://northernwilds.com (non-www; www redirect-loops)
+    content: '''Points North'' dated run-status pieces, mostly MN North Shore analog, some TB'
+    tier: T3
+    priority: 2
+    slices:
+    - northernwilds:steelhead_salmon_searches
+  - name: TBSA site pre-2019 via Wayback
+    content: 'current site fully enumerated (tranche 1 + this sweep): 2017+ posts are poster images, results pages empty shells;
+      only remaining angle is pre-2019 snapshots'
+    tier: T2
+    priority: 3
+    slices:
+    - tbsa:wayback_pre2019 (CI)
   dead_ends:
-    - {name: Thunder Bay Fishing Message Board (topic pages), reason: "AUTH-WALLED: topic bodies return HTTP 403 'You are viewing as a guest. Please create an account.' (IPS4 app-level, not a WAF) for ALL eras - independently confirmed by two agents 2026-08-09. Listing pages are guest-readable but expose only titles/dates, which cannot supply the schema's required verbatim quote. Rule 12 forbids auth-walled scraping EVEN WITH credentials; the only legitimate path is explicit permission from the site owner (operator action). The 2026-08-08 sweep's 'guest-readable full post bodies' claim was WRONG - it verified listing pages only"}
-    - {name: Thunder Bay Chronicle-Journal, reason: "robots.txt explicitly disallows ClaudeBot/Claude-Web/anthropic-ai site-wide -> rule 12 do-not-mine, despite verified-excellent dated content (e.g. Nipigon festival weights 2023). Operator could pursue permission/licensed access - would be T2 P1 if unblocked"}
-    - {name: CBC (cbc.ca), reason: "robots.txt disallows Anthropic-ai/Claude-Web site-wide - noticed AFTER tranche 1 mined 3 rows via curl; those rows REMOVED from the ledger 2026-08-08 pending operator decision. No further CBC mining without explicit operator authorization"}
-    - {name: tourism/feature sites (superiorcountry.ca, visitthunderbay, northernontario.travel, thenewflyfisher, ontariofishing.net), reason: "evergreen undated content"}
-    - {name: outdoorcanada.ca, reason: "hot-spot features, no dated TB reports"}
-    - {name: thunderbayfishandgame.com, reason: "shooting range club"}
-    - {name: charters (archiescharters etc.), reason: "booking sites, no public dated reports"}
-    - {name: tvo.org, reason: "JS SPA, no dated fishing content"}
-    - {name: upnorthvoice.com, reason: "Northern Michigan, wrong region"}
-    - {name: dougsmithoutdoors.com, reason: "dead domain, no Wayback; the column lives inside the TBF forum (covered)"}
-    - {name: Google cache, reason: "service discontinued 2024"}
-    - {name: wawa-news.com, reason: "real derby results but east shore, outside bbox"}
+  - name: Thunder Bay Fishing Message Board (topic pages)
+    reason: 'AUTH-WALLED: topic bodies return HTTP 403 ''You are viewing as a guest. Please create an account.'' (IPS4 app-level,
+      not a WAF) for ALL eras - independently confirmed by two agents 2026-08-09. Listing pages are guest-readable but expose
+      only titles/dates, which cannot supply the schema''s required verbatim quote. Rule 12 forbids auth-walled scraping EVEN
+      WITH credentials; the only legitimate path is explicit permission from the site owner (operator action). The 2026-08-08
+      sweep''s ''guest-readable full post bodies'' claim was WRONG - it verified listing pages only'
+  - name: Thunder Bay Chronicle-Journal
+    reason: robots.txt explicitly disallows ClaudeBot/Claude-Web/anthropic-ai site-wide -> rule 12 do-not-mine, despite verified-excellent
+      dated content (e.g. Nipigon festival weights 2023). Operator could pursue permission/licensed access - would be T2 P1
+      if unblocked
+  - name: CBC (cbc.ca)
+    reason: robots.txt disallows Anthropic-ai/Claude-Web site-wide - noticed AFTER tranche 1 mined 3 rows via curl; those
+      rows REMOVED from the ledger 2026-08-08 pending operator decision. No further CBC mining without explicit operator authorization
+  - name: tourism/feature sites (superiorcountry.ca
+    visitthunderbay: null
+    northernontario.travel: null
+    thenewflyfisher: null
+    ontariofishing.net): null
+    reason: evergreen undated content
+  - name: outdoorcanada.ca
+    reason: hot-spot features, no dated TB reports
+  - name: thunderbayfishandgame.com
+    reason: shooting range club
+  - name: charters (archiescharters etc.)
+    reason: booking sites, no public dated reports
+  - name: tvo.org
+    reason: JS SPA, no dated fishing content
+  - name: upnorthvoice.com
+    reason: Northern Michigan, wrong region
+  - name: dougsmithoutdoors.com
+    reason: dead domain, no Wayback; the column lives inside the TBF forum (covered)
+  - name: Google cache
+    reason: service discontinued 2024
+  - name: wawa-news.com
+    reason: real derby results but east shore, outside bbox
   unreachable:
-    - {name: Wayback snapshot content (web.archive.org + CDX), note: "TLS-reset via proxy; availability API works. ALL snapshot mining is CI-side: tbnewswatch bodies, pre-2019 TBSA, old thunderbayfishing.com, NSSA newsletters"}
-    - {name: oodmag.com (Ontario OUT of DOORS), note: "403 all UAs; Gord Ellis dated TB content near-certain - CI or Wayback"}
-    - {name: lakesuperiornews.com, note: "connect reset; carried NSSA items - CI fetch"}
-    - {name: ofncommunity.com, note: "proxy 502 (also in community section)"}
+  - name: Wayback snapshot content (web.archive.org + CDX)
+    note: 'TLS-reset via proxy; availability API works. ALL snapshot mining is CI-side: tbnewswatch bodies, pre-2019 TBSA,
+      old thunderbayfishing.com, NSSA newsletters'
+  - name: oodmag.com (Ontario OUT of DOORS)
+    note: 403 all UAs; Gord Ellis dated TB content near-certain - CI or Wayback
+  - name: lakesuperiornews.com
+    note: connect reset; carried NSSA items - CI fetch
+  - name: ofncommunity.com
+    note: proxy 502 (also in community section)
