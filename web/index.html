@@ -231,7 +231,8 @@
   <div class="strow"><b>Settings</b><button id="setclose" title="close">✕</button></div>
   <label class="strow"><span>Depth-contour chart<br><small>water becomes a depth chart (CHS survey); land stays satellite</small></span>
     <input type="checkbox" id="chartview" /></label>
-  <label class="strow"><span>River seams</span>
+  <label class="strow"><span>River seams<br>
+    <small style="opacity:.62;font-weight:400">zoom into a river to see them · not shown for lake trout</small></span>
     <input type="checkbox" id="seamview" /></label>
   <label class="strow"><span>Overlay strength</span>
     <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
@@ -311,8 +312,10 @@ function applyLayers(){
     map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g99'));
   });
   paintFills();
-  if(typeof applySeams === 'function' && document.getElementById('seamview'))
-    applySeams(document.getElementById('seamview').checked);
+  if(window.applySeams && document.getElementById('seamview')){
+    window.applySeams(document.getElementById('seamview').checked);
+    if(window.seamHint) window.seamHint();
+  }
   renderLegend();
   updateMarkers();
   updateStations();
@@ -829,6 +832,11 @@ map.on('load', async () => {
           'line-opacity': 0.10 + 0.05 * t } });
     }
   }
+  // EXPOSED ON window ON PURPOSE. This function is defined inside map.on('load'), but the species
+  // switch that must re-apply it lives at top level — so a bare `typeof applySeams === 'function'`
+  // guard there silently evaluated to false and the seam layer never re-filtered when you changed
+  // species. It looked exactly like "the toggle does nothing". A guard written to be safe instead
+  // hid the failure, which is the silent-degradation trap this project keeps meeting.
   function applySeams(on){
     for(let b = 1; b <= 13; b++){
       const id = 'seam'+b;
@@ -841,10 +849,41 @@ map.on('load', async () => {
                                   ['in', ['get','kind'], ['literal', kinds]]]);
     }
   }
+  // TELL THE USER WHY THEY SEE NOTHING. Two things make the seam layer legitimately empty, and
+  // both looked identical to a broken toggle: lake trout gets no river ranking at all, and at the
+  // default zoom (8.55) one pixel is 277 m, so a 100 m seam is 0.36 px long — physically
+  // unrenderable, which no styling can fix. Silence reads as a bug, so say which it is.
+  const SEAM_MIN_ZOOM = 11.5;
+  function seamHint(){
+    let el = document.getElementById('seamhint');
+    const on = document.getElementById('seamview') && document.getElementById('seamview').checked;
+    if(!el){
+      el = document.createElement('div'); el.id = 'seamhint';
+      el.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);bottom:96px;'
+        + 'background:rgba(12,18,28,.88);color:#dfe6ef;padding:6px 11px;border-radius:8px;'
+        + 'font-size:12.5px;pointer-events:none;z-index:5;display:none;max-width:82vw;text-align:center';
+      document.body.appendChild(el);
+    }
+    if(!on){ el.style.display = 'none'; return; }
+    const kinds = (curSp && SEAM_FOR[curSp.id]) || [];
+    if(!kinds.length){
+      el.textContent = 'River seams are not ranked for lake trout — it barely enters rivers.';
+      el.style.display = 'block';
+    } else if(map.getZoom() < SEAM_MIN_ZOOM){
+      el.textContent = 'Zoom into a river to see seams (they are 40–260 m long).';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+  map.on('zoomend', seamHint);
+  window.seamHint = seamHint;
+  window.applySeams = applySeams;
   const sv = document.getElementById('seamview');
   async function setSeams(on){
     if(on && !seamLoaded) await loadSeams();
     applySeams(on);
+    seamHint();
     localStorage.setItem('fc_seams', on ? '1' : '0');
   }
   sv.addEventListener('change', () => setSeams(sv.checked));
