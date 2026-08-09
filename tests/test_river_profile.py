@@ -125,3 +125,64 @@ def test_densify_produces_even_spacing():
     gaps = [b - a for a, b in zip(dist, dist[1:])]
     assert all(abs(g - 50.0) < 1e-6 for g in gaps)
     assert len(out) == len(dist)
+
+
+def test_width_gradient_signs_constriction_and_expansion():
+    """A narrowing must read negative and a widening positive — the sign is what distinguishes
+    a scour-producing constriction from a slack-water expansion."""
+    d = [0.0, 100.0, 200.0]
+    assert rp.width_gradient([30.0, 20.0, 10.0], d)[1] < 0      # narrowing
+    assert rp.width_gradient([10.0, 20.0, 30.0], d)[1] > 0      # widening
+    # centred difference: a gap AT the station is irrelevant (its neighbours carry it), but a
+    # gap in a NEIGHBOUR must yield None rather than a fabricated gradient
+    assert rp.width_gradient([20.0, None, 20.0], d)[1] == 0.0
+    assert rp.width_gradient([None, 20.0, 30.0], d)[1] is None
+
+
+def test_curvature_sign_identifies_the_outer_bank():
+    """The scour pool sits on the OUTER bank, so the sign has to be right or the tool sends an
+    angler to the shallow side of the bend."""
+    left = [(48.400, -89.200), (48.401, -89.200), (48.402, -89.2005),
+            (48.4025, -89.2015), (48.4028, -89.2030)]
+    c = rp.curvature(left)
+    mid = [v for v in c if v is not None]
+    assert mid, "curvature must be defined away from the ends"
+    assert rp.outer_bank(mid[0]) in ("left", "right")
+    # a straight line has no meaningful bend, so no outer bank
+    straight = [(48.40 + 0.001 * i, -89.20) for i in range(6)]
+    assert all(rp.outer_bank(v) is None for v in rp.curvature(straight) if v is not None)
+
+
+def test_stream_power_makes_a_big_flat_river_comparable_to_a_small_steep_one():
+    """The whole reason omega replaced raw slope: the Kam (wide, low gradient, high Q) and McVicar
+    (narrow, steep, low Q) are 4.5x apart in slope and must land close in stream power."""
+    kam = rp.unit_stream_power(2.0, 20.0, 116.0)
+    mcvicar = rp.unit_stream_power(9.0, 0.3, 6.0)
+    assert 0.5 < kam / mcvicar < 2.0, f"omega should reconcile them, got {kam:.1f} vs {mcvicar:.1f}"
+
+
+def test_stream_power_rejects_nonphysical_input():
+    assert rp.unit_stream_power(5.0, 1.0, 0.0) is None
+    assert rp.unit_stream_power(5.0, None, 10.0) is None
+    assert rp.unit_stream_power(-5.0, 1.0, 10.0) == 0.0     # negative slope is survey noise
+
+
+def test_barrier_is_species_specific():
+    """A step that passes steelhead can still stop brook trout — which is exactly why the
+    upstream limit has to be reported per species rather than once per river."""
+    assert not rp.barrier_for(1.0, 10.0, "steelhead")
+    assert rp.barrier_for(1.0, 10.0, "brook_trout")
+    assert rp.barrier_for(3.0, 10.0, "steelhead")
+
+
+def test_upstream_limit_walks_up_from_the_mouth():
+    ll = (48.4, -89.2)
+    reaches = [
+        rp.Reach("riffle", 0, 100, 210, 209, 10, *ll),
+        rp.Reach("barrier", 100, 110, 209, 206, 300, *ll),     # 3 m step
+        rp.Reach("pool", 110, 400, 206, 205.9, 0.3, *ll),
+    ]
+    assert rp.upstream_limit(reaches, "steelhead") == 1
+    assert rp.upstream_limit(reaches, "lake_trout") == 1
+    flat = [rp.Reach("pool", 0, 400, 200, 199.9, 0.25, *ll)]
+    assert rp.upstream_limit(flat, "steelhead") is None

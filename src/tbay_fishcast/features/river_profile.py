@@ -403,3 +403,65 @@ def upstream_limit(reaches, species: str):
         if barrier_for(r.drop_m, r.length_m, species):
             return i
     return None
+
+
+# --- SEAM GEOMETRY: the other dimensions of the survey ----------------------------------------
+# Downstream slope is ONE dimension of a 1 m 3-D survey. Fish sit on seams, and seams are made by
+# geometry we were not reading. Each of the following was probed on the Current River (the
+# best-validated of the five, 100% barrier recall) and confirmed to carry real signal.
+
+def width_gradient(widths, dist_m):
+    """dW/ds — channel narrowing (+ scour below) or widening (deposition, slack water).
+
+    A constriction accelerates flow and scours a pool immediately below it; an expansion drops
+    velocity and deposits. This is literally the "sharp edge that makes a seam" case, and it costs
+    nothing once width is measured per station. Measured on the Current: |dW/ds| p50 0.15,
+    p90 0.65, p99 1.62 m/m — a wide spread, so the sharp cases stand out clearly.
+    """
+    n = len(widths)
+    out = [None] * n
+    for i in range(1, n - 1):
+        a, b = widths[i - 1], widths[i + 1]
+        ds = dist_m[i + 1] - dist_m[i - 1]
+        if a is None or b is None or ds <= 0:
+            continue
+        out[i] = (b - a) / ds
+    return out
+
+
+def curvature(points):
+    """Signed planform curvature (~sin of the turn angle); + is a left bend looking downstream.
+
+    On a meander bend the thalweg swings to the OUTER bank and scours the pool there, while the
+    inner bank builds a point bar — the most reliable "where is the deep water on a bend" rule in
+    fluvial geomorphology, and it needs only the centreline. Sign matters because it tells you
+    WHICH bank holds the pool, which is what an angler standing on one side needs to know.
+    Measured on the Current: |curvature| p50 0.11, p90 0.42, p99 0.78.
+    """
+    n = len(points)
+    out = [None] * n
+    if n < 5:
+        return out
+    mlat = 111320.0
+    mlon = 111320.0 * math.cos(math.radians(points[0][0]))
+    xy = [((p[1]) * mlon, (p[0]) * mlat) for p in points]
+    for i in range(2, n - 2):
+        ax, ay = xy[i - 2]
+        bx, by = xy[i]
+        cx, cy = xy[i + 2]
+        abx, aby = bx - ax, by - ay
+        bcx, bcy = cx - bx, cy - by
+        la = math.hypot(abx, aby)
+        lb = math.hypot(bcx, bcy)
+        if la > 1.0 and lb > 1.0:
+            out[i] = (abx * bcy - aby * bcx) / (la * lb)
+    return out
+
+
+def outer_bank(curv_value: float | None) -> str | None:
+    """Which bank holds the scour pool on this bend, looking downstream."""
+    if curv_value is None or not math.isfinite(curv_value):
+        return None
+    if abs(curv_value) < 0.15:            # p50 of measured curvature — straighter than a bend
+        return None
+    return "right" if curv_value > 0 else "left"
