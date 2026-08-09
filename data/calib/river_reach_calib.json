@@ -1,0 +1,142 @@
+{
+ "edges": {
+  "flat": 0.00499147091271444,
+  "steep": 10.72871619126123,
+  "barrier": 45.19838676851399,
+  "n_samples": 23852,
+  "pcts": {
+   "flat": 25.0,
+   "steep": 90.0,
+   "barrier": 99.0
+  }
+ },
+ "rivers": {
+  "current": {
+   "reaches": 34,
+   "by_class": {
+    "pool": 5,
+    "riffle": 17,
+    "rapid": 11,
+    "barrier": 1
+   },
+   "length_km": 9.67,
+   "drop_m": 84.4,
+   "mouth_z_m": 182.79,
+   "uphill_frac": 0.0202,
+   "holding_below_barrier": 0
+  },
+  "neebing": {
+   "reaches": 157,
+   "by_class": {
+    "riffle": 77,
+    "pool": 61,
+    "rapid": 18,
+    "barrier": 1
+   },
+   "length_km": 27.2,
+   "drop_m": 98.7,
+   "mouth_z_m": 182.76,
+   "uphill_frac": 0.0698,
+   "holding_below_barrier": 1
+  },
+  "mcintyre": {
+   "reaches": 55,
+   "by_class": {
+    "pool": 27,
+    "riffle": 28
+   },
+   "length_km": 8.89,
+   "drop_m": 0.3,
+   "mouth_z_m": 182.77,
+   "uphill_frac": 0.0247,
+   "holding_below_barrier": 0
+  },
+  "kam": {
+   "reaches": 67,
+   "by_class": {
+    "riffle": 34,
+    "pool": 30,
+    "rapid": 2,
+    "barrier": 1
+   },
+   "length_km": 63.37,
+   "drop_m": 117.7,
+   "mouth_z_m": 182.75,
+   "uphill_frac": 0.001,
+   "holding_below_barrier": 0
+  },
+  "mcvicar": {
+   "reaches": 149,
+   "by_class": {
+    "riffle": 52,
+    "pool": 47,
+    "rapid": 41,
+    "barrier": 9
+   },
+   "length_km": 10.1,
+   "drop_m": 87.0,
+   "mouth_z_m": 182.81,
+   "uphill_frac": 0.1672,
+   "holding_below_barrier": 6
+  }
+ },
+ "validation": {
+  "datum": {
+   "current": {
+    "ok": true,
+    "measured_m": 182.79,
+    "datum_m": 183.2,
+    "error_m": 0.41
+   },
+   "neebing": {
+    "ok": true,
+    "measured_m": 182.76,
+    "datum_m": 183.2,
+    "error_m": 0.44
+   },
+   "mcintyre": {
+    "ok": true,
+    "measured_m": 182.77,
+    "datum_m": 183.2,
+    "error_m": 0.43
+   },
+   "kam": {
+    "ok": true,
+    "measured_m": 182.75,
+    "datum_m": 183.2,
+    "error_m": 0.45
+   },
+   "mcvicar": {
+    "ok": true,
+    "measured_m": 182.81,
+    "datum_m": 183.2,
+    "error_m": 0.39
+   }
+  },
+  "barrier_corroboration": {
+   "matched": 9,
+   "steep": 84,
+   "frac": 0.107,
+   "osm_features": 78,
+   "match_radius_m": 250.0
+  },
+  "worst_uphill_frac": 0.1672,
+  "fast_unit_spacing_widths": {
+   "current": 13.3,
+   "neebing": 14.2,
+   "mcintyre": 21.2,
+   "kam": 21.4,
+   "mcvicar": 12.4
+  }
+ },
+ "source": {
+  "lidar": "ON-ThunderBay_UTM16_2024-1m",
+  "acquired": "2024-05-06",
+  "product": "dtm",
+  "resolution_m": 1.0,
+  "centreline": "OpenStreetMap waterway",
+  "step_m": 5.0
+ },
+ "method": "water-surface elevation sampled as the MINIMUM over a perpendicular transect; reach slope by least squares over a window of 8 channel widths; class edges are percentiles of the pooled regional slope distribution, not fixed values",
+ "tier": "T1 (measured lidar water surface)"
+}
