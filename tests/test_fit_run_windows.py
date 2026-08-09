@@ -131,3 +131,14 @@ def test_analog_rows_never_fit_local_windows():
     assert f is not None
     assert f["n"] == len(local), "analog rows must be excluded from n entirely"
     assert f["applied"] is False, "12 local reports alone must not ship a window"
+
+
+def test_offshore_survey_rows_never_fit_shore_windows():
+    """USGS research-vessel trawls are open-lake tows with trawl gear — long-term abundance
+    context, not shore run observations. They must not fit a shore-fishing tool's windows."""
+    shore = [f"{yr}-09-{d:02d}" for yr in (2021, 2022, 2023, 2024) for d in (5, 8, 11)]
+    off = [f"{yr}-08-{d:02d}" for yr in (2014, 2015, 2016, 2017, 2018) for d in (1, 3, 5, 7)]
+    rows = _rows("chinook", shore)
+    rows += [{**r, "offshore_survey": True} for r in _rows("chinook", off)]
+    f = frw.fit_entry(CHINOOK_ENTRY, rows)
+    assert f is not None and f["n"] == len(shore)

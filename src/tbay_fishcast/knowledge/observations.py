@@ -82,6 +82,12 @@ def row_id(row: dict) -> str:
     """Content-hash dedup key: same source+date+species+kind+place = same observation."""
     basis = "|".join(str(row.get(k, "")) for k in
                      ("source", "date", "species", "kind", "place_raw", "count"))
+    # Structured datasets can emit many rows sharing all of the above (one trawl tow, several
+    # life stages, species collapsed into "other") — those collided and were silently deduped.
+    # Appended ONLY when present, so every hash computed before this existed is unchanged.
+    ext = row.get("external_id")
+    if ext:
+        basis += "|" + str(ext)
     return hashlib.sha1(basis.encode()).hexdigest()[:16]
 
 

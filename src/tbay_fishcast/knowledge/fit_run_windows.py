@@ -84,7 +84,7 @@ def _report_doys(rows, species: str, win_start: str, win_end: str, tol_days: int
         # comparison, but fitting Thunder Bay's phenology with Minnesota's run dates would be
         # exactly the silent substitution this project exists to avoid — the window would claim
         # to be "measured locally" while describing another jurisdiction's fish.
-        if r.get("analog"):
+        if r.get("analog") or r.get("offshore_survey"):
             continue
         if r.get("kind") not in ("catch", "sighting", "run_status"):
             continue
