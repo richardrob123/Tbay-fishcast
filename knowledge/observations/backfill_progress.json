@@ -1,22 +1,38 @@
 {
   "done": [
     "glfc:annual_reports_2021_2024_neebing_trap",
+    "glfc:annual_report_2025_neebing_trap",
     "mnrf_stocking:historical_1900_2015_tb_tributaries",
     "mnrf_stocking:current_2016_2026_checked_no_shore_relevant_rows",
     "cbc_tbay:steelhead_run_articles",
-    "tbsa:derby_pages_2023_2026"
+    "tbsa:derby_pages_2023_2026",
+    "inat:2016_through_2026_full_bbox_sweep",
+    "gbif:familykey_8615_full_bbox_sweep",
+    "usgs:rvcat_sciencebase_full_extract",
+    "mndnr:knife_river_trap_and_creel",
+    "lakehead:knowledgecommons_theses",
+    "nssa:news_and_newsletters",
+    "pautzke:thunder_bay_articles_one_pass",
+    "northernwilds:steelhead_salmon_searches",
+    "reddit:public_json_search_no_key",
+    "tbnw:rss_and_keyword_pages"
   ],
   "unreachable": [
-    "tbnewswatch.com — Cloudflare bot challenge on all article fetches (2 attempts, incl. browser UA); 5 candidate articles identified but not fetchable",
-    "data.glfc.org — JS-only SPA (Barrier Tracing app), no scrapable data; http variant blocked by egress allowlist"
+    "tbnewswatch.com article BODIES — Cloudflare bot challenge on direct fetches; RSS + listing metadata only (3 rows). Archive floor is ~page 5001 = June 2014.",
+    "data.glfc.org — JS-only SPA (Barrier Tracing app), no scrapable data; http variant blocked by egress allowlist",
+    "nssa:wayback_older_newsletters — the on-site archive (2000-2023) was fully readable, so Wayback is only needed for any pre-2000 issues; not attempted"
   ],
   "notes": [
-    "GLFC annual reports 2021+2024 mined for Neebing R. adult sea lamprey trap counts (species=other); other report years not yet fetched — candidate for a later tranche",
+    "GLFC annual reports 2021+2024+2025 mined for Neebing R. adult sea lamprey trap counts (species=other); other report years not yet fetched — candidate for a later tranche",
     "MNRF historical stocking filtered to Thunder Bay shore-relevant waters (bbox 48.3-48.6N, 89.5-88.9W): Kaministiquia, Current/North Current, Neebing, McIntyre, McVicar, MacKenzie; 56 out-of-area records excluded (inland lakes / other districts), 14 pre-1950 records excluded (schema date floor), 10 identical-field records collapsed by content-hash dedup",
     "MNRF current dataset (2016-2026, Thunder Bay districts, 680 records) is year-precision inland-lake stocking (brook trout/splake/rainbow in small lakes) plus 3 LSMU lake trout drops at lon -86.7 (Marathon area, out of scope) — no rows taken",
     "TBSA derby result pages carry results only as photos; 2024 winning-weight row transcribed from leaderboard photo at confidence 0.5; 2023/2025/2026 pages are announcements only (no fish data)",
-    "date_precision=month used for stocking dates falling on the 1st (likely month placeholders in the historical dataset)"
+    "date_precision=month used for stocking dates falling on the 1st (likely month placeholders in the historical dataset)",
+    "GBIF curated 1871 -> 368 rows (year-precision 'other' occurrences dropped; iNat mirror deduped by iNat id). USGS RVCAT curated 2812 -> 326 and every row carries offshore_survey=true so open-lake trawls can never fit a shore window.",
+    "MN DNR Knife River rows all carry analog=true (~200 km southwest, different watershed) — context only, never fits our phenology.",
+    "NSSA newsletter archive 2000-2023 mined 2026-08-09: McIntyre River counter series (electronic resistivity counter 1999-2004, Petersen mark-recapture 2008-2024). A bar chart in one issue carries further years as plotted bars with no printed values — deliberately NOT transcribed. Black Bay / Nipigon tributary items excluded rather than filed as region scope (different watershed system).",
+    "Reddit needs no API key for the public .json endpoints; 4 rows from r/ThunderBay. Low yield but free and robots-clean — worth a light nightly touch, not a re-crawl."
   ],
-  "tranche": 1,
-  "updated": "2026-08-08"
+  "tranche": 2,
+  "updated": "2026-08-09"
 }

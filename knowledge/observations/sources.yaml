@@ -6,6 +6,11 @@
 #   NOT YET MINED at audit time: North Shore Steelhead Association (P1 — the Current River fishway
 #     COUNTER, direct run counts on a mapped mouth; the biggest miss), Pautzke (P2), Northern Wilds
 #     (P2), Arctic Shift Reddit (P3), GLFC harvest + commercial-production DBs (P3).
+#   AUDIT GAP CLOSED same day: NSSA + Pautzke + Northern Wilds + Reddit mined (+75 rows, ledger
+#     1348 -> 1423). NSSA turned out to hold a 19-year newsletter archive (2000-2023) with the
+#     McIntyre River counter series — the single best fall-steelhead record we have. STILL OPEN:
+#     GLFC harvest + commercial-production DBs (P3), and the NSSA bar-chart years that exist only
+#     as pixels (deliberately not transcribed — see backfill_progress.json).
 #   DAILY SCANNING is narrower than "everything": the coast_site workflow refreshes iNaturalist
 #     only; GBIF and the PDF/agency sources are episodic by nature (annual reports, museum
 #     accessions) and are re-mined on demand, not nightly. The research Routine (21:30 UTC) is the
