@@ -136,12 +136,21 @@ def _get(path: str, **params):
     return []
 
 
-def _relevant(text: str) -> bool:
+# r/ThunderBay is inherently local — every post is about this place, so species + fishing context
+# is enough there. Every other sub is province- or continent-wide, where "walleye on the Grand
+# River" and "resort 2 h outside the GTA" sail through a species+context filter and would then
+# burn extraction budget on water 1,200 km away. Those subs must also name local geography.
+LOCAL_SUBS = frozenset({"ThunderBay"})
+
+
+def _relevant(text: str, sub: str = "ThunderBay") -> bool:
     if not text or len(text) < 12:
         return False
     if not SPECIES_RE.search(text):
         return False
-    return bool(CONTEXT_RE.search(text) or PLACE_RE.search(text))
+    if sub in LOCAL_SUBS:
+        return bool(CONTEXT_RE.search(text) or PLACE_RE.search(text))
+    return bool(PLACE_RE.search(text)) and bool(CONTEXT_RE.search(text))
 
 
 def _permalink(sub: str, row: dict, stream: str) -> str:
@@ -207,7 +216,7 @@ def _sweep_window(sub: str, stream: str, lo: int, hi: int, fh, counters: dict) -
         keep = []
         for r in rows:
             text = " ".join(filter(None, [r.get("title"), r.get(body_field)]))
-            if _relevant(text):
+            if _relevant(text, sub):
                 keep.append(_row_out(sub, stream, r, body_field))
         if keep:
             with _write_lock:
@@ -307,7 +316,7 @@ def search_sub(sub: str, ckpt: dict) -> None:
                     continue
                 known.add(r.get("id"))
                 text = " ".join(filter(None, [r.get("title"), r.get("selftext")]))
-                if _relevant(text):
+                if _relevant(text, sub):
                     fh.write(json.dumps(_row_out(sub, "posts", r, "selftext",
                                                  {"matched_query": t}), ensure_ascii=False) + "\n")
                     kept += 1
@@ -317,13 +326,42 @@ def search_sub(sub: str, ckpt: dict) -> None:
     print(f"  {sub}:search: +{kept} candidates ({len(known)} posts seen)")
 
 
+def refilter() -> None:
+    """Re-apply the current predicate to candidate files already on disk.
+
+    The filter is the cheap part; the fetch is the expensive part. When the rules tighten (as they
+    did once the province-wide subs turned out to be full of Grand River walleye), re-deciding
+    locally beats re-sweeping the archive — the raw rows are already here.
+    """
+    for path in sorted(OUT_DIR.glob("reddit_*.jsonl")):
+        rows = [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+        keep, seen = [], set()
+        for r in rows:
+            k = (r.get("sub"), r.get("stream"), r.get("id"))
+            if k in seen:            # a window interrupted mid-sweep re-appends on resume
+                continue
+            seen.add(k)
+            text = " ".join(filter(None, [r.get("title"), r.get("text")]))
+            if _relevant(text, r.get("sub", "")):
+                keep.append(r)
+        dropped = len(rows) - len(keep)
+        path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in keep))
+        print(f"  {path.name}: {len(rows)} -> {len(keep)} ({dropped} dropped)")
+
+
 def main(argv) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sub", action="append")
     ap.add_argument("--workers", type=int, default=WORKERS)
     ap.add_argument("--rate", type=float, default=RATE_PER_S, help="global req/s ceiling")
     ap.add_argument("--status", action="store_true")
+    ap.add_argument("--refilter", action="store_true",
+                    help="re-apply the predicate to candidates already fetched (no network)")
     a = ap.parse_args(argv)
+
+    if a.refilter:
+        refilter()
+        return 0
 
     global LIMITER
     LIMITER = RateLimiter(a.rate)
