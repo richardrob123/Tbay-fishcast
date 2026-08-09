@@ -1123,8 +1123,8 @@
   {
    "lat": 48.054682,
    "lon": -89.41628,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_1c1b8e67f39563bd"
   },
   {
@@ -2075,8 +2075,8 @@
   {
    "lat": 48.054279,
    "lon": -89.415827,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_1c1b8e67f39563bd"
   },
   {
@@ -2089,8 +2089,8 @@
   {
    "lat": 48.054581,
    "lon": -89.414846,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_1c1b8e67f39563bd"
   },
   {
@@ -2656,8 +2656,8 @@
   {
    "lat": 48.520261,
    "lon": -88.939452,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_48273a476cc74223"
   },
   {
@@ -2803,8 +2803,8 @@
   {
    "lat": 48.520022,
    "lon": -88.940028,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_48273a476cc74223"
   },
   {
@@ -2908,8 +2908,8 @@
   {
    "lat": 48.520166,
    "lon": -88.939668,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_48273a476cc74223"
   },
   {
@@ -2992,8 +2992,8 @@
   {
    "lat": 48.517442,
    "lon": -88.950044,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_48273a476cc74223"
   },
   {
@@ -3006,8 +3006,8 @@
   {
    "lat": 48.517442,
    "lon": -88.949972,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_48273a476cc74223"
   },
   {
@@ -3552,8 +3552,8 @@
   {
    "lat": 48.057735,
    "lon": -89.415914,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_513d3f2a1e9dbaeb"
   },
   {
@@ -3587,8 +3587,8 @@
   {
    "lat": 48.057699,
    "lon": -89.414458,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_513d3f2a1e9dbaeb"
   },
   {
@@ -4098,8 +4098,8 @@
   {
    "lat": 48.057591,
    "lon": -89.416453,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_513d3f2a1e9dbaeb"
   },
   {
@@ -7724,8 +7724,8 @@
   {
    "lat": 48.501133,
    "lon": -88.989591,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -7997,8 +7997,8 @@
   {
    "lat": 48.503167,
    "lon": -88.987542,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8074,8 +8074,8 @@
   {
    "lat": 48.500348,
    "lon": -88.993042,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8137,8 +8137,8 @@
   {
    "lat": 48.501561,
    "lon": -88.989915,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8291,15 +8291,15 @@
   {
    "lat": 48.501347,
    "lon": -88.990454,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
    "lat": 48.502275,
    "lon": -88.988729,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8326,8 +8326,8 @@
   {
    "lat": 48.500455,
    "lon": -88.992719,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8452,8 +8452,8 @@
   {
    "lat": 48.501347,
    "lon": -88.988836,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -8536,8 +8536,8 @@
   {
    "lat": 48.50149,
    "lon": -88.990131,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_8355c553d5a44ad6"
   },
   {
@@ -9383,15 +9383,15 @@
   {
    "lat": 48.509702,
    "lon": -88.977246,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
    "lat": 48.499568,
    "lon": -88.993869,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9404,8 +9404,8 @@
   {
    "lat": 48.504243,
    "lon": -88.982625,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9467,8 +9467,8 @@
   {
    "lat": 48.499496,
    "lon": -88.993762,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9481,8 +9481,8 @@
   {
    "lat": 48.504992,
    "lon": -88.982894,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9495,8 +9495,8 @@
   {
    "lat": 48.504493,
    "lon": -88.985154,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9509,8 +9509,8 @@
   {
    "lat": 48.50881,
    "lon": -88.974394,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9544,8 +9544,8 @@
   {
    "lat": 48.508989,
    "lon": -88.974932,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9628,8 +9628,8 @@
   {
    "lat": 48.499925,
    "lon": -88.993977,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9649,8 +9649,8 @@
   {
    "lat": 48.502316,
    "lon": -88.987144,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9691,8 +9691,8 @@
   {
    "lat": 48.520334,
    "lon": -88.939264,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9775,8 +9775,8 @@
   {
    "lat": 48.500424,
    "lon": -88.992793,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9796,8 +9796,8 @@
   {
    "lat": 48.501424,
    "lon": -88.990265,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9831,15 +9831,15 @@
   {
    "lat": 48.503529,
    "lon": -88.986875,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
    "lat": 48.501923,
    "lon": -88.989243,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9908,8 +9908,8 @@
   {
    "lat": 48.503351,
    "lon": -88.984777,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9922,8 +9922,8 @@
   {
    "lat": 48.509524,
    "lon": -88.97434,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9950,8 +9950,8 @@
   {
    "lat": 48.500353,
    "lon": -88.993116,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -9971,8 +9971,8 @@
   {
    "lat": 48.505099,
    "lon": -88.979397,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10020,8 +10020,8 @@
   {
    "lat": 48.502851,
    "lon": -88.987951,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10076,8 +10076,8 @@
   {
    "lat": 48.504635,
    "lon": -88.98397,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10111,8 +10111,8 @@
   {
    "lat": 48.509702,
    "lon": -88.971758,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10146,8 +10146,8 @@
   {
    "lat": 48.499532,
    "lon": -88.993546,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10181,15 +10181,15 @@
   {
    "lat": 48.505099,
    "lon": -88.97929,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
    "lat": 48.509702,
    "lon": -88.971328,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10272,8 +10272,8 @@
   {
    "lat": 48.504493,
    "lon": -88.982141,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10293,8 +10293,8 @@
   {
    "lat": 48.504029,
    "lon": -88.986176,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
@@ -10384,22 +10384,22 @@
   {
    "lat": 48.5041,
    "lon": -88.982894,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_bcf7094139af00c1"
   },
   {
    "lat": 48.337907,
    "lon": -88.816192,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.332644,
    "lon": -88.839701,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10420,7 +10420,7 @@
    "lat": 48.33472,
    "lon": -88.791065,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10469,14 +10469,14 @@
    "lat": 48.327022,
    "lon": -88.847412,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.336511,
    "lon": -88.789501,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10497,7 +10497,7 @@
    "lat": 48.337155,
    "lon": -88.817917,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10524,8 +10524,8 @@
   {
    "lat": 48.333038,
    "lon": -88.828162,
-   "cls": "unknown",
-   "holder": null,
+   "cls": "public",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10539,7 +10539,7 @@
    "lat": 48.339446,
    "lon": -88.785565,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10581,7 +10581,7 @@
    "lat": 48.33873,
    "lon": -88.791496,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10616,21 +10616,21 @@
    "lat": 48.336797,
    "lon": -88.818834,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.321722,
    "lon": -88.811717,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.329385,
    "lon": -88.844824,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10672,7 +10672,7 @@
    "lat": 48.341022,
    "lon": -88.782545,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10693,21 +10693,21 @@
    "lat": 48.343349,
    "lon": -88.807942,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.329493,
    "lon": -88.84477,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.336833,
    "lon": -88.780658,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10742,14 +10742,14 @@
    "lat": 48.33694,
    "lon": -88.776075,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.337513,
    "lon": -88.825251,
-   "cls": "unknown",
-   "holder": null,
+   "cls": "public",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10770,7 +10770,7 @@
    "lat": 48.338229,
    "lon": -88.782545,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10798,14 +10798,14 @@
    "lat": 48.339518,
    "lon": -88.812579,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.337155,
    "lon": -88.831613,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10826,7 +10826,7 @@
    "lat": 48.334541,
    "lon": -88.834687,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10861,7 +10861,7 @@
    "lat": 48.336761,
    "lon": -88.784001,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -10938,7 +10938,7 @@
    "lat": 48.336725,
    "lon": -88.784864,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11015,7 +11015,7 @@
    "lat": 48.337441,
    "lon": -88.817378,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11029,14 +11029,14 @@
    "lat": 48.326055,
    "lon": -88.848544,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.346463,
    "lon": -88.816084,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11085,7 +11085,7 @@
    "lat": 48.345926,
    "lon": -88.81878,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11113,7 +11113,7 @@
    "lat": 48.336725,
    "lon": -88.784972,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11127,14 +11127,14 @@
    "lat": 48.344673,
    "lon": -88.821207,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.337764,
    "lon": -88.824334,
-   "cls": "unknown",
-   "holder": null,
+   "cls": "public",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11147,8 +11147,8 @@
   {
    "lat": 48.336833,
    "lon": -88.791766,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11176,28 +11176,28 @@
    "lat": 48.339554,
    "lon": -88.81177,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.33336,
    "lon": -88.787722,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.34564,
    "lon": -88.806001,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.334183,
    "lon": -88.828809,
-   "cls": "unknown",
-   "holder": null,
+   "cls": "public",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11218,7 +11218,7 @@
    "lat": 48.339339,
    "lon": -88.78508,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11246,7 +11246,7 @@
    "lat": 48.345819,
    "lon": -88.820829,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11337,7 +11337,7 @@
    "lat": 48.346033,
    "lon": -88.817055,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11400,7 +11400,7 @@
    "lat": 48.337048,
    "lon": -88.831182,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11414,7 +11414,7 @@
    "lat": 48.331999,
    "lon": -88.840564,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11428,21 +11428,21 @@
    "lat": 48.335472,
    "lon": -88.832961,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.334685,
    "lon": -88.834363,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.336582,
    "lon": -88.831074,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11463,21 +11463,21 @@
    "lat": 48.337549,
    "lon": -88.817055,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.322223,
    "lon": -88.81107,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_c9e9ca7653856927"
   },
   {
    "lat": 48.329708,
    "lon": -88.8445,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -11505,7 +11505,7 @@
    "lat": 48.328096,
    "lon": -88.845201,
    "cls": "public",
-   "holder": "Crown unpatented",
+   "holder": "regulated park/reserve",
    "mask": "wm_c9e9ca7653856927"
   },
   {
@@ -12638,15 +12638,15 @@
   {
    "lat": 48.504664,
    "lon": -88.981774,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.504807,
    "lon": -88.981557,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12659,8 +12659,8 @@
   {
    "lat": 48.505142,
    "lon": -88.979252,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12673,22 +12673,22 @@
   {
    "lat": 48.503325,
    "lon": -88.984728,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.505189,
    "lon": -88.978675,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.502991,
    "lon": -88.985232,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12701,8 +12701,8 @@
   {
    "lat": 48.50973,
    "lon": -88.97745,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12722,15 +12722,15 @@
   {
    "lat": 48.50452,
    "lon": -88.982134,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.503564,
    "lon": -88.984512,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12750,8 +12750,8 @@
   {
    "lat": 48.504472,
    "lon": -88.982206,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12764,15 +12764,15 @@
   {
    "lat": 48.50495,
    "lon": -88.982927,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.503517,
    "lon": -88.984512,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12792,8 +12792,8 @@
   {
    "lat": 48.50887,
    "lon": -88.974496,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12806,15 +12806,15 @@
   {
    "lat": 48.503373,
    "lon": -88.984656,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.505046,
    "lon": -88.980332,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12827,15 +12827,15 @@
   {
    "lat": 48.508917,
    "lon": -88.97464,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.509061,
    "lon": -88.974856,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12855,22 +12855,22 @@
   {
    "lat": 48.509539,
    "lon": -88.976009,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.508917,
    "lon": -88.975288,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
    "lat": 48.50973,
    "lon": -88.976658,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "unknown",
+   "holder": "private title but official access nearby (Lake Superior - Silver Harbour Access)",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12883,8 +12883,8 @@
   {
    "lat": 48.50409,
    "lon": -88.982927,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -12904,8 +12904,8 @@
   {
    "lat": 48.504138,
    "lon": -88.983071,
-   "cls": "private",
-   "holder": "Private",
+   "cls": "public",
+   "holder": "Crown unpatented",
    "mask": "wm_e433e8910869def9"
   },
   {
@@ -14037,9 +14037,9 @@
   }
  ],
  "coverage": {
-  "private": 1144,
-  "unknown": 187,
-  "public": 674
+  "private": 1071,
+  "unknown": 196,
+  "public": 738
  },
  "holders": {
   "Federal Government": 22,
