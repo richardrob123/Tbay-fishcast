@@ -27,11 +27,11 @@ How the forecast the map ships degrades with lead time. Same far-chain caveats. 
 
 | lead | n | corrected MAE | raw MAE |
 |---|---|---|---|
-| +24 h | 6 | 1.57 m | 2.97 m |
-| +48 h | 6 | 1.32 m | 2.60 m |
-| +72 h | 6 | 1.90 m | 3.25 m |
-| +96 h | 6 | 1.49 m | 3.02 m |
-| +120 h | 6 | 1.46 m | 2.60 m |
+| +24 h | 7 | 1.40 m | 2.78 m |
+| +48 h | 7 | 1.23 m | 2.35 m |
+| +72 h | 7 | 1.70 m | 2.93 m |
+| +96 h | 7 | 1.33 m | 2.60 m |
+| +120 h | 7 | 1.28 m | 2.29 m |
 
 (Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent uncertainty band (ADR-021) activates once these per-lead n are respectable — the widening is read from this measured error, never hand-picked.
 
@@ -45,4 +45,4 @@ n=16 days · mixed-layer model−clim mean **-0.56 °C**, iso-12 depth model−c
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=54 buoy-days · GFS speed MAE **2.68 kn**, W-quadrant forecast−obs bias **-0.08 kn** · airport(CYQT)−buoy offset **-1.10 kn** (W-quadrant -0.40). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=56 buoy-days · GFS speed MAE **2.67 kn**, W-quadrant forecast−obs bias **-0.12 kn** · airport(CYQT)−buoy offset **-1.12 kn** (W-quadrant -0.47). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
