@@ -34,3 +34,7 @@ data/*
 .DS_Store
 scratch/
 .cdsapirc
+
+# Forum credentials (ADR-042 forum access). NEVER committed — supplied via env vars or this
+# gitignored file, read at runtime only.
+.forum_creds
