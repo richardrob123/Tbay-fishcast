@@ -25,11 +25,40 @@ GEOMET_REALTIME = "https://api.weather.gc.ca/collections/hydrometric-realtime/it
 TBAY_BBOX = "-89.7,48.2,-89.0,48.7"
 
 # Verified gauge IDs for the three modelled river mouths (2026-08-07, live).
+# MAIN-STEM gauges, with drainage area (km2) and the discharge on the lidar acquisition date.
+#
+# THE FIX THIS RECORDS. The first mapping sent the Current River to 02AB014 — "NORTH CURRENT RIVER",
+# a 105 km2 TRIBUTARY — while the main stem has its own active station 02AB021 at 406.8 km2, nearly
+# four times the catchment. McVicar and McIntyre were likewise treated as ungauged when both have
+# active stations. All five rivers are gauged on their main stems; we simply had the wrong list.
+#
+# q_ref_cms is the DAILY MEAN DISCHARGE ON 2024-05-06, the day the lidar was flown. It is what makes
+# the measured channel widths usable: those widths are the WETTED width at that flow, and applying
+# them to today's discharge without rescaling is what produced a 3.5 cm "depth" for a 28 m river.
+# See features/hydraulics.width_at_flow.
+#
+# CROSS-CHECK, and the reason to trust the new list: specific discharge q = Q/A should be similar
+# for neighbouring catchments sharing one climate. Measured 2026-08-09: Current 0.66, Neebing 0.80,
+# McIntyre 0.75 L/s/km2 — a tight cluster. Kam (3.27) and McVicar (1.99) sit out, both explicably:
+# the Kam is a 6,481 km2 regulated system with large lake storage, and McVicar is a small urban
+# catchment whose impervious surfaces raise runoff. A gauge on the WRONG watercourse shows up here
+# as an inexplicable outlier, which is exactly how the North Current error would have been caught.
 GAUGES = {
-    "kam": "02AB006",       # Kaministiquia R. — the big plume
-    "current": "02AB014",   # N. Current R. (below Boulevard Lake)
-    "neebing": "02AB008",   # Neebing–McIntyre floodway
+    "kam": "02AB006",       # Kaministiquia at Kaministiquia — the big plume
+    "current": "02AB021",   # Current R. AT STEPSTONE — main stem (was 02AB014, a tributary)
+    "neebing": "02AB008",   # Neebing-McIntyre floodway
+    "mcintyre": "02AB020",  # McIntyre above Thunder Bay
+    "mcvicar": "02AB019",   # McVicar Creek at Thunder Bay
 }
+
+GAUGE_META = {
+    "kam": {"station": "02AB006", "area_km2": 6481.0, "q_ref_cms": 42.00},
+    "current": {"station": "02AB021", "area_km2": 406.8, "q_ref_cms": 11.80},
+    "neebing": {"station": "02AB008", "area_km2": 208.1, "q_ref_cms": 3.62},
+    "mcintyre": {"station": "02AB020", "area_km2": 81.41, "q_ref_cms": 1.74},
+    "mcvicar": {"station": "02AB019", "area_km2": 44.77, "q_ref_cms": 0.89},
+}
+LIDAR_REF_DATE = "2024-05-06"
 
 
 def list_stations(bbox: str = TBAY_BBOX, timeout: float = 60.0) -> list[dict]:

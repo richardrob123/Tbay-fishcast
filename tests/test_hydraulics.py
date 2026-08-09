@@ -110,3 +110,64 @@ def test_implausible_depth_is_refused_rather_than_reported():
     assert "wrong gauge" in bad.note
     good = hy.solve(10.0, 28.0, 8.0)
     assert good.depth_m is not None
+
+
+def test_width_rescales_with_discharge():
+    """THE SEASON MISMATCH. Widths are the WETTED width on the lidar date; the Current runs at
+    2.3% of that flow in August, and pairing a freshet width with a low-flow discharge produced a
+    3.5 cm depth on a 28 m river."""
+    aug = hy.width_at_flow(28.0, 0.27, 11.80)
+    assert 8.0 < aug < 14.0, f"August width should be roughly a third of May's, got {aug:.1f}"
+    assert hy.width_at_flow(28.0, 11.80, 11.80) == 28.0, "at the reference flow, width is unchanged"
+    assert hy.width_at_flow(28.0, 0.0, 11.8) is None
+    assert hy.width_at_flow(28.0, 1.0, 0.0) is None
+
+
+def test_rescaled_width_makes_the_current_river_plausible_again():
+    w = hy.width_at_flow(28.0, 0.27, 11.80)
+    s = hy.solve(0.27, w, 8.0)
+    assert s.depth_m is not None, "with the right width it must no longer be refused"
+    assert 0.02 < s.depth_m < 0.5 and 0.1 < s.velocity_ms < 1.5
+
+
+def test_scour_pools_are_flagged_as_lower_bounds():
+    """Manning solves NORMAL depth; a pool is cut below the uniform-flow profile with its depth
+    set by the downstream riffle. Reporting a normal depth as the pool's would overstate what we
+    know about the one quantity a fishing tool most wants."""
+    pool = hy.solve(0.27, 10.5, 0.5, mean_slope_m_km=8.7)
+    assert "LOWER BOUND" in pool.note
+    riffle = hy.solve(0.27, 10.5, 8.0, mean_slope_m_km=8.7)
+    assert "LOWER BOUND" not in riffle.note
+
+
+def test_species_seam_preference_is_ordinal_and_differs_by_species():
+    """Steelhead exploit the largest gradients; salmon favour holding depth. A single universal
+    'strength' ramp would be wrong for three of the four species."""
+    assert hy.species_seam_signal("steelhead")["primary"] == "velocity_gradient"
+    assert hy.species_seam_signal("salmon")["primary"] == "pool_depth"
+    assert hy.species_seam_signal("brook_trout")["primary"] == "bend"
+    assert hy.species_seam_signal("lake_trout")["primary"] == "none"
+
+
+def test_unmodelled_species_gets_no_ranking_rather_than_a_default():
+    assert hy.species_seam_signal("walleye")["primary"] == "none"
+
+
+def test_seam_ramp_is_measured_and_nested():
+    vals = [float(i) for i in range(500)]
+    r = hy.seam_ramp_bands(vals)
+    assert r["edges"] == sorted(r["edges"]), "a nested ramp must have monotonic edges"
+    assert hy.seam_band(vals[-1], r) == len(r["qs"]), "the maximum reaches the top band"
+    assert hy.seam_band(0.0, r) == 0
+    doubled = hy.seam_ramp_bands([2 * v for v in vals])
+    assert all(abs(b - 2 * a) < 1e-6 for a, b in zip(r["edges"], doubled["edges"])), \
+        "edges are percentiles of the measured distribution, not constants"
+
+
+def test_seam_ramp_refuses_thin_evidence():
+    try:
+        hy.seam_ramp_bands([1.0, 2.0, 3.0])
+    except ValueError as e:
+        assert "too thin" in str(e)
+    else:
+        raise AssertionError("must refuse to build a ramp from a handful of values")

@@ -60,6 +60,37 @@ BACKWATER_TOL_M = 0.5
 # they appear to, the discharge is wrong.
 MIN_DEPTH_WIDTH_RATIO = 1.0 / 500.0
 
+# --- AT-A-STATION HYDRAULIC GEOMETRY ----------------------------------------------------------
+# The measured widths are the WETTED width on the lidar date (2024-05-06). Today's discharge is a
+# different number entirely — the Current River is running at 2.3% of that day's flow in August —
+# and pairing a freshet width with a low-flow discharge is what produced a 3.5 cm "depth" on a
+# 28 m river. The flow does not spread across the whole May bed in August; it retreats into a
+# narrower thread of it.
+#
+# Leopold & Maddock's at-a-station relations describe exactly this: at ONE cross-section, as
+# discharge varies, w ~ Q^b, d ~ Q^f, v ~ Q^m with b+f+m = 1. The classic exponents are
+# b~0.26, f~0.40, m~0.34. Only the width exponent is used here — depth and velocity still come
+# from Manning, so the two are not double-counted.
+WIDTH_Q_EXPONENT = 0.26
+
+
+def width_at_flow(width_ref_m, q_cms, q_ref_cms, *, exponent: float = WIDTH_Q_EXPONENT):
+    """Rescale a width measured at q_ref to the width at q. None if inputs are unusable."""
+    if None in (width_ref_m, q_cms, q_ref_cms):
+        return None
+    if width_ref_m <= 0 or q_cms <= 0 or q_ref_cms <= 0:
+        return None
+    return float(width_ref_m) * (float(q_cms) / float(q_ref_cms)) ** exponent
+
+
+# A pool is scoured BELOW the uniform-flow profile, and its depth is set by the downstream riffle
+# control rather than by local slope — so Manning, which solves for NORMAL depth, systematically
+# UNDER-estimates pools. That is awkward, because pool depth is exactly the quantity a fishing tool
+# would most like to state. The honest response is to keep the number as a LOWER BOUND and label it,
+# rather than quietly present a normal depth as if it were the pool's. A reach is treated as a
+# scour pool when its slope falls well below the river's own mean gradient.
+POOL_SLOPE_FRACTION = 0.25
+
 
 @dataclass
 class Hydraulics:
@@ -128,8 +159,14 @@ def is_backwater(z_m, lake_datum_m: float, tol_m: float = BACKWATER_TOL_M) -> bo
 
 
 def solve(q_cms, width_m, slope_m_km, *, z_m=None, lake_datum_m=None,
-          n_lo: float = N_LO, n_mid: float = N_MID, n_hi: float = N_HI) -> Hydraulics:
-    """Full hydraulic state with its uncertainty band."""
+          mean_slope_m_km=None, n_lo: float = N_LO, n_mid: float = N_MID,
+          n_hi: float = N_HI) -> Hydraulics:
+    """Full hydraulic state with its uncertainty band.
+
+    `width_m` must be the width AT THIS DISCHARGE — rescale a lidar-date width through
+    `width_at_flow` first, or the answer will be nonsense in any season but May.
+    `mean_slope_m_km`, when given, flags scour pools whose depth Manning under-estimates.
+    """
     if lake_datum_m is not None and is_backwater(z_m, lake_datum_m):
         return Hydraulics(None, None, None, None, None, backwater=True,
                           note="water surface at lake level — depth set by the lake, not by slope")
@@ -143,12 +180,18 @@ def solve(q_cms, width_m, slope_m_km, *, z_m=None, lake_datum_m=None,
                                 f"wrong gauge, not a real reading of this river"))
     v = velocity(q_cms, width_m, d)
     fr = froude(v, d)
+    pool_note = ""
+    if mean_slope_m_km and slope_m_km is not None and float(slope_m_km) > 0:
+        if float(slope_m_km) < POOL_SLOPE_FRACTION * float(mean_slope_m_km):
+            pool_note = ("scour pool: Manning solves NORMAL depth, and a pool is cut below the "
+                         "uniform-flow profile with its depth set by the downstream riffle — "
+                         "treat this depth as a LOWER BOUND")
     # a LOWER n gives a shallower, faster flow => a HIGHER Froude number
     d_hi_n = manning_depth(q_cms, width_m, slope_m_km, n_hi)
     d_lo_n = manning_depth(q_cms, width_m, slope_m_km, n_lo)
     fr_lo = froude(velocity(q_cms, width_m, d_hi_n), d_hi_n)      # rough bed -> deep, slow, low Fr
     fr_hi = froude(velocity(q_cms, width_m, d_lo_n), d_lo_n)      # smooth bed -> shallow, fast
-    return Hydraulics(d, v, fr, fr_lo, fr_hi)
+    return Hydraulics(d, v, fr, fr_lo, fr_hi, note=pool_note)
 
 
 # --- SEAMS ------------------------------------------------------------------------------------
@@ -199,3 +242,79 @@ def find_seams(dvds, curvature_vals, width_grad, *, dv_edge: float,
             tags.append("seam_constriction" if dw < 0 else "seam_expansion")
         out.append(tags)
     return out
+
+
+# --- PER-SPECIES SEAM PREFERENCE --------------------------------------------------------------
+# "Strongest seam = where the fish are" is close to true for STEELHEAD and wrong for salmon, and
+# the difference is measured rather than folkloric. Salmonids choose positions that maximise NET
+# energy intake — gross feeding intake minus the swimming cost at the focal point — so the best
+# seam is an OPTIMUM, not a maximum. There is a floor as well: slack water beside a seam is
+# explicitly unattractive, being neither productive nor secure, so fish hold ON the seam rather
+# than in the dead water next to it. Steelhead exploit LARGER velocity gradients than other
+# salmonids, a difference tied to their foraging behaviour and physiology, while coho and chinook
+# favour deeper, low-velocity pools. Steelhead will also work shallow fast riffles the others
+# will not. (NAJFM 40(2):320; Hughes & Dill drift-feeding position choice.)
+#
+# WHAT IS AND IS NOT CLAIMED. This is an ORDINAL preference — which signal dominates for which
+# species — not a fitted weight. The project has no catch data at seam resolution, so inventing
+# numeric weights would be fabricating precision, exactly what ADR-037 avoided by combining
+# signals as a conjunction rather than a weighted sum. Direction is literature-supported (T3);
+# magnitude is not claimed.
+#
+# A SECOND MODE THAT MATTERS MORE DURING A RUN. Three of the four species are migratory here, and
+# a fish mid-run is not feeding — it is resting between pushes. Its water is the RESTING LIE:
+# below a barrier, in a pool tail. That is a different object from a feeding seam and is computed
+# separately (river_profile.holding_water_below), not folded into this ramp.
+SPECIES_SEAM = {
+    "steelhead": {"primary": "velocity_gradient", "secondary": "bend",
+                  "note": "exploits the largest velocity gradients of the four; will hold in "
+                          "shallow fast water others avoid"},
+    "salmon": {"primary": "pool_depth", "secondary": "bend",
+               "note": "chinook/coho favour deeper low-velocity water; seams matter less than "
+                       "holding depth"},
+    "brook_trout": {"primary": "bend", "secondary": "constriction",
+                    "note": "smaller and a weaker swimmer — moderate seams beside cover, not the "
+                            "strongest gradient available"},
+    "lake_trout": {"primary": "none", "secondary": "none",
+                   "note": "barely a river fish here; enters only the lowest reaches, so river "
+                           "seams are not ranked for it"},
+}
+
+
+def species_seam_signal(species: str) -> dict:
+    """Which seam signal leads for this species. Unknown species get no ranking rather than a
+    default — silently ranking an unmodelled species is how a tool starts making things up."""
+    return SPECIES_SEAM.get(species, {"primary": "none", "secondary": "none",
+                                      "note": "species not modelled for river seams"})
+
+
+def seam_ramp_bands(values, qs=(75, 77, 79, 81, 83, 85, 87, 89, 90, 92, 95, 97, 99)):
+    """Measured percentile ladder for a seam signal — the ADR-039 ramp discipline, reused.
+
+    Nested CUMULATIVE bands, not disjoint rings: ADR-039 established that disjoint bands shred
+    into sliver speckle (874 fragments on McKellar against 141 nested), and the same will happen
+    to a line rendered in segments. Edges are measured from the pooled regional distribution so
+    the ramp means "strong for Thunder Bay" rather than a number someone chose.
+    """
+    finite = sorted(abs(v) for v in values if v is not None and math.isfinite(v))
+    if len(finite) < 50:
+        raise ValueError(f"only {len(finite)} finite values — too thin for a measured ramp")
+    out = []
+    for q in qs:
+        k = (len(finite) - 1) * q / 100.0
+        lo = int(k)
+        hi = min(lo + 1, len(finite) - 1)
+        out.append(finite[lo] + (finite[hi] - finite[lo]) * (k - lo))
+    return {"qs": list(qs), "edges": out, "n": len(finite)}
+
+
+def seam_band(value, ramp: dict) -> int:
+    """Which nested band a value reaches (0 = below the ramp, len(qs) = the top band)."""
+    if value is None or not math.isfinite(value):
+        return 0
+    v = abs(value)
+    n = 0
+    for e in ramp["edges"]:
+        if v >= e:
+            n += 1
+    return n
