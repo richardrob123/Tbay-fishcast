@@ -34,6 +34,13 @@ from tbay_fishcast.ingest import hrdem, hydat            # noqa: E402
 import build_river_reaches as B                          # noqa: E402
 
 GEOJSON = ROOT / "web" / "data" / "rivers.geojson"
+# FROZEN GEOMETRY, committed. Same discipline as the frozen water masks: the lidar-derived parts
+# — centreline, water surface, width, bends, backwater — do not change from day to day, but
+# rebuilding them costs thousands of HTTP range reads into the 1 m DTM plus five Overpass calls,
+# and both caches are gitignored. Re-deriving that in CI four times a day would be slow and would
+# make the map hostage to a rate-limited Overpass. So geometry is frozen by an operator
+# (--freeze), and the DAILY step reads it and applies only today's discharge.
+FROZEN = ROOT / "data" / "river_geometry.json"
 CALIB = ROOT / "data" / "calib" / "river_seam_calib.json"
 STEP_M = 20.0
 SPECIES = ("steelhead", "salmon", "brook_trout", "lake_trout")
@@ -94,15 +101,36 @@ def profile(r):
 def main(argv) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(GEOJSON))
+    ap.add_argument("--freeze", action="store_true",
+                    help="re-derive geometry from lidar + OSM and commit it (operator step)")
     a = ap.parse_args(argv)
 
     Q = _live_q()
     print("live discharge:", {k: (round(v, 3) if v else None) for k, v in Q.items()})
 
+    frozen = None
+    if not a.freeze and FROZEN.exists():
+        try:
+            frozen = json.loads(FROZEN.read_text())["rivers"]
+            print(f"using frozen geometry ({FROZEN.name}, {len(frozen)} rivers) — "
+                  f"no lidar or Overpass calls")
+        except (ValueError, KeyError):
+            frozen = None
+    if frozen is None and not a.freeze:
+        print("no frozen geometry; deriving it now (slow). Run --freeze and commit the result.")
+
     P, all_dv, all_rw, all_dw = {}, [], [], []
+    geom_out = {}
     for r in B.RIVERS:
         rid = r["id"]
-        pr = profile(r)
+        if frozen and rid in frozen:
+            f = frozen[rid]
+            pr = {"pts": [tuple(x) for x in f["pts"]], "dist": f["dist"],
+                  "z": f["z"], "w_ref": f["w_ref"]}
+            pre_bends = f.get("bends")
+        else:
+            pr = profile(r)
+            pre_bends = None
         if pr is None:
             print(f"  {r['name']:22s} profile unusable — skipped")
             continue
@@ -132,7 +160,12 @@ def main(argv) -> int:
         vel = [st.velocity_ms for st in states]
         dv = hy.velocity_gradient(vel, pr["dist"])
         dw = rp.width_gradient(pr["w_ref"], pr["dist"])
-        bends = rp.bend_seams(pr["pts"], pr["w_ref"], suppress=back, dists=pr["dist"])
+        bends = (pre_bends if pre_bends is not None
+                 else rp.bend_seams(pr["pts"], pr["w_ref"], suppress=back, dists=pr["dist"]))
+        geom_out[rid] = {"pts": [[round(q[0], 6), round(q[1], 6)] for q in pr["pts"]],
+                         "dist": [round(x, 1) for x in pr["dist"]],
+                         "z": [round(x, 2) for x in pr["z"]],
+                         "w_ref": pr["w_ref"], "bends": bends}
         P[rid] = {**pr, "r": r, "q": q, "q_ref": qref, "w_now": w_now, "slopes": slopes,
                   "states": states, "dv": dv, "dw": dw, "bends": bends, "back": back,
                   "med_ref": med_ref, "med_now": med_now, "mean_slope": mean_slope}
@@ -240,6 +273,18 @@ def main(argv) -> int:
                         "bends": len(p["bends"]),
                         "backwater_frac": round(sum(p["back"]) / len(p["back"]), 3),
                         "hydraulics_stations": sum(1 for s in p["states"] if s.froude is not None)}
+    if a.freeze:
+        FROZEN.parent.mkdir(parents=True, exist_ok=True)
+        FROZEN.write_text(json.dumps({
+            "rivers": geom_out,
+            "source": {"lidar": hrdem.STAC_ITEM, "acquired": hrdem.ACQUIRED,
+                       "step_m": STEP_M, "centreline": "OpenStreetMap waterway"},
+            "note": ("STATIC lidar/planform geometry. Frozen so the daily build applies only "
+                     "discharge — no lidar range reads, no Overpass. Re-freeze when the "
+                     "centrelines or the lidar acquisition change."),
+        }))
+        print(f"froze geometry for {len(geom_out)} rivers -> {FROZEN.relative_to(ROOT)}")
+
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
     CALIB.parent.mkdir(parents=True, exist_ok=True)

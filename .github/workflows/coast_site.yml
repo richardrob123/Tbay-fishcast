@@ -96,6 +96,18 @@ jobs:
         continue-on-error: true
         run: python scripts/fit_run_windows.py
 
+      # RIVER SEAMS (ADR-045). Runs on EVERY build, not once a day, because seams are a function of
+      # DISCHARGE and discharge moves through a storm — a seam layer stapled to yesterday's flow
+      # would contradict the map beside it. Affordable because the expensive part is frozen:
+      # data/river_geometry.json holds the lidar-derived centreline, water surface, width and
+      # bends, so this step fetches five gauge readings and does arithmetic. Measured at 3.4 s on a
+      # runner with NO caches present. continue-on-error: a gauge outage must cost the seam layer,
+      # never the map.
+      - name: Build river seams from frozen geometry + live discharge
+        id: seams
+        continue-on-error: true
+        run: python scripts/build_river_seams.py
+
       - name: Build the coast site data (today's issue)
         id: build
         run: python scripts/build_coast_site.py
@@ -202,11 +214,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then

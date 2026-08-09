@@ -83,21 +83,21 @@
     99
    ],
    "edges": [
-    0.0020134431656532803,
-    0.002183750527011171,
-    0.0023537464847594425,
-    0.0024907718415597443,
-    0.0027056453072666752,
-    0.0029407473564185506,
-    0.0032134929956821826,
-    0.0035549703960900112,
-    0.0036845222789329223,
-    0.004177322499589817,
-    0.0050858537456984175,
-    0.006036088445113214,
-    0.009098887381855388
+    0.0020200488052671897,
+    0.002175819939059062,
+    0.0023614908067260505,
+    0.002514185968706815,
+    0.0027045908317207728,
+    0.0029354709673664547,
+    0.003215700866784963,
+    0.003532225941953472,
+    0.003701640592655661,
+    0.004152552836901809,
+    0.00515718093120224,
+    0.006080862528643034,
+    0.009156365107492249
    ],
-   "n": 3058
+   "n": 3045
   }
  },
  "rivers": {
@@ -107,10 +107,10 @@
    "q_ref_cms": 11.8,
    "width_ref_m": 26.0,
    "width_now_m": 9.709054837553516,
-   "mean_slope_m_km": 10.448,
+   "mean_slope_m_km": 10.497,
    "bends": 20,
    "backwater_frac": 0.021,
-   "hydraulics_stations": 380
+   "hydraulics_stations": 379
   },
   "neebing": {
    "name": "Neebing River",
@@ -118,10 +118,10 @@
    "q_ref_cms": 3.62,
    "width_ref_m": 10.0,
    "width_now_m": 4.494092987242274,
-   "mean_slope_m_km": 7.071,
+   "mean_slope_m_km": 7.163,
    "bends": 35,
    "backwater_frac": 0.142,
-   "hydraulics_stations": 760
+   "hydraulics_stations": 753
   },
   "mcintyre": {
    "name": "McIntyre River",
@@ -129,7 +129,7 @@
    "q_ref_cms": 1.74,
    "width_ref_m": 60.0,
    "width_now_m": 25.106964177711596,
-   "mean_slope_m_km": 0.277,
+   "mean_slope_m_km": 0.282,
    "bends": 0,
    "backwater_frac": 0.998,
    "hydraulics_stations": 1
@@ -140,10 +140,10 @@
    "q_ref_cms": 42.0,
    "width_ref_m": 112.0,
    "width_now_m": 93.7606330648743,
-   "mean_slope_m_km": 2.448,
+   "mean_slope_m_km": 2.451,
    "bends": 56,
-   "backwater_frac": 0.31,
-   "hydraulics_stations": 1920
+   "backwater_frac": 0.311,
+   "hydraulics_stations": 1914
   },
   "mcvicar": {
    "name": "McVicar Creek",
@@ -151,10 +151,10 @@
    "q_ref_cms": 0.89,
    "width_ref_m": 8.0,
    "width_now_m": 4.396326990860996,
-   "mean_slope_m_km": 12.78,
+   "mean_slope_m_km": 12.748,
    "bends": 13,
    "backwater_frac": 0.018,
-   "hydraulics_stations": 356
+   "hydraulics_stations": 357
   }
  },
  "species_seam": {
