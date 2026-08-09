@@ -465,3 +465,160 @@ def outer_bank(curv_value: float | None) -> str | None:
     if abs(curv_value) < 0.15:            # p50 of measured curvature — straighter than a bend
         return None
     return "right" if curv_value > 0 else "left"
+
+
+def bend_radius(points, i: int, span_m: float = 40.0):
+    """Radius of curvature (m) at station i, by least-squares circle fit over +/- `span_m`.
+
+    THREE THINGS THIS GETS RIGHT, each learned by getting it wrong.
+
+    1. SPAN SCALES WITH THE CHANNEL. Measuring over +/-40 m on a 28 m-wide river samples at the
+       scale of the channel itself, where centreline digitising noise dominates real planform —
+       that produced bends at R/w 0.30, a river doubling back inside a third of its own width,
+       which is geometrically impossible. The caller passes a span in channel widths.
+
+    2. FIT ALL THE POINTS, NOT THREE. The first version took the circumradius of the triangle at
+       (lo, i, hi). That is exact for three points and fragile for a real centreline: on a line
+       with alternating jitter the walk to +/-span lands on one parity or the other, and when the
+       three chosen points happen to be collinear the area term vanishes and the radius comes back
+       None. Measured on a jittered line it alternated None / 380 m / None / 3399 m purely by
+       parity. A radius that depends on which station index you started from is not a measurement.
+       A least-squares fit over every point in the span uses all the evidence and is stable.
+
+    3. Collinearity is still possible (a genuinely straight reach), and returns None rather than a
+       vast meaningless radius.
+    """
+    n = len(points)
+    if n < 5 or i < 0 or i >= n:
+        return None
+    mlat = 111320.0
+    mlon = 111320.0 * math.cos(math.radians(points[i][0]))
+
+    def m(k):
+        return ((points[k][1]) * mlon, (points[k][0]) * mlat)
+
+    ci = m(i)
+    xs, ys = [], []
+    for k in range(n):
+        p = m(k)
+        if math.dist(p, ci) <= span_m:
+            xs.append(p[0])
+            ys.append(p[1])
+    if len(xs) < 4:
+        return None
+    # Kasa circle fit: x^2+y^2 = 2ax + 2by + c, linear least squares in (a, b, c)
+    mx = sum(xs) / len(xs)
+    my = sum(ys) / len(ys)
+    u = [x - mx for x in xs]
+    v = [y - my for y in ys]
+    suu = sum(a * a for a in u)
+    svv = sum(b * b for b in v)
+    suv = sum(a * b for a, b in zip(u, v))
+    suuu = sum(a ** 3 for a in u)
+    svvv = sum(b ** 3 for b in v)
+    suvv = sum(a * b * b for a, b in zip(u, v))
+    svuu = sum(b * a * a for a, b in zip(u, v))
+    det = 2.0 * (suu * svv - suv * suv)
+    if abs(det) < 1e-9:
+        return None                      # degenerate: a straight reach
+    uc = (svv * (suuu + suvv) - suv * (svvv + svuu)) / det
+    vc = (suu * (svvv + svuu) - suv * (suuu + suvv)) / det
+    r = math.sqrt(max(0.0, uc * uc + vc * vc + (suu + svv) / len(xs)))
+    return r if math.isfinite(r) and r > 0 else None
+
+
+BEND_SPAN_WIDTHS = 2.0     # curvature is measured over this many channel widths
+# A bend must PERSIST to be real. 22 of the Kaministiquia's 73 first-pass bends were single
+# stations — zero drawn length, i.e. a curvature spike that did not survive even one measurement
+# span. On a 112 m-wide river a "bend" occupying one 20 m station is the draughtsman's hand, not a
+# meander. Requiring both a minimum station count AND a minimum extent in CHANNEL WIDTHS applies
+# the same scale discipline used for the slope window and the reach-length floor.
+MIN_BEND_STATIONS = 3
+MIN_BEND_WIDTHS = 0.5
+
+
+# A bend scours an outer-bank pool when it is TIGHT RELATIVE TO ITS OWN WIDTH. The controlling
+# ratio is R/w: natural meanders cluster around 2-3, maximum scour occurs in roughly 2-4, and by
+# R/w > ~7 a bend behaves hydraulically like a straight reach.
+#
+# THIS REPLACES A CURVATURE PERCENTILE, and the reason matters. A percentile ALWAYS returns its
+# quantile — thresholding curvature at p90 tagged 21% of the Current River's stations as seams,
+# which is simply what two p90 tests produce by construction, and a dead-straight river would
+# still have got 10% "bends". R/w is a physical ratio, so a straight river correctly yields none.
+# Stated as a literature-derived JUDGMENT (T3), weaker than Fr = 1 which is exact physics.
+BEND_POOL_RW_MAX = 4.0
+
+
+def bend_seams(points, widths, *, rw_max: float = BEND_POOL_RW_MAX, suppress=None,
+               span_widths: float = BEND_SPAN_WIDTHS, group: bool = True,
+               min_stations: int = MIN_BEND_STATIONS, min_widths: float = MIN_BEND_WIDTHS,
+               dists=None):
+    """Bends tight enough to scour an outer-bank pool, as DISTINCT features.
+
+    Returns [{i, i0, i1, side, radius_m, rw}] — one entry per bend, not per station. Grouping
+    matters for honesty as much as tidiness: at 20 m spacing every station inside one bend gets
+    tagged, so an ungrouped count reported "79 seams" on the Current River when it had found
+    perhaps twenty bends. A map drawn from that would show a wall of markers implying far more
+    structure than the river has.
+
+    `side` is left/right looking downstream — which bank to stand on, the part that actually
+    matters. `suppress` marks stations (backwater) where geometry cannot be trusted: in a drowned
+    mouth the reach-smoothed width balloons to several times the channel's, so offsetting by half
+    of it throws the marker into open water instead of onto a bank.
+    """
+    curv = curvature(points)
+    hits = []
+    for i in range(len(points)):
+        if suppress is not None and i < len(suppress) and suppress[i]:
+            continue
+        w = widths[i] if i < len(widths) else None
+        c = curv[i]
+        if not w or w <= 0 or c is None:
+            continue
+        R = bend_radius(points, i, span_m=span_widths * w)
+        if R is None:
+            continue
+        rw = R / w
+        if rw <= rw_max:
+            hits.append({"i": i, "side": "right" if c > 0 else "left",
+                         "radius_m": R, "rw": rw})
+    if not group or not hits:
+        return hits
+    out = []
+    run = [hits[0]]
+    for h in hits[1:]:
+        if h["i"] - run[-1]["i"] <= 2 and h["side"] == run[-1]["side"]:
+            run.append(h)
+        else:
+            out.append(_collapse(run))
+            run = [h]
+    out.append(_collapse(run))
+
+    def extent_m(b):
+        if dists is not None and b["i1"] < len(dists):
+            return dists[b["i1"]] - dists[b["i0"]]
+        mlat = 111320.0
+        mlon = 111320.0 * math.cos(math.radians(points[b["i0"]][0]))
+        tot = 0.0
+        for k in range(b["i0"], b["i1"]):
+            a, c = points[k], points[k + 1]
+            tot += math.hypot((c[0] - a[0]) * mlat, (c[1] - a[1]) * mlon)
+        return tot
+
+    kept = []
+    for b in out:
+        w = widths[b["i"]] if b["i"] < len(widths) else None
+        if b["n_stations"] < min_stations:
+            continue
+        if w and extent_m(b) < min_widths * w:
+            continue
+        b["extent_m"] = round(extent_m(b), 1)
+        kept.append(b)
+    return kept
+
+
+def _collapse(run):
+    """One bend from a run of stations: keep its tightest point, and its extent."""
+    best = min(run, key=lambda h: h["rw"])
+    return {"i": best["i"], "i0": run[0]["i"], "i1": run[-1]["i"], "side": best["side"],
+            "radius_m": best["radius_m"], "rw": best["rw"], "n_stations": len(run)}

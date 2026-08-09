@@ -186,3 +186,61 @@ def test_upstream_limit_walks_up_from_the_mouth():
     assert rp.upstream_limit(reaches, "lake_trout") == 1
     flat = [rp.Reach("pool", 0, 400, 200, 199.9, 0.25, *ll)]
     assert rp.upstream_limit(flat, "steelhead") is None
+
+
+def test_bend_radius_uses_a_width_scaled_span():
+    """Measuring curvature at the scale of the channel itself reads digitising noise, not
+    planform — that produced R/w of 0.30, a river doubling back inside a third of its own width.
+
+    NOTE the test had to be written correctly to mean anything: on a PERFECT arc the circumradius
+    is span-invariant by definition, so a clean curve proves nothing. The claim is specifically
+    about noisy lines, so this jitters a straight centreline and asserts that a short span is
+    fooled into a tight radius while a wide span is not.
+    """
+    import math as _m
+    jitter = [(48.40 + 0.0002 * i, -89.20 + (0.00004 if i % 2 else -0.00004)) for i in range(40)]
+    tight = rp.bend_radius(jitter, 20, span_m=60.0)
+    wide = rp.bend_radius(jitter, 20, span_m=200.0)
+    assert tight is not None and wide is not None
+    assert wide > tight * 3, (
+        f"a wide span must see through the jitter: short={tight:.0f} m wide={wide:.0f} m")
+
+
+def test_bend_radius_is_stable_against_station_parity():
+    """THE DEFECT THIS REPLACES. The three-point circumradius picked whichever stations the span
+    walk landed on, so on a line with alternating jitter it returned None / 380 m / None / 3399 m
+    purely by parity. A radius that depends on which index you started from is not a measurement,
+    so the fit now uses every point in the span."""
+    jitter = [(48.40 + 0.0002 * i, -89.20 + (0.00004 if i % 2 else -0.00004)) for i in range(40)]
+    vals = [rp.bend_radius(jitter, 20, span_m=sp) for sp in (60.0, 120.0, 200.0, 400.0)]
+    assert all(v is not None for v in vals), "no span may collapse to None by parity"
+    assert vals == sorted(vals), "a wider span must see through jitter, monotonically"
+
+
+def test_straight_river_yields_no_bends_where_a_percentile_would_invent_them():
+    """The reason R/w replaced a curvature percentile: a percentile ALWAYS returns its quantile,
+    so a dead-straight river would still be handed 10% 'bends'."""
+    straight = [(48.40 + 0.0002 * i, -89.20) for i in range(40)]
+    assert rp.bend_seams(straight, [28.0] * 40) == []
+
+
+def test_bends_must_persist_to_count():
+    """22 of the Kam's 73 first-pass bends were single stations with zero extent — curvature
+    spikes that did not survive one measurement span. A bend has to hold across stations AND
+    cover a real fraction of a channel width."""
+    import math as _m
+    arc = [(48.40 + 0.0009 * _m.sin(t / 8), -89.20 + 0.0009 * (1 - _m.cos(t / 8)))
+           for t in range(40)]
+    kept = rp.bend_seams(arc, [28.0] * 40)
+    assert all(b["n_stations"] >= rp.MIN_BEND_STATIONS for b in kept)
+    assert all(b["extent_m"] >= 0.5 * 28.0 - 1e-6 for b in kept)
+
+
+def test_backwater_stations_are_suppressed():
+    """In a drowned mouth the reach-smoothed width balloons, so offsetting by half of it throws
+    the marker into open water instead of onto a bank."""
+    import math as _m
+    arc = [(48.40 + 0.0009 * _m.sin(t / 8), -89.20 + 0.0009 * (1 - _m.cos(t / 8)))
+           for t in range(40)]
+    assert rp.bend_seams(arc, [28.0] * 40) != []
+    assert rp.bend_seams(arc, [28.0] * 40, suppress=[True] * 40) == []
