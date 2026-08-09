@@ -319,30 +319,47 @@ def _merc_to_ll(x, y):
 
 
 
-def _resolve_issue(cfg, issue, max_back=3):
-    """Most recent issue day whose t12z nowcast is actually posted.
+# LSOFS posts FOUR cycles a day (verified on NODD: t00z/t06z/t12z/t18z, ~258 objects each).
+# The build used to read t12z only, so a map built at 02:40 UTC showed the PREVIOUS day's noon
+# cycle even though that day's t00z was already on the bucket — a phone opened at breakfast read
+# ~25 h stale every single morning (reported 2026-08-09). Newest-first ordering fixes that: take
+# the freshest cycle actually posted, whatever hour it is.
+_CYCLES_NEWEST_FIRST = ("t18z", "t12z", "t06z", "t00z")
+_CYCLE_HOUR = {"t00z": 0, "t06z": 6, "t12z": 12, "t18z": 18}
 
-    The daily Action can fire before today's t12z cycle reaches NODD (or on a slow
-    posting day); rather than crash, walk back to the latest available cycle. The
-    forecast hours of a slightly older cycle still cover the days ahead.
+
+def _resolve_issue(cfg, issue, max_back=3):
+    """Newest (day, cycle) whose nowcast is actually posted, searching back from `issue`.
+
+    Walks days newest-first and, within each day, cycles newest-first — but never picks a cycle
+    dated in the FUTURE relative to now (a cycle hour that hasn't occurred yet cannot be posted,
+    and asking for it just burns four failed opens every build).
+
+    The Action can also fire before any of today's cycles reach NODD, so the walk-back across days
+    is kept: the forecast hours of a slightly older cycle still cover the days ahead.
     """
+    now = datetime.now(timezone.utc)
     for k in range(max_back + 1):
         d = issue - timedelta(days=k)
-        try:
-            ds = _open_first(candidate_urls(LsofsFile(d, "t12z", "n", 6),
-                             cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket, byterange=False))
-            ds.close()
-            if k:
-                print(f"issue {issue} t12z not posted yet; using {d}")
-            return d
-        except Exception:  # noqa: BLE001
-            continue
-    return issue  # nothing found — let the downstream open fail loudly
+        for cyc in _CYCLES_NEWEST_FIRST:
+            # skip cycles whose nominal hour is still in the future
+            if datetime(d.year, d.month, d.day, _CYCLE_HOUR[cyc], tzinfo=timezone.utc) > now:
+                continue
+            try:
+                ds = _open_first(candidate_urls(LsofsFile(d, cyc, "n", 6),
+                                 cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket, byterange=False))
+                ds.close()
+                print(f"LSOFS cycle: {d} {cyc}"
+                      + (f" (issue {issue} newer cycles not posted yet)" if (k or cyc != "t18z") else ""))
+                return d, cyc
+            except Exception:  # noqa: BLE001
+                continue
+    return issue, "t12z"  # nothing found — let the downstream open fail loudly
 
 
-def _node_columns_in_box(cfg, issue, clat, clon):
+def _node_columns_in_box(cfg, issue, clat, clon, cycle="t12z"):
     """LSOFS nodes inside the box + a reader that returns native columns per lead."""
-    f0 = LsofsFile(issue, "t12z", "n", 6)
+    f0 = LsofsFile(issue, cycle, "n", 6)
     ds0 = _open_first(candidate_urls(f0, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket, byterange=False))
     grid = lsofs_grid.read_grid(ds0)
     ds0.close()
@@ -814,7 +831,7 @@ def main(argv) -> int:
     else:
         issue = datetime.now(timezone.utc).date()
     cfg = load_config()
-    issue = _resolve_issue(cfg, issue)     # fall back if today's t12z isn't posted yet
+    issue, cycle = _resolve_issue(cfg, issue)   # freshest posted LSOFS cycle, not just t12z
     OUT.mkdir(parents=True, exist_ok=True)
 
     # SAFETY-CRITICAL (ADR-007 / CLAUDE rule 4): EVERY recommendation surface — stretches,
@@ -881,7 +898,7 @@ def main(argv) -> int:
         cy = y1 - (np.arange(ny) + 0.5) / ny * (y1 - y0)
         gx, gy = np.meshgrid(cx, cy)
         try:
-            inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon)
+            inbox, node_xy = _node_columns_in_box(cfg, issue, clat, clon, cycle)
         except Exception as e:  # noqa: BLE001 - an S3 blip costs one stretch, not the build (M3)
             print(f"skip {sid}: LSOFS grid open failed ({str(e)[:50]})"); continue
         if len(inbox) == 0:
@@ -911,7 +928,7 @@ def main(argv) -> int:
         area_feats = []                       # vector reachable-cold polygons, tagged by lead
         tier_area = {}                        # {species_id: {tier: area_m2}} at lead 0 (for top-spots)
         for kind, fh, lead in LEADS:
-            f = LsofsFile(issue, "t12z", kind, fh)
+            f = LsofsFile(issue, cycle, kind, fh)
             try:
                 ds = _open_first(candidate_urls(f, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket, byterange=False))
             except Exception:  # noqa: BLE001
@@ -1202,9 +1219,15 @@ def main(argv) -> int:
             print(f"top {_sp.id}: " + ", ".join(f"{r['name'].split('—')[0].strip()}={r['score']}" for r in _rk[:3]))
 
     now = datetime.now(timezone.utc)
-    age_h = (now - datetime(issue.year, issue.month, issue.day, 12, tzinfo=timezone.utc)).total_seconds() / 3600
+    # Age is measured from the ACTUAL cycle hour we read, not a hardcoded noon: on a t00z or t06z
+    # build a noon assumption would report the map as 12-18 h YOUNGER than it is, which is exactly
+    # the direction rule 5 forbids (staleness must be loud, never flattering).
+    _cyc_h = _CYCLE_HOUR[cycle]
+    _issued = datetime(issue.year, issue.month, issue.day, _cyc_h, tzinfo=timezone.utc)
+    age_h = (now - _issued).total_seconds() / 3600
     manifest = {
-        "issue": issue.isoformat(), "issued_utc": f"{issue}T12:00:00Z",
+        "issue": issue.isoformat(), "issued_utc": _issued.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "lsofs_cycle": cycle,
         "built_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         # age_h/stale are the BUILD-TIME values; the page recomputes age client-side
         # from issued_utc so a dead build can't display a frozen age (AUDIT_ROUND3)

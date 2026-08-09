@@ -1,8 +1,13 @@
 name: coast-site
 
 # Builds the hosted whole-coast cold-water forecast map (web/) and publishes it to
-# the gh-pages branch, which GitHub Pages serves. Runs daily after the LSOFS t12z
-# cycle posts, so the phone map stays current. Deterministic build (ADR-001: no LLM).
+# the gh-pages branch, which GitHub Pages serves. Runs FOUR times a day, each ~20 min
+# after one of LSOFS's four cycles finishes posting, so the phone map is never more
+# than ~6 h behind the model. Deterministic build (ADR-001: no LLM).
+#
+# The knowledge refresh and the accuracy-log accumulation stay ONCE a day (gated to the
+# 15:45Z run): they are per-day datasets keyed by date, and running them four times would
+# quadruple upstream API load for rows that would immediately dedupe.
 #
 # We publish to a branch (force-orphan: single-commit, no history bloat) rather than
 # via actions/deploy-pages, whose Pages-deployment API repeatedly got stuck in
@@ -15,7 +20,17 @@ name: coast-site
 
 on:
   schedule:
-    - cron: "45 16 * * *"   # ~after t12z posts to NODD (UTC)
+    # LSOFS posts FOUR cycles a day and each one finishes landing on NODD at cycle+3.5 h
+    # (measured 2026-08-09 off S3 LastModified: t00z done 03:27Z, t06z 09:25Z, t12z 15:25Z,
+    # t18z 21:25Z). Building once a day off t12z meant a phone opened at breakfast read ~25 h
+    # stale every morning — the exact hour an angler checks. Four builds, each ~20 min after
+    # its cycle completes, so the map is never more than ~6 h behind the model.
+    #   03:45Z = 23:45 local (prev day)   09:45Z = 05:45 local  <- the dawn build
+    #   15:45Z = 11:45 local              21:45Z = 17:45 local
+    - cron: "45 3 * * *"    # t00z
+    - cron: "45 9 * * *"    # t06z
+    - cron: "45 15 * * *"   # t12z  — also the once-daily knowledge-refresh slot (see below)
+    - cron: "45 21 * * *"   # t18z
   workflow_dispatch: {}
   push:
     branches: [claude/tbay-fishcast-phase-0-6kh5lx]
@@ -58,14 +73,17 @@ jobs:
       # block the map, which simply falls back to the last committed fit / authored windows.
       - name: Refresh iNaturalist observations
         id: inat
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/backfill_inaturalist.py
       - name: Merge any agent-written observation shards
         id: shards
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/merge_observation_shards.py
       - name: Re-fit run windows from the ledger (ADR-042)
         id: fitwin
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/fit_run_windows.py
 
@@ -100,26 +118,32 @@ jobs:
       # continue-on-error: a flaky upstream fetch must never fail the map deploy above.
       - name: Accumulate the isotherm-depth gate (GLOS vs product)
         id: gate
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/accumulate_gate.py
       - name: Accumulate the nearshore anchor (Landsat vs GLSEA)
         id: anchor
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/accumulate_anchor.py
       - name: Accumulate the forecast-lead gate (ADR-021)
         id: fcstgate
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/accumulate_forecast_gate.py
       - name: Cross-check LSOFS offshore stratification vs mooring climatology
         id: offshore
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/check_offshore_climatology.py
       - name: Accumulate the over-lake wind gate (buoy obs vs GFS forecast)
         id: windgate
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/accumulate_wind_gate.py
       - name: Commit the observation logs back to the branch
         id: datacommit
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: |
           set -e
