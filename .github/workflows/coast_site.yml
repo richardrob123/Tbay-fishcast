@@ -50,6 +50,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[geo]"
+      # --- KNOWLEDGE REFRESH, before the build so today's map uses today's knowledge ----------
+      # The research Routine appends observations daily, but nothing regenerated the FITTED run
+      # windows from them — so the ledger could grow forever while the calendar kept quoting the
+      # literature dates (gap found 2026-08-09). These three steps close the ADR-042 loop:
+      # refresh -> merge -> refit -> build. All continue-on-error: a knowledge hiccup must never
+      # block the map, which simply falls back to the last committed fit / authored windows.
+      - name: Refresh iNaturalist observations
+        id: inat
+        continue-on-error: true
+        run: python scripts/backfill_inaturalist.py
+      - name: Merge any agent-written observation shards
+        id: shards
+        continue-on-error: true
+        run: python scripts/merge_observation_shards.py
+      - name: Re-fit run windows from the ledger (ADR-042)
+        id: fitwin
+        continue-on-error: true
+        run: python scripts/fit_run_windows.py
+
       - name: Build the coast site data (today's issue)
         id: build
         run: python scripts/build_coast_site.py
@@ -115,7 +134,9 @@ jobs:
           # first produces rows (e.g. GLOS down), and a bare `git add` on it would fail under set -e.
           for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv \
                    data/offshore_check_log.csv data/wind_gate_log.csv \
-                   data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md; do
+                   data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md \
+                   data/calib/run_windows_fitted.json \
+                   knowledge/observations/observations.jsonl; do
             [ -f "$f" ] && git add "$f"
           done
           if git diff --staged --quiet; then
@@ -145,11 +166,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then
