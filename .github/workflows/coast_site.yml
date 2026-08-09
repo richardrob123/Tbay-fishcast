@@ -76,6 +76,15 @@ jobs:
         if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
         continue-on-error: true
         run: python scripts/backfill_inaturalist.py
+      # Incremental Reddit sweep. Only the trailing time window is re-swept (every earlier window is
+      # checkpointed), so the daily cost is a handful of requests — nothing like the ~4,400-request
+      # historical backfill. Arctic Shift's measured lag is 0.1 h for comments, so "yesterday's talk"
+      # is genuinely available today. Writes CANDIDATES; the research Routine extracts them.
+      - name: Sweep Reddit for new local reports (incremental)
+        id: reddit
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
+        continue-on-error: true
+        run: python scripts/harvest_reddit.py --sub ThunderBay --workers 2 --rate 2
       - name: Merge any agent-written observation shards
         id: shards
         if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
@@ -163,6 +172,9 @@ jobs:
                    knowledge/observations/observations.jsonl; do
             [ -f "$f" ] && git add "$f"
           done
+          # the candidate queue and its processed-state must persist too, or the nightly Reddit
+          # sweep re-harvests the same rows and the Routine re-extracts what it already did.
+          [ -d knowledge/observations/candidates ] && git add -A knowledge/observations/candidates
           if git diff --staged --quiet; then
             echo "no new observations to commit"; exit 0
           fi
@@ -190,11 +202,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then
