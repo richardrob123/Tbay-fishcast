@@ -1015,7 +1015,8 @@ def main(argv) -> int:
             from tbay_fishcast.features.nearshore import STATION_EXPOSURE
             pts, wins, meta = fw.forecast_spot(cfg, s.lat, s.lon, s.name, s.lsofs_node, issue,
                                                (central, lo, hi, n),
-                                               exposure=STATION_EXPOSURE.get(s.id))
+                                               exposure=STATION_EXPOSURE.get(s.id),
+                                               cycle=cycle)
         except Exception as e:  # noqa: BLE001 - a dead pin costs one pin, not the build (H3):
             # forecast_spot's internal NONNA fetch is unwrapped, and this loop runs AFTER all the
             # expensive stretch overlays — an escape here discarded the whole build (stress-test).

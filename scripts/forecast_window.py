@@ -71,7 +71,7 @@ def _bathy_grid(lat, lon):
     return depth, dist, res, note
 
 
-def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats, *, exposure=None):
+def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats, *, exposure=None, cycle="t12z"):
     """Compute the reachability trajectory + windows for one spot. Reusable by the
     heartbeat. Returns (points, windows, meta) or (None, None, meta) if no bathymetry.
     `bias_stats` = (central, lo, hi, n) pooled subsurface bias (computed once by caller)."""
@@ -94,7 +94,7 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats, *, exposure=None
     points = []
     grid = None
     for kind, fh, lead in LEADS:
-        f = LsofsFile(issue, "t12z", kind, fh)
+        f = LsofsFile(issue, cycle, kind, fh)
         try:
             ds = _open_first(candidate_urls(f, cfg.lsofs.recent_bucket, cfg.lsofs.archive_bucket,
                                             byterange=False))

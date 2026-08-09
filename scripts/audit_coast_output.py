@@ -152,7 +152,31 @@ def main() -> int:
         if tot < 0.5:
             warns.append(f"{sp}: near-zero coverage ({tot:.1f} ha)")
 
+    # WHOLE SURFACES GOING MISSING. Origin (2026-08-09): the station-pin loop swallows a per-station
+    # exception and continues, so when every station failed for the same reason — a cycle change left
+    # forecast_spot asking for a t12z file that did not exist yet — the build shipped `stations: []`
+    # and deployed green. The map looked fine; the pins were simply gone, and the "best spots" list
+    # named places with nothing on the map to point at. A per-item try/except is right (one dead pin
+    # must not cost the build) but it needs a floor: if EVERY item fails, that is not degradation,
+    # that is a broken surface. Same reasoning as rule 5 — silence must not read as success.
+    n_st = len(man.get("stations") or [])
+    try:                       # local YAML read; the audit stays offline
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+        from tbay_fishcast.config import load_config
+        n_cfg = len(load_config().stations)
+    except Exception:          # noqa: BLE001 — a config hiccup must not crash the gate itself
+        n_cfg = 0
+    if n_cfg and n_st == 0:
+        fails.append(f"stations: 0 of {n_cfg} configured pins survived the build "
+                     f"(every station failed — check the LSOFS cycle/date they request)")
+    elif n_cfg and n_st < n_cfg:
+        warns.append(f"stations: only {n_st} of {n_cfg} pins built")
+    n_mk = len(man.get("markers") or [])
+    if n_mk == 0:
+        fails.append("markers: 0 river-mouth markers in the manifest")
+
     print("\n" + "=" * 60)
+    print(f"  surfaces: {n_st}/{n_cfg} station pins, {n_mk} river-mouth markers")
     for w in warns:
         print(f"  ⚠ WARN  {w}")
     for f in fails:
