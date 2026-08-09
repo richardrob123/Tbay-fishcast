@@ -67,5 +67,5 @@
  ],
  "definition": "Run windows fitted from the LOCAL observation ledger: percentiles of dated report day-of-year within each authored window +/-tol, anchored to the authored window so multi-run species (spring/fall steelhead) stay separate. Effort-biased: describes when people REPORT fish, not escapement. Entries below the evidence bar are absent -> authored window.",
  "ledger_rows": 1423,
- "generated_utc": "2026-08-09T16:37:15Z"
+ "generated_utc": "2026-08-09T16:55:26Z"
 }
