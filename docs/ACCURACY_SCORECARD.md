@@ -41,8 +41,8 @@ n=54 clear scenes · shore-warm **+1.18 °C** (range -10.08…+10.14). GLSEA (1 
 
 ## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)
 
-n=18 days · mixed-layer model−clim mean **-0.56 °C**, iso-12 depth model−clim mean **+5.3 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
+n=19 days · mixed-layer model−clim mean **-0.56 °C**, iso-12 depth model−clim mean **+5.3 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=62 buoy-days · GFS speed MAE **2.66 kn**, W-quadrant forecast−obs bias **-0.25 kn** · airport(CYQT)−buoy offset **-1.17 kn** (W-quadrant -0.65). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=64 buoy-days · GFS speed MAE **2.66 kn**, W-quadrant forecast−obs bias **-0.29 kn** · airport(CYQT)−buoy offset **-1.19 kn** (W-quadrant -0.71). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
