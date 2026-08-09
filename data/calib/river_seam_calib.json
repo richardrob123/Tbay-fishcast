@@ -1,0 +1,195 @@
+{
+ "ramps": {
+  "bend": {
+   "qs": [
+    75,
+    77,
+    79,
+    81,
+    83,
+    85,
+    87,
+    89,
+    90,
+    92,
+    95,
+    97,
+    99
+   ],
+   "edges": [
+    0.769083334837027,
+    0.7833550825227671,
+    0.7961425989526352,
+    0.8189513842935782,
+    0.8373998935958279,
+    0.8480290343712962,
+    0.8654121968298347,
+    0.8729997686566695,
+    0.8767456728368298,
+    0.8951564146548318,
+    0.9245882634843573,
+    0.9515279153049755,
+    0.9868232058181668
+   ],
+   "n": 124
+  },
+  "constriction": {
+   "qs": [
+    75,
+    77,
+    79,
+    81,
+    83,
+    85,
+    87,
+    89,
+    90,
+    92,
+    95,
+    97,
+    99
+   ],
+   "edges": [
+    0.0,
+    0.0,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.1,
+    0.1,
+    0.1,
+    0.15,
+    0.25,
+    0.35,
+    0.6730000000000018
+   ],
+   "n": 5955
+  },
+  "velocity_gradient": {
+   "qs": [
+    75,
+    77,
+    79,
+    81,
+    83,
+    85,
+    87,
+    89,
+    90,
+    92,
+    95,
+    97,
+    99
+   ],
+   "edges": [
+    0.0020134431656532803,
+    0.002183750527011171,
+    0.0023537464847594425,
+    0.0024907718415597443,
+    0.0027056453072666752,
+    0.0029407473564185506,
+    0.0032134929956821826,
+    0.0035549703960900112,
+    0.0036845222789329223,
+    0.004177322499589817,
+    0.0050858537456984175,
+    0.006036088445113214,
+    0.009098887381855388
+   ],
+   "n": 3058
+  }
+ },
+ "rivers": {
+  "current": {
+   "name": "Current River",
+   "q_cms": 0.267,
+   "q_ref_cms": 11.8,
+   "width_ref_m": 26.0,
+   "width_now_m": 9.709054837553516,
+   "mean_slope_m_km": 10.448,
+   "bends": 20,
+   "backwater_frac": 0.021,
+   "hydraulics_stations": 380
+  },
+  "neebing": {
+   "name": "Neebing River",
+   "q_cms": 0.167,
+   "q_ref_cms": 3.62,
+   "width_ref_m": 10.0,
+   "width_now_m": 4.494092987242274,
+   "mean_slope_m_km": 7.071,
+   "bends": 35,
+   "backwater_frac": 0.142,
+   "hydraulics_stations": 760
+  },
+  "mcintyre": {
+   "name": "McIntyre River",
+   "q_cms": 0.061,
+   "q_ref_cms": 1.74,
+   "width_ref_m": 60.0,
+   "width_now_m": 25.106964177711596,
+   "mean_slope_m_km": 0.277,
+   "bends": 0,
+   "backwater_frac": 0.998,
+   "hydraulics_stations": 1
+  },
+  "kam": {
+   "name": "Kaministiquia River",
+   "q_cms": 21.2,
+   "q_ref_cms": 42.0,
+   "width_ref_m": 112.0,
+   "width_now_m": 93.7606330648743,
+   "mean_slope_m_km": 2.448,
+   "bends": 56,
+   "backwater_frac": 0.31,
+   "hydraulics_stations": 1920
+  },
+  "mcvicar": {
+   "name": "McVicar Creek",
+   "q_cms": 0.089,
+   "q_ref_cms": 0.89,
+   "width_ref_m": 8.0,
+   "width_now_m": 4.396326990860996,
+   "mean_slope_m_km": 12.78,
+   "bends": 13,
+   "backwater_frac": 0.018,
+   "hydraulics_stations": 356
+  }
+ },
+ "species_seam": {
+  "steelhead": {
+   "primary": "velocity_gradient",
+   "secondary": "bend",
+   "note": "exploits the largest velocity gradients of the four; will hold in shallow fast water others avoid"
+  },
+  "salmon": {
+   "primary": "pool_depth",
+   "secondary": "bend",
+   "note": "chinook/coho favour deeper low-velocity water; seams matter less than holding depth"
+  },
+  "brook_trout": {
+   "primary": "bend",
+   "secondary": "constriction",
+   "note": "smaller and a weaker swimmer \u2014 moderate seams beside cover, not the strongest gradient available"
+  },
+  "lake_trout": {
+   "primary": "none",
+   "secondary": "none",
+   "note": "barely a river fish here; enters only the lowest reaches, so river seams are not ranked for it"
+  }
+ },
+ "source": {
+  "lidar": "ON-ThunderBay_UTM16_2024-1m",
+  "acquired": "2024-05-06",
+  "gauges": {
+   "kam": "02AB006",
+   "current": "02AB021",
+   "neebing": "02AB008",
+   "mcintyre": "02AB020",
+   "mcvicar": "02AB019"
+  },
+  "width_q_exponent": 0.26
+ },
+ "method": "bend seams are T1 lidar planform offset to the outer bank by half the measured width; velocity seams are T3 Manning derived and only exist where discharge is usable; ramps are measured regional percentiles (ADR-039 discipline)"
+}

@@ -231,6 +231,8 @@
   <div class="strow"><b>Settings</b><button id="setclose" title="close">✕</button></div>
   <label class="strow"><span>Depth-contour chart<br><small>water becomes a depth chart (CHS survey); land stays satellite</small></span>
     <input type="checkbox" id="chartview" /></label>
+  <label class="strow"><span>River seams</span>
+    <input type="checkbox" id="seamview" /></label>
   <label class="strow"><span>Overlay strength</span>
     <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
 </div>
@@ -309,6 +311,8 @@ function applyLayers(){
     map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g99'));
   });
   paintFills();
+  if(typeof applySeams === 'function' && document.getElementById('seamview'))
+    applySeams(document.getElementById('seamview').checked);
   renderLegend();
   updateMarkers();
   updateStations();
@@ -788,6 +792,63 @@ map.on('load', async () => {
   const cv = document.getElementById('chartview');
   cv.addEventListener('change', () => setChart(cv.checked));
   if(localStorage.getItem('fc_chart') === '1'){ cv.checked = true; setChart(true); }
+
+  // RIVER SEAMS (ADR-045). Bend / constriction / velocity seams computed from 1 m lidar plus live
+  // discharge. Graded with the SAME nested-band discipline as the gold structure ramp (ADR-039):
+  // 13 cumulative bands on measured regional percentiles, so a bright segment means "strong for
+  // Thunder Bay" rather than a number someone chose.
+  //
+  // Drawn as SEGMENTS, never pins or a soft glow. The centreline is cartographic and a seam is
+  // 1-5 m wide, so the honest resolution is reach-scale (~100 m) — a dot would claim a precision
+  // we do not have, which is the error that once put the river-mouth markers kilometres out.
+  const SEAM_COL = { bend:'#ff8a3d', constriction:'#ff8a3d', expansion:'#7fb2ff',
+                     decel:'#ffd75e', accel:'#ff6b6b' };
+  // which seam signal leads for which species — ORDINAL, from hydraulics.SPECIES_SEAM
+  const SEAM_FOR = { steelhead:['decel','accel','bend'], salmon:['decel','bend'],
+                     brook_trout:['bend','constriction','expansion'], lake_trout:[] };
+  let seamLoaded = false;
+  async function loadSeams(){
+    seamLoaded = true;
+    try {
+      const r = await fetch('data/rivers.geojson' + V);
+      if(!r.ok) throw new Error('no rivers.geojson');
+      map.addSource('seams', { type:'geojson', data: await r.json() });
+    } catch(e){ console.warn('river seams unavailable', e); return; }
+    // one layer per band so opacity stacks into a true gradient (nested, not disjoint)
+    for(let b = 1; b <= 13; b++){
+      const t = (b - 1) / 12;
+      map.addLayer({ id:'seam'+b, type:'line', source:'seams',
+        filter:['>=', ['get','band'], b],
+        layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' },
+        paint:{
+          'line-color': ['match', ['get','kind'],
+            'bend', SEAM_COL.bend, 'constriction', SEAM_COL.constriction,
+            'expansion', SEAM_COL.expansion, 'decel', SEAM_COL.decel,
+            'accel', SEAM_COL.accel, '#ff8a3d'],
+          'line-width': 1.6 + 2.2 * t,
+          'line-opacity': 0.10 + 0.05 * t } });
+    }
+  }
+  function applySeams(on){
+    for(let b = 1; b <= 13; b++){
+      const id = 'seam'+b;
+      if(!map.getLayer(id)) continue;
+      const kinds = (curSp && SEAM_FOR[curSp.id]) || [];
+      // lake trout gets NO river ranking (it barely enters them), so the layer stays hidden
+      const show = on && kinds.length > 0;
+      map.setLayoutProperty(id, 'visibility', show ? 'visible' : 'none');
+      if(show) map.setFilter(id, ['all', ['>=', ['get','band'], b],
+                                  ['in', ['get','kind'], ['literal', kinds]]]);
+    }
+  }
+  const sv = document.getElementById('seamview');
+  async function setSeams(on){
+    if(on && !seamLoaded) await loadSeams();
+    applySeams(on);
+    localStorage.setItem('fc_seams', on ? '1' : '0');
+  }
+  sv.addEventListener('change', () => setSeams(sv.checked));
+  if(localStorage.getItem('fc_seams') === '1'){ sv.checked = true; setSeams(true); }
   // open on the frame you're DECIDING on: the first snapshot still in the future
   // (walkthrough finding #3 — Friday 9 pm should land on Saturday dawn, not this morning)
   let start0 = 0;
