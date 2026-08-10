@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live  # noqa: E402
-from tbay_fishcast.features import thermocline  # noqa: E402
+from tbay_fishcast.features import thermal_skill, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import ForecastPoint, reachable_windows, summarize  # noqa: E402
 from tbay_fishcast.features.reachability import corrected_fields, reachability  # noqa: E402
 from tbay_fishcast.ingest import glsea, nonna  # noqa: E402
@@ -122,8 +122,15 @@ def forecast_spot(cfg, lat, lon, name, node, issue, bias_stats, *, exposure=None
         reach, closest, area = reachability(*args, iso, prod.cast_m, res_m, **kw)
         certain = reachability(*args, band["deep"], prod.cast_m, res_m, **kw)[0]
         possible = reachability(*args, band["shallow"], prod.cast_m, res_m, **kw)[0]
+        # gradient at the isotherm, from the BIAS-CORRECTED column the isotherm came from —
+        # not the raw one, or the band would describe a profile the product never showed.
+        grad = None
+        if iso is not None:
+            corr = thermocline.corrected_profile(depths, raw, bm, "central")
+            grad = thermal_skill.local_gradient(depths, corr, iso)
         points.append(ForecastPoint(vt, lead, iso, closest, reach,
-                                    reachable_certain=certain, reachable_possible=possible))
+                                    reachable_certain=certain, reachable_possible=possible,
+                                    gradient_c_per_m=grad))
     return points, reachable_windows(points), {"bathy": bsrc, "surf_sst": surf_sst}
 
 

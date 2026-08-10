@@ -28,6 +28,12 @@ class ForecastPoint:
     # possible = reachable under the most-favorable end. certain => reachable => possible.
     reachable_certain: bool = False
     reachable_possible: bool = False
+    # |dT/dz| (C/m) at the isotherm on THIS profile. The map's depth uncertainty is
+    # sigma_T / |dT/dz| (ADR-049): the same temperature error is 10 cm across a sharp thermocline
+    # and tens of metres in a mixed column, so the band has to be computed per forecast from the
+    # stratification actually present. Pooling a metres-error across days averages those two
+    # regimes into a number that describes neither.
+    gradient_c_per_m: float | None = None
 
 
 @dataclass(frozen=True)

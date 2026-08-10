@@ -979,7 +979,13 @@ function stationHTML(st, coldCued=true){
   // cell tone mirrors the band: solid green = whole band agrees, pale = central-only
   const traj = (st.traj||[]).map(p => {
     const cls = p.certain ? 'go' : (p.reach ? 'go soft' : '');
-    return `<div class="c ${cls}"><span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${esc(p.label)}</div>`;
+    // ADR-049: the depth band is computed per day from THAT day's stratification, so it is
+    // tight when the thermocline is sharp and absent when the column is mixed. "not constrained
+    // today" is a true and useful thing to say; a single pooled +/- would say it never.
+    const band = p.iso_band_m != null ? ` ±${p.iso_band_m}m` : '';
+    const why = p.iso_band_m == null && p.iso_band_why ? ` — ${p.iso_band_why}` : '';
+    return `<div class="c ${cls}" title="${esc((p.iso!=null?('12 °C at ~'+p.iso+' m'+band):'no crossing')+why)}">`+
+           `<span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${esc(p.label)}</div>`;
   }).join('');
   // for the warm-preferring weak-cue species, say plainly that cold-reachability isn't their signal
   const caveat = coldCued

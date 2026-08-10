@@ -137,6 +137,18 @@ jobs:
       #   * data/nearshore_anchor.csv — Landsat shore skin-temp vs GLSEA offshore anchor (per clear pass)
       # Both scripts are idempotent (skip already-logged keys), so re-runs never duplicate.
       # continue-on-error: a flaky upstream fetch must never fail the map deploy above.
+      # THERMAL SKILL GATE (ADR-049). Keeps the paired-sample record growing forward with the
+      # same method the 2025 hindcast used — temperature at the observed sensor depths, scored
+      # against observed persistence and other-year climatology. Idempotent by key, so a re-run
+      # costs nothing; the short window keeps it to a handful of 10 MB station files.
+      - name: Extend the thermal skill gate + re-analyze
+        id: thermal
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
+        continue-on-error: true
+        run: |
+          python scripts/backfill_thermal_gate.py \
+            --start "$(date -u -d '10 days ago' +%F)" --end "$(date -u -d '1 day ago' +%F)"
+          python scripts/analyze_thermal_skill.py
       - name: Accumulate the isotherm-depth gate (GLOS vs product)
         id: gate
         if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
@@ -180,6 +192,7 @@ jobs:
           for f in data/gate_log.csv data/forecast_gate_log.csv data/nearshore_anchor.csv \
                    data/offshore_check_log.csv data/wind_gate_log.csv \
                    data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md \
+                   data/thermal_gate_log.csv data/calib/thermal_skill.json \
                    data/calib/run_windows_fitted.json \
                    knowledge/observations/observations.jsonl; do
             [ -f "$f" ] && git add "$f"
@@ -214,11 +227,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.thermal.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} thermal:${{ steps.thermal.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then

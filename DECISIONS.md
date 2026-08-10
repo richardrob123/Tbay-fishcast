@@ -101,6 +101,86 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-049 — Score the forecast in degrees, hindcast a whole season, and get a real ADR-006 answer:
+  every lead loses to the cheap baseline.**
+  Signed off after ADR-048 established that the isotherm-depth gate could not measure anything.
+  Three changes, then the answer.
+
+  **(1) The metric.** Isotherm depth is derived, censored, and — the part that matters most — its
+  UNITS FLOAT: sensitivity is dz = dT/|dT/dz|, so the same 0.5 °C error is 10 cm across a sharp
+  thermocline and 30 m in a mixed column. Pooling that across days produces a number whose meaning
+  rescales with whatever stratification was present, biased OPTIMISTIC because the days that yield
+  a crossing at all are the sharply stratified ones. Scoring TEMPERATURE at the observed sensor
+  depths fixes all three: never censored, stable units, ~10 samples per profile instead of ≤1.
+
+  **(2) The data, which turned out to exist all along.** NOAA publishes
+  `lsofs.tHHz.YYYYMMDD.stations.forecast.nc` — 10 MB, ~2 s, 19 stations × 20 sigma layers × 1201
+  time steps, i.e. the ENTIRE f000–f120 window at 6-minute resolution in ONE file per cycle,
+  archived from 2024-12. Station 45027 sits **0.11 km** from the Duluth LLO1 chain and station
+  10050 sits 2.3 km off the Thunder Bay waterfront, so the model can be scored where the
+  observation is rather than at whatever node `nearest_node` picks. On the observation side, the
+  buoy's ARCHIVE dataset (`obs_42`) carries the chain WIDE — `sea_water_temperature_1..N` with
+  per-sensor `_depth` and full QARTOD flags, back years — whereas the dataset the product reads
+  (`obs_42_thermistor_latest`) is a THREE-DAY ROLLING WINDOW with no flags. That single fact is
+  why no hindcast had looked possible and why a stuck thermistor could enter the gate as truth.
+  Result: **6,291 paired samples over 118 issue days (2025-05-15 → 2025-09-16)** instead of 5.
+
+  **(3) The statistics, four guards.** Paired samples only. The baseline is the HARDER of OBSERVED
+  persistence (not the model's own nowcast held forward — that is model-versus-model) and
+  other-year climatology, per sample. The interval is a block bootstrap whose block length is
+  MEASURED from the error ACF (1/e at lag 8; 10-day blocks used, 12 blocks, flagged "approximate"
+  because a 2.5% tail needs ~40). And a lead is benched only when the interval EXCLUDES 1.0.
+
+  **THE ANSWER, and it is not close.** At every forecast lead the model loses:
+
+      lead    fcst MAE   persist   clim    ratio  95% CI          days forecast better
+       24 h    2.86 °C    1.07     2.39    3.67   [2.95, 5.04]     4 / 118   p=5e-29
+       48 h    2.79       1.59     2.40    2.48   [1.91, 3.57]    10 / 118   p=6e-22
+       72 h    2.79       1.90     2.41    2.13   [1.64, 3.07]    13 / 118   p=5e-19
+       96 h    2.82       2.05     2.43    2.08   [1.59, 2.95]    17 / 118   p=1e-15
+      120 h    2.88       2.19     2.44    2.05   [1.54, 2.96]    22 / 118   p=3e-12
+
+  The bootstrap and a fully non-parametric day-level sign test — which assumes nothing about
+  magnitude or how long the error stays correlated — agree at every lead.
+
+  **The diagnostic that says what kind of failure this is.** Lead 0 (the model's own NOWCAST,
+  free in the same file) has MAE **2.90 °C**, indistinguishable from 120 h's 2.88 °C. The error
+  does not grow with lead at all, so this is not forecast decay — it is the model's STATE at this
+  location. The bias is depth-structured: 5–20 m runs 1.2–1.7 °C too COLD, 30–45 m runs 1.5–1.8 °C
+  too WARM. That is a thermocline sitting too shallow and too diffuse, not an offset.
+
+  **Would the product's bias correction rescue it?** Measured, not assumed: reconstructing a
+  surface-anchored correction from the log with a PERFECT anchor (the observation itself) and the
+  product's tapered shape improves 2.75 → 2.15 °C at a 30 m taper (a uniform offset makes it
+  WORSE, 3.54 — the taper is the right family). Still roughly twice persistence at 24 h.
+
+  **Three checks the claim had to survive, all passed.** (a) Am I reading the same model the
+  product reads? The station file and the product's own `fields` + `nearest_node` pipeline agree
+  to **0.000 °C** at every depth on the same cycle. (b) Is the block length binding? The ACF
+  decays properly (1.0 → 0.35 by lag 8), so the 10-day blocks are conservative rather than
+  truncated. (c) Is any cell selection-biased? Yes, one: the 1.0 m sensor is admitted only when
+  the surface elevation puts the model's top sigma layer above it — ~1% of days — and it was
+  reporting a +5 to +6 °C bias on n≈13 that looked like a finding. An explicit
+  missing-not-at-random guard drops any (lead, depth) cell present on fewer than half the days.
+
+  **A real bug the tests caught.** With a single bootstrap block every resample is the same
+  sample, so the interval collapsed to a point and a point below 1.0 was reported as a PROVEN win
+  — false certainty from 500 rows carrying one day of information. Now guarded, and the block
+  count and interval quality are published rather than implied.
+
+  **What ships now.** The measurement layer, the 2025 hindcast, and the verdict — plus the
+  metres-at-the-point-of-use conversion: each station's trajectory carries `iso_band_m`, computed
+  from sigma_T(lead, depth) divided by THAT day's own gradient at the isotherm, withheld entirely
+  when the column is mixed or the band exceeds a shore cast's reach. What does NOT ship is a
+  decision about the thermal layer itself: benching it is a product judgement the operator has to
+  make, and this ADR only establishes the evidence.
+
+  **Standing caveat, stated because no amount of statistics removes it.** All of this is measured
+  at LLO1, a nearshore Duluth buoy on an upwelling-dominated coast 271 km from Thunder Bay — very
+  possibly LSOFS's worst case, and certainly not a measurement of the Thunder Bay column. It is
+  the only subsurface truth within reach of this model; the Bare Point intake (task #8) remains
+  the one source that would settle the local question.
+
 - **ADR-048 — The forecast gate was scoring against a censored bound: 30 of 35 rows were not observations.**
   Chasing why `skill_vs_persistence` was still null (only 10 rows carried the persistence column,
   which shipped 2026-08-08 — a benign wait), the analyzer's own `n_effective_chains: 0` pointed at

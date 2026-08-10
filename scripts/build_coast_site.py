@@ -35,6 +35,7 @@ import forecast_window as fw  # noqa: E402
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
 from tbay_fishcast.features.forecast import summarize  # noqa: E402
+from tbay_fishcast.features import thermal_skill  # noqa: E402
 from tbay_fishcast.features.overlay import merc, reachable_area_features  # noqa: E402
 from tbay_fishcast.features.reachability import corrected_fields  # noqa: E402
 from tbay_fishcast.ingest import glsea, lsofs_grid, nonna  # noqa: E402
@@ -176,6 +177,38 @@ def _nearshore_delta_by_class():
 
 
 FORECAST_ERR = Path(__file__).resolve().parents[1] / "data" / "calib" / "forecast_lead_error.json"
+THERMAL_SKILL = Path(__file__).resolve().parents[1] / "data" / "calib" / "thermal_skill.json"
+# Beyond this the "depth of the cold water" is not a useful statement — the column is mixed
+# enough that the isotherm could be anywhere in it, and a band wider than the reachable water
+# column is noise dressed as precision. Set to the deepest water a shore cast reaches.
+MAX_BAND_M = 25.0
+
+
+def _load_thermal_skill():
+    """MEASURED temperature error sigma_T(lead, depth) + the ADR-006 skill verdict, or None.
+
+    scripts/analyze_thermal_skill.py writes this from a season of paired samples at the only
+    subsurface mooring within reach of this model. Scored in DEGREES, deliberately: the metres
+    the map wants are derived per forecast from that day's own stratification (ADR-049), because
+    an error in metres has no fixed meaning across days."""
+    try:
+        d = json.loads(THERMAL_SKILL.read_text())
+    except (OSError, ValueError):
+        return None
+    return d if isinstance(d, dict) and d.get("sigma_t") else None
+
+
+def _sigma_t_for(skill, lead_h: int, depth_m: float):
+    """sigma_T (C) for a lead and depth, from the measured table; falls back to the nearest
+    lead rather than inventing one, and returns None if the table has nothing to say."""
+    if not skill:
+        return None
+    cells = [v for v in skill["sigma_t"].values()
+             if v["depth_lo"] <= depth_m < v["depth_hi"] and v["n"] >= 20]
+    if not cells:
+        return None
+    best = min(cells, key=lambda v: abs(v["lead_h"] - lead_h))
+    return best["rmse_c"]
 
 
 def _load_forecast_error():
@@ -1023,6 +1056,13 @@ def main(argv) -> int:
         print("no stretches produced"); return 1
 
     # per-station verdicts (reuse the per-spot forecast)
+    # Loaded HERE, before the station loop that consumes it — the per-day depth band is attached
+    # to each trajectory point as it is built.
+    thermal_skill_calib = _load_thermal_skill()   # measured sigma_T(lead, depth) + ADR-006 verdict
+    if thermal_skill_calib:
+        print(f"thermal skill: {thermal_skill_calib['verdict']} "
+              f"(n={thermal_skill_calib['n']}, {thermal_skill_calib['n_days']} days, "
+              f"{thermal_skill_calib['window'][0]}..{thermal_skill_calib['window'][1]})")
     stations = []
     for s in cfg.shore_stations:
         if not _regs_ok(s.name):        # regs gate on the station recommendation surface
@@ -1040,10 +1080,23 @@ def main(argv) -> int:
         if not pts:
             print(f"skip station {s.id}: no forecast points (rule 5 — absence must be loud)")
             continue
-        traj = [{"label": f"{p.valid_time:%a}", "lead": p.lead_h,
-                 "iso": round(p.isotherm_depth_m, 1) if p.isotherm_depth_m is not None else None,
-                 "reach": bool(p.reachable), "certain": bool(p.reachable_certain),
-                 "possible": bool(p.reachable_possible)} for p in pts]
+        # ADR-049: convert the MEASURED temperature error into a depth band using THIS day's
+        # gradient at THIS station. Tight when the thermocline is sharp, absent when the column
+        # is mixed — and "not constrained today" is a true and useful thing to be able to say.
+        traj = []
+        for p in pts:
+            band_m, band_why = None, None
+            if p.isotherm_depth_m is not None:
+                st = _sigma_t_for(thermal_skill_calib, p.lead_h, p.isotherm_depth_m)
+                band_m, band_why = thermal_skill.depth_sigma_from_gradient(
+                    st, p.gradient_c_per_m, max_m=MAX_BAND_M)
+            traj.append({"label": f"{p.valid_time:%a}", "lead": p.lead_h,
+                         "iso": round(p.isotherm_depth_m, 1) if p.isotherm_depth_m is not None else None,
+                         "iso_band_m": round(band_m, 1) if band_m is not None else None,
+                         "iso_band_why": (None if band_m is not None else band_why),
+                         "grad_c_per_m": round(p.gradient_c_per_m, 3) if p.gradient_c_per_m else None,
+                         "reach": bool(p.reachable), "certain": bool(p.reachable_certain),
+                         "possible": bool(p.reachable_possible)})
         verdict = summarize(pts, wins)
         if pts[0].reachable and not pts[0].reachable_certain:
             verdict += " (edge of band — uncertain)"
@@ -1063,7 +1116,7 @@ def main(argv) -> int:
     wind = []
     ens_w = None
     favor_calib = _load_favor_calib()
-    fc_err = _load_forecast_error()   # measured thermal-field position uncertainty (± m), or None
+    fc_err = _load_forecast_error()   # legacy isotherm-depth gate (ADR-048: usually withheld)
     if fc_err:
         print(f"forecast error: {fc_err['pooled_mae_m']} m MAE, lead-trend="
               f"{fc_err['lead_trend_detected']} (n={fc_err['n']}, "
@@ -1270,6 +1323,14 @@ def main(argv) -> int:
         "bias": {"central": round(central, 1), "lo": round(lo, 1), "hi": round(hi, 1),
                  "n": n, "source": bias_src},
         "forecast_error": fc_err,   # MEASURED isotherm-depth MAE + lead-trend verdict (or None)
+        # ADR-049: the measured TEMPERATURE error and the ADR-006 skill verdict. The per-day,
+        # per-station depth band derived from it rides on each trajectory point (iso_band_m),
+        # because it depends on that day's stratification and cannot be a single site-wide number.
+        "thermal_skill": ({k: thermal_skill_calib[k] for k in
+                           ("n", "n_days", "window", "chains", "per_lead", "verdict",
+                            "demote_leads", "nowcast_mae_c", "block_days_measured",
+                            "error_is_model_state_not_forecast_decay", "caveat")}
+                          if thermal_skill_calib else None),
         "stretches": stretches_out, "stations": stations, "wind": wind,
         "phase": phase, "markers": markers_out,
         "season": season_block, "light": light_block, "barometric": baro_block,

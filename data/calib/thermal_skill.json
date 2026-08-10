@@ -1,0 +1,354 @@
+{
+  "source": "data/thermal_gate_log.csv",
+  "built_utc": "2026-08-10T14:21:41+00:00",
+  "n": 5310,
+  "n_days": 125,
+  "window": [
+    "2025-05-15",
+    "2025-09-16"
+  ],
+  "chains": [
+    "llo1"
+  ],
+  "block_days_measured": 9,
+  "baseline": "per-sample harder of OBSERVED persistence and other-year climatology",
+  "per_lead": {
+    "24": {
+      "n": 1062,
+      "n_days": 118,
+      "fcst_mae_c": 2.8953,
+      "fcst_bias_c": 0.2804,
+      "fcst_rmse_c": 3.5306,
+      "persist_mae_c": 1.0598,
+      "clim_mae_c": 2.3929,
+      "baseline_mae_c": 0.7727,
+      "skill_ratio": 3.7492,
+      "ci95": [
+        2.9247,
+        5.1151
+      ],
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "48": {
+      "n": 1062,
+      "n_days": 118,
+      "fcst_mae_c": 2.8136,
+      "fcst_bias_c": 0.3983,
+      "fcst_rmse_c": 3.4004,
+      "persist_mae_c": 1.5686,
+      "clim_mae_c": 2.3979,
+      "baseline_mae_c": 1.1123,
+      "skill_ratio": 2.5324,
+      "ci95": [
+        1.9547,
+        3.5479
+      ],
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "72": {
+      "n": 1062,
+      "n_days": 118,
+      "fcst_mae_c": 2.8164,
+      "fcst_bias_c": 0.1381,
+      "fcst_rmse_c": 3.4478,
+      "persist_mae_c": 1.8754,
+      "clim_mae_c": 2.4142,
+      "baseline_mae_c": 1.2967,
+      "skill_ratio": 2.1764,
+      "ci95": [
+        1.6779,
+        2.966
+      ],
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "96": {
+      "n": 1062,
+      "n_days": 118,
+      "fcst_mae_c": 2.8547,
+      "fcst_bias_c": 0.042,
+      "fcst_rmse_c": 3.5542,
+      "persist_mae_c": 2.0337,
+      "clim_mae_c": 2.4277,
+      "baseline_mae_c": 1.3446,
+      "skill_ratio": 2.1279,
+      "ci95": [
+        1.607,
+        2.9106
+      ],
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "120": {
+      "n": 1062,
+      "n_days": 118,
+      "fcst_mae_c": 2.9101,
+      "fcst_bias_c": -0.0526,
+      "fcst_rmse_c": 3.6332,
+      "persist_mae_c": 2.1655,
+      "clim_mae_c": 2.4425,
+      "baseline_mae_c": 1.3937,
+      "skill_ratio": 2.0944,
+      "ci95": [
+        1.5628,
+        2.9218
+      ],
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    }
+  },
+  "sigma_t": {
+    "24|0": {
+      "lead_h": 24,
+      "depth_lo": 0,
+      "depth_hi": 5,
+      "n": 15,
+      "rmse_c": 5.282,
+      "bias_c": 5.0683
+    },
+    "24|1": {
+      "lead_h": 24,
+      "depth_lo": 5,
+      "depth_hi": 10,
+      "n": 236,
+      "rmse_c": 4.5924,
+      "bias_c": -0.9131
+    },
+    "24|2": {
+      "lead_h": 24,
+      "depth_lo": 10,
+      "depth_hi": 15,
+      "n": 118,
+      "rmse_c": 4.1707,
+      "bias_c": -1.2127
+    },
+    "24|3": {
+      "lead_h": 24,
+      "depth_lo": 15,
+      "depth_hi": 20,
+      "n": 118,
+      "rmse_c": 3.7275,
+      "bias_c": -0.8747
+    },
+    "24|4": {
+      "lead_h": 24,
+      "depth_lo": 20,
+      "depth_hi": 30,
+      "n": 236,
+      "rmse_c": 2.8511,
+      "bias_c": 0.4426
+    },
+    "24|5": {
+      "lead_h": 24,
+      "depth_lo": 30,
+      "depth_hi": 45,
+      "n": 339,
+      "rmse_c": 2.5658,
+      "bias_c": 1.7083
+    },
+    "48|0": {
+      "lead_h": 48,
+      "depth_lo": 0,
+      "depth_hi": 5,
+      "n": 14,
+      "rmse_c": 5.1837,
+      "bias_c": 4.9346
+    },
+    "48|1": {
+      "lead_h": 48,
+      "depth_lo": 5,
+      "depth_hi": 10,
+      "n": 236,
+      "rmse_c": 4.2875,
+      "bias_c": -0.6204
+    },
+    "48|2": {
+      "lead_h": 48,
+      "depth_lo": 10,
+      "depth_hi": 15,
+      "n": 118,
+      "rmse_c": 3.9601,
+      "bias_c": -1.0973
+    },
+    "48|3": {
+      "lead_h": 48,
+      "depth_lo": 15,
+      "depth_hi": 20,
+      "n": 118,
+      "rmse_c": 3.6156,
+      "bias_c": -0.7911
+    },
+    "48|4": {
+      "lead_h": 48,
+      "depth_lo": 20,
+      "depth_hi": 30,
+      "n": 236,
+      "rmse_c": 2.8485,
+      "bias_c": 0.4922
+    },
+    "48|5": {
+      "lead_h": 48,
+      "depth_lo": 30,
+      "depth_hi": 45,
+      "n": 340,
+      "rmse_c": 2.5765,
+      "bias_c": 1.7854
+    },
+    "72|0": {
+      "lead_h": 72,
+      "depth_lo": 0,
+      "depth_hi": 5,
+      "n": 13,
+      "rmse_c": 5.4185,
+      "bias_c": 5.2518
+    },
+    "72|1": {
+      "lead_h": 72,
+      "depth_lo": 5,
+      "depth_hi": 10,
+      "n": 236,
+      "rmse_c": 4.3365,
+      "bias_c": -1.1089
+    },
+    "72|2": {
+      "lead_h": 72,
+      "depth_lo": 10,
+      "depth_hi": 15,
+      "n": 118,
+      "rmse_c": 4.0968,
+      "bias_c": -1.4574
+    },
+    "72|3": {
+      "lead_h": 72,
+      "depth_lo": 15,
+      "depth_hi": 20,
+      "n": 118,
+      "rmse_c": 3.6525,
+      "bias_c": -1.0555
+    },
+    "72|4": {
+      "lead_h": 72,
+      "depth_lo": 20,
+      "depth_hi": 30,
+      "n": 236,
+      "rmse_c": 2.8321,
+      "bias_c": 0.2877
+    },
+    "72|5": {
+      "lead_h": 72,
+      "depth_lo": 30,
+      "depth_hi": 45,
+      "n": 341,
+      "rmse_c": 2.629,
+      "bias_c": 1.6677
+    },
+    "96|0": {
+      "lead_h": 96,
+      "depth_lo": 0,
+      "depth_hi": 5,
+      "n": 12,
+      "rmse_c": 5.8315,
+      "bias_c": 5.7543
+    },
+    "96|1": {
+      "lead_h": 96,
+      "depth_lo": 5,
+      "depth_hi": 10,
+      "n": 236,
+      "rmse_c": 4.5027,
+      "bias_c": -1.1425
+    },
+    "96|2": {
+      "lead_h": 96,
+      "depth_lo": 10,
+      "depth_hi": 15,
+      "n": 118,
+      "rmse_c": 4.2136,
+      "bias_c": -1.5977
+    },
+    "96|3": {
+      "lead_h": 96,
+      "depth_lo": 15,
+      "depth_hi": 20,
+      "n": 118,
+      "rmse_c": 3.7753,
+      "bias_c": -1.2113
+    },
+    "96|4": {
+      "lead_h": 96,
+      "depth_lo": 20,
+      "depth_hi": 30,
+      "n": 236,
+      "rmse_c": 2.903,
+      "bias_c": 0.1655
+    },
+    "96|5": {
+      "lead_h": 96,
+      "depth_lo": 30,
+      "depth_hi": 45,
+      "n": 342,
+      "rmse_c": 2.6804,
+      "bias_c": 1.5718
+    },
+    "120|0": {
+      "lead_h": 120,
+      "depth_lo": 0,
+      "depth_hi": 5,
+      "n": 11,
+      "rmse_c": 6.0128,
+      "bias_c": 5.9428
+    },
+    "120|1": {
+      "lead_h": 120,
+      "depth_lo": 5,
+      "depth_hi": 10,
+      "n": 236,
+      "rmse_c": 4.5727,
+      "bias_c": -1.2039
+    },
+    "120|2": {
+      "lead_h": 120,
+      "depth_lo": 10,
+      "depth_hi": 15,
+      "n": 118,
+      "rmse_c": 4.3254,
+      "bias_c": -1.7282
+    },
+    "120|3": {
+      "lead_h": 120,
+      "depth_lo": 15,
+      "depth_hi": 20,
+      "n": 118,
+      "rmse_c": 3.8815,
+      "bias_c": -1.3188
+    },
+    "120|4": {
+      "lead_h": 120,
+      "depth_lo": 20,
+      "depth_hi": 30,
+      "n": 236,
+      "rmse_c": 2.9977,
+      "bias_c": 0.0682
+    },
+    "120|5": {
+      "lead_h": 120,
+      "depth_lo": 30,
+      "depth_hi": 45,
+      "n": 343,
+      "rmse_c": 2.7427,
+      "bias_c": 1.4763
+    }
+  },
+  "demote_leads": [
+    "24",
+    "48",
+    "72",
+    "96",
+    "120"
+  ],
+  "verdict": "EVERY lead fails the ADR-006 bar",
+  "method": "Scored in C at the observed sensor depths (never censored, stable units). Paired samples; the baseline is the harder of observed persistence and other-year climatology per sample; the CI is a block bootstrap whose block length is the measured error decorrelation. A lead is benched only when the interval EXCLUDES 1.0.",
+  "caveat": "Scored at the Duluth LLO1 mooring (LSOFS station 45027, 0.11 km away), which is 271 km from Thunder Bay on an upwelling-dominated coast. This measures the model's OFFSHORE column there; transfer to the Thunder Bay nearshore is an assumption, not a measurement, and no subsurface profile exists nearer."
+}

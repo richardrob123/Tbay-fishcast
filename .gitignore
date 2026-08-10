@@ -40,8 +40,17 @@ scratch/
 .forum_creds
 knowledge/observations/candidates/*.tmp
 
+# ADR-049: the thermal gate's paired-sample log and its skill analysis ARE the standing accuracy
+# record — a season of hindcast (6,291 rows) that answers the ADR-006 demotion question. Committed
+# for the same reason as gate_log.csv: the evidence behind a published verdict has to be auditable.
+!data/thermal_gate_log.csv
+!data/calib/thermal_skill.json
+
 # ADR-045: FROZEN river geometry is a committed ARTIFACT, not a cache. It holds the lidar-derived
 # centreline, water surface, width and bends so the daily seam build needs no lidar range reads and
 # no Overpass call (3.4 s instead of minutes, and no dependency on a rate-limited public API).
 # Same reasoning as data/watermask_frozen/, which is likewise committed under this data/* rule.
 !data/river_geometry.json
+
+# Station-file extracts are a CACHE (the .nc is fetched, read and discarded); regenerable.
+data/lsofs_station_cache/
