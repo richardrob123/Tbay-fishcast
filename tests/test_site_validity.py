@@ -66,3 +66,33 @@ def test_the_observation_arm_can_be_skipped():
     """Where only model-vs-satellite is available the check still runs, on that arm alone."""
     v = sv.check([(18.0, None, 18.1)] * 20)
     assert v.usable and v.obs_vs_sat_c is None
+
+
+# --- reference validity (ADR-053) -------------------------------------------------------------
+
+def test_a_smoothed_analysis_is_refused_as_a_skill_baseline():
+    """THE SECOND WRONG CONCLUSION, in miniature. GLSEA's day-to-day change sd is 0.38 C where
+    the water's is 1.93 C, so persisting it scored 0.295 C — its own smoothness — and nothing
+    physical can beat that. The reference has to be checked before it is used, not after."""
+    import math
+    days = [f"2025-06-{d:02d}" for d in range(1, 29)]
+    water = {d: 10.0 + 3.0 * math.sin(i * 1.7) for i, d in enumerate(days)}     # lively
+    smooth = {d: 10.0 + 3.0 * math.sin(i * 0.12) for i, d in enumerate(days)}   # relaxed
+    v = sv.reference_variability(smooth, water)
+    assert not v["usable_as_skill_baseline"]
+    assert "SMOOTHER than the water" in v["reason"]
+    assert v["variability_ratio"] < 0.5
+
+
+def test_a_reference_that_tracks_the_water_is_accepted():
+    import math
+    days = [f"2025-06-{d:02d}" for d in range(1, 29)]
+    water = {d: 10.0 + 3.0 * math.sin(i * 1.7) for i, d in enumerate(days)}
+    good = {d: v + 0.2 for d, v in water.items()}
+    v = sv.reference_variability(good, water)
+    assert v["usable_as_skill_baseline"] and v["variability_ratio"] > 0.9
+
+
+def test_a_thin_overlap_cannot_characterise_the_reference():
+    v = sv.reference_variability({"2025-06-01": 10.0}, {"2025-06-01": 10.0})
+    assert not v["usable_as_skill_baseline"] and "cannot characterise" in v["reason"]

@@ -1,6 +1,6 @@
 {
   "source": "data/surface_gate_log.csv",
-  "built_utc": "2026-08-10T15:38:07+00:00",
+  "built_utc": "2026-08-10T15:57:32+00:00",
   "site": "Thunder Bay (LSOFS station 10050, 2.3 km off the waterfront)",
   "truth": "GLSEA/ACSPO satellite SST",
   "n": 1104,
@@ -256,14 +256,23 @@
     }
   },
   "regime_dependence": null,
-  "demote_leads": [
-    "24",
-    "48",
-    "72",
-    "96",
-    "120"
-  ],
-  "verdict": "leads ['24', '48', '72', '96', '120'] fail the ADR-006 bar at Thunder Bay",
+  "demote_leads": [],
+  "reference_disqualified": {
+    "reference": "GLSEA/ACSPO satellite SST",
+    "reference_daily_change_sd_c": 0.383,
+    "insitu_daily_change_sd_c": 1.93,
+    "measured_at": "LLO1 thermistor vs GLSEA at the same pixel, 99 paired days, 2025",
+    "usable_for": [
+      "mean bias",
+      "seasonal cycle"
+    ],
+    "NOT_usable_for": [
+      "forecast skill baselines",
+      "variance/dispersion comparisons"
+    ],
+    "reason": "a persistence baseline built on a temporally relaxed analysis scores the analysis's own smoothness rather than forecast difficulty, and its damped variance makes a physical model look over-dispersed"
+  },
+  "verdict": "NO SKILL VERDICT. The reference cannot support one \u2014 see reference_disqualified. The per-lead numbers below are retained for the MEAN BIAS they do support, and must not be read as forecast skill.",
   "scope": "SURFACE ONLY. GLSEA cannot see the isotherm DEPTH, which is the product's actual claim, so a good result here is necessary and not sufficient. The subsurface profile at Thunder Bay remains unvalidated and needs a local measurement (Bare Point intake, task #8).",
   "method": "Raw LSOFS surface vs satellite \u2014 NOT the bias-corrected product, which is anchored to GLSEA and would be scored against its own input. Baselines are satellite persistence (lagged one day, which is what an operational forecast could actually have had) and other-year satellite climatology, harder of the two per sample."
 }

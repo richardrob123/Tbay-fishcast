@@ -101,6 +101,51 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-053 — CORRECTION to ADR-051: the reference was not truth. Withdraw the Thunder Bay skill
+  verdict.** Operator challenge, for the second time and correct for the second time: "we can't
+  even get the direction right? I feel like we're missing something."
+
+  One number in my own output should have stopped me. GLSEA day-to-day persistence scored an MAE
+  of **0.295 C**. A real lake surface does not change that little. Measured against a real
+  thermistor at the same pixel (LLO1, 99 paired days):
+
+      day-to-day change, sd        real water 1.930 C     GLSEA 0.383 C   -> 5x smoother
+      mean |day-to-day change|     real water 1.385 C     GLSEA 0.294 C
+
+  0.294 is 0.295. My "persistence baseline" was never measuring how hard tomorrow's lake is to
+  predict — it was measuring **how smooth the GLSEA analysis is**, persisted against itself. No
+  physical forecast can beat that, and beating it would mean nothing.
+
+  **What that invalidates.** (a) "Persistence beats the model 0.3-1.1 C" — the bar was an
+  artefact; against real water, one-day persistence is ~1.4 C, not 0.29 C. (b) "The model is
+  over-dispersed 2.3x" — measured against GLSEA's DAMPED variance; on the day-to-day axis the
+  model is closer to reality than the reference is. (c) "Every lead fails the ADR-006 bar at
+  Thunder Bay" — **withdrawn**. `surface_skill.json` now issues NO skill verdict and carries a
+  `reference_disqualified` block; `demote_leads` is empty.
+
+  **What survives.** GLSEA is not junk — its seasonal amplitude is 4.09 C against the buoy's
+  5.08 C, so it tracks the season well and remains fine for a MEAN BIAS check and for the
+  seasonal cycle. The failure was using it for the two jobs it cannot do: a skill baseline and a
+  variance reference. A reference can be excellent for one purpose and disqualifying for another.
+
+  **The pattern, now twice.** ADR-050 was "the SITE was not representative". This is "the
+  REFERENCE was not the thing we are trying to predict". Both times every check I ran looked for
+  bugs in our own pipeline and all of them passed, which is exactly why the wrong answer looked
+  solid. `features/site_validity.reference_variability()` closes the second one structurally:
+  before anything is used as truth for a skill comparison, its day-to-day variability is compared
+  against a real instrument at the same place, and a reference more than 2x smoother than the
+  water is refused as a skill baseline while remaining available for bias.
+
+  **Where the local question now stands: no worse than before, and better understood.** We still
+  cannot measure thermal forecast SKILL at Thunder Bay, because no reference there has the
+  variability we are trying to predict. Checked and closed off this session: GLOS has no
+  subsurface platform within the domain (only surface-only 45001 mid-lake); DFO's Thunder Bay
+  gauge (10050, 2.4 km away) publishes water level and forecast only, no water temperature.
+  Landsat is real and unsmoothed but yields ~10-20 clear scenes a season — enough for bias, not
+  for day-to-day skill. **The Bare Point intake (task #8) is not one option among several; it is
+  the only route to a local skill measurement, and this ADR is the strongest argument yet for
+  chasing it.**
+
 - **ADR-051/052 — Validation AT Thunder Bay at last, a site-validity guard, and a diagnosis that
   is calibration rather than ignorance.**
   First validation this project has ever had at the place it forecasts for. LSOFS publishes

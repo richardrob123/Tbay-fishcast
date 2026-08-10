@@ -54,6 +54,72 @@ class SiteVerdict:
                 "reason": self.reason}
 
 
+# --- REFERENCE VALIDITY -----------------------------------------------------------------------
+# ADR-053. The site check above asks "is this PLACE representative?". It does not ask the other
+# question, and missing it cost a second wrong conclusion: "is this REFERENCE actually the thing
+# we are trying to predict?"
+#
+# GLSEA/ACSPO satellite SST looked like an ideal truth for Thunder Bay — local, multi-year, T1.
+# Measured against a real thermistor at the same place, its day-to-day change has a standard
+# deviation of 0.38 C where the water's is 1.93 C. It is FIVE TIMES SMOOTHER than the lake,
+# because it is a cloud-gap-filled, temporally relaxed analysis. Two things follow, and both
+# invalidated a published verdict:
+#
+#   * A PERSISTENCE BASELINE built on it is not a forecast bar at all. Persisting a smooth
+#     analysis against itself scored 0.295 C — which is simply GLSEA's own mean day-to-day change
+#     (0.294 C). No physical forecast can beat that, and beating it would mean nothing.
+#   * Its VARIANCE is damped, so a physical model compared against it looks "over-dispersed"
+#     when the reference is under-dispersed.
+#
+# A reference can be perfectly good for one job and disqualifying for another: GLSEA tracks the
+# seasonal cycle well (amplitude 4.09 C against the buoy's 5.08 C) and is fine for a mean-bias
+# check. The failure was using it for the two jobs it cannot do.
+VARIABILITY_RATIO_MIN = 0.5      # below this the reference is too smooth to be a skill baseline
+
+
+def reference_variability(ref_daily: dict, insitu_daily: dict) -> dict:
+    """Is a candidate reference as variable as the real water? (ADR-053)
+
+    Both arguments are ``{ISO day: value}`` at the SAME place. Returns the day-to-day change
+    statistics of each and a verdict on which jobs the reference can do. Run this before any
+    reference is used as truth for a skill comparison — not after a verdict has been published.
+    """
+    import statistics as _st
+    from datetime import date as _date
+
+    def _chg(series):
+        keys = sorted(set(series))
+        out = []
+        for a, b in zip(keys, keys[1:]):
+            if (_date.fromisoformat(b) - _date.fromisoformat(a)).days == 1:
+                out.append(series[b] - series[a])
+        return out
+
+    common = sorted(set(ref_daily) & set(insitu_daily))
+    r = _chg({d: ref_daily[d] for d in common})
+    o = _chg({d: insitu_daily[d] for d in common})
+    if len(r) < 10 or len(o) < 10:
+        return {"n_days": len(common), "usable_as_skill_baseline": False,
+                "reason": f"only {len(common)} paired days — cannot characterise the reference"}
+    rs, os_ = _st.pstdev(r), _st.pstdev(o)
+    ratio = (rs / os_) if os_ > 0 else None
+    ok = bool(ratio is not None and ratio >= VARIABILITY_RATIO_MIN)
+    return {
+        "n_days": len(common),
+        "reference_daily_change_sd_c": round(rs, 3),
+        "insitu_daily_change_sd_c": round(os_, 3),
+        "variability_ratio": round(ratio, 3) if ratio is not None else None,
+        "usable_as_skill_baseline": ok,
+        "reason": (f"reference day-to-day variability is {ratio:.2f} of the real water's — "
+                   f"usable as a skill baseline" if ok else
+                   f"reference is {1 / ratio:.1f}x SMOOTHER than the water "
+                   f"({rs:.2f} vs {os_:.2f} C day-to-day sd). Persisting it scores its own "
+                   f"smoothness, not forecast difficulty, and its damped variance makes a "
+                   f"physical model look over-dispersed. Usable for mean bias and the seasonal "
+                   f"cycle; NOT for skill or variance."),
+    }
+
+
 def _mean(v):
     v = [x for x in v if x is not None and math.isfinite(x)]
     return sum(v) / len(v) if v else None
