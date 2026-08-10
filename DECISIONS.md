@@ -101,6 +101,66 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-051/052 — Validation AT Thunder Bay at last, a site-validity guard, and a diagnosis that
+  is calibration rather than ignorance.**
+  First validation this project has ever had at the place it forecasts for. LSOFS publishes
+  station **10050 at 48.4095,-89.2150** (2.31 km off the waterfront, h 14.1 m) and GLSEA/ACSPO
+  satellite SST has a multi-year archive at any point, so truth, model and both cheap baselines
+  are all locally available. **1,104 paired samples over 184 issue days, 2025-05-01 → 2025-10-31**,
+  scoring RAW LSOFS against satellite — not the bias-corrected product, which is anchored to
+  GLSEA and would be scored against its own input.
+
+  **A flaw in my own test, caught before publishing it.** The first run pinned the satellite pixel
+  from the WATERFRONT coordinate and compared it against a station 2.97 km away — in a bay whose
+  entire product is about thermal gradients, and against a node in 14.1 m of water that warms
+  faster than the pixel it was scored against. Re-pinning the pixel at the model station (0.56 km)
+  cut the apparent warm bias from +2.6 to +2.4 °C. Geometry wearing a model bias's clothes.
+
+  **Raw result:** MAE 3.08-3.17 °C, bias **+2.4 to +2.6 °C** (model too warm), essentially FLAT
+  across leads 0-120 h. Satellite persistence 0.30→1.15 °C, climatology ~1.6 °C. Every lead loses.
+
+  **Then two confounds, both of which cut against the model, and neither of which saves it.**
+  (a) Both baselines are built FROM GLSEA, so they inherit its smoothness and carry no
+  cross-dataset representativeness error while the model must bridge model-space to
+  satellite-space. (b) A constant satellite offset at this pixel inflates the MODEL's error and
+  leaves the baselines' untouched — and the project's own Landsat-vs-GLSEA record says the
+  nearshore delta is only +0.23 °C region-wide (+1.62 sheltered), so it cannot explain +2.4 °C.
+  De-biasing drops the model to 2.15-2.30 °C — still behind climatology at every lead.
+
+  **THE DIAGNOSIS, which is the useful part.** Strip the seasonal cycle from both sides and the
+  model is not ignorant at all: anomaly correlation **0.59-0.63** and an **82-86% sign match** at
+  every lead including 120 h. What is wrong is the AMPLITUDE — the model's anomaly standard
+  deviation is **3.3-3.4 °C against an observed 1.49 °C, over-dispersed 2.3x** — plus the constant
+  warm offset. Those are calibration faults, not information faults. Fitting the calibration on
+  the first half of the season and scoring the held-out remainder (rule 6) gives slopes of
+  **0.43-0.52** and nearly halves the error (1.86 → 1.16 °C at 24 h). It still does not beat
+  persistence or climatology on the held-out half, but the model demonstrably carries signal the
+  product is currently discarding by consuming raw temperatures.
+
+  **What this actually validates.** The product ALREADY anchors LSOFS to GLSEA. This result says
+  that anchoring is load-bearing rather than cosmetic: without it the surface field would run
+  ~2.5 °C warm. An existing design choice is vindicated by measurement for the first time.
+
+  **The regime question is UNANSWERED, not answered.** Only 13 relaxation and 3 peak samples out
+  of 1,104 — the phase classifier almost never fires on reanalysis 10 m wind at a coastal grid
+  point. Reading a verdict off n=3 would be exactly the noise-chasing the demotion rule exists to
+  prevent, so `surface_skill.json` carries an explicit `phase_coverage_note` saying so. Answering
+  it needs over-lake wind or a lower sustained-blow threshold.
+
+  **ADR-052 — the site-validity guard**, so the ADR-049/050 failure cannot recur structurally
+  rather than by diligence. `features/site_validity.py` cross-checks model and in-situ observation
+  against an independent satellite third party before any site grounds a product claim, and
+  separates the two failure directions: the model being locally wrong (the site cannot generalise)
+  from the observation being wrong (the measurement cannot be trusted). Its own test caught a real
+  flaw in the first version: an ABSOLUTE bar convicted the LLO1 buoy for sitting 4.5 °C below the
+  satellite — an ordinary skin-versus-bulk difference, since a satellite sees the top microns and
+  a 1 m thermistor sees mixed water — while letting an 11.8 °C model error pass. Attribution is
+  now comparative: whichever side is further from the third party is the suspect.
+
+  **Still open.** The subsurface at Thunder Bay remains unvalidated — GLSEA cannot see isotherm
+  DEPTH, which is the product's actual claim — and the Bare Point intake (task #8) is still the
+  only route to it.
+
 - **ADR-050 — CORRECTION to ADR-049: the failure is local to the validation mooring, not a verdict
   on the product.** Operator challenge, and it was right: "we aren't even getting the direction
   right? Are you sure we don't have a bug?" There is no bug — and the conclusion was still wrong.

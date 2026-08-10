@@ -45,6 +45,11 @@ knowledge/observations/candidates/*.tmp
 # for the same reason as gate_log.csv: the evidence behind a published verdict has to be auditable.
 !data/thermal_gate_log.csv
 !data/calib/thermal_skill.json
+# ADR-051: the Thunder Bay SURFACE gate — the first validation this project has ever had at the
+# place it actually forecasts for. Committed for the same reason as the others: a published
+# verdict has to carry its evidence.
+!data/surface_gate_log.csv
+!data/calib/surface_skill.json
 
 # ADR-045: FROZEN river geometry is a committed ARTIFACT, not a cache. It holds the lidar-derived
 # centreline, water surface, width and bends so the daily seam build needs no lidar range reads and
@@ -54,3 +59,4 @@ knowledge/observations/candidates/*.tmp
 
 # Station-file extracts are a CACHE (the .nc is fetched, read and discarded); regenerable.
 data/lsofs_station_cache/
+data/wind_archive_cache/

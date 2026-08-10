@@ -1,0 +1,269 @@
+{
+  "source": "data/surface_gate_log.csv",
+  "built_utc": "2026-08-10T15:38:07+00:00",
+  "site": "Thunder Bay (LSOFS station 10050, 2.3 km off the waterfront)",
+  "truth": "GLSEA/ACSPO satellite SST",
+  "n": 1104,
+  "n_days": 184,
+  "window": [
+    "2025-05-01",
+    "2025-10-31"
+  ],
+  "block_days_measured": 10,
+  "site_check": {
+    "usable": true,
+    "n_days": 184,
+    "model_vs_satellite_c": 2.413,
+    "obs_vs_satellite_c": null,
+    "reason": "model within 3 C of satellite here (+2.4 C mean) \u2014 the site can ground a product claim"
+  },
+  "per_lead": {
+    "0": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.0784,
+      "model_bias_c": 2.4126,
+      "persist_mae_c": 0.2954,
+      "clim_mae_c": 1.6408,
+      "skill_ratio": 12.1828,
+      "ci95": [
+        9.1715,
+        16.0132
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 2,
+      "days_model_worse": 182,
+      "sign_test_p": 1.388340091872536e-51,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "24": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.1362,
+      "model_bias_c": 2.4434,
+      "persist_mae_c": 0.5071,
+      "clim_mae_c": 1.6386,
+      "skill_ratio": 7.3484,
+      "ci95": [
+        5.8712,
+        9.3365
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 7,
+      "days_model_worse": 177,
+      "sign_test_p": 1.0714267651676255e-43,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "48": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.118,
+      "model_bias_c": 2.4345,
+      "persist_mae_c": 0.6895,
+      "clim_mae_c": 1.6328,
+      "skill_ratio": 5.5741,
+      "ci95": [
+        4.5074,
+        6.9631
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 9,
+      "days_model_worse": 175,
+      "sign_test_p": 4.692991986863574e-41,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "72": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.1697,
+      "model_bias_c": 2.5127,
+      "persist_mae_c": 0.862,
+      "clim_mae_c": 1.6256,
+      "skill_ratio": 4.6389,
+      "ci95": [
+        3.6873,
+        5.7927
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 17,
+      "days_model_worse": 167,
+      "sign_test_p": 3.7781525769181686e-32,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "96": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.1723,
+      "model_bias_c": 2.5445,
+      "persist_mae_c": 1.0147,
+      "clim_mae_c": 1.617,
+      "skill_ratio": 4.0391,
+      "ci95": [
+        3.1996,
+        5.1555
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 20,
+      "days_model_worse": 164,
+      "sign_test_p": 2.5835219865078984e-29,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    },
+    "120": {
+      "n": 184,
+      "n_days": 184,
+      "model_mae_c": 3.1606,
+      "model_bias_c": 2.5989,
+      "persist_mae_c": 1.1484,
+      "clim_mae_c": 1.6071,
+      "skill_ratio": 3.6499,
+      "ci95": [
+        2.9097,
+        4.6052
+      ],
+      "n_blocks": 19,
+      "interval_quality": "approximate",
+      "days_model_better": 23,
+      "days_model_worse": 161,
+      "sign_test_p": 1.078078148608129e-26,
+      "verdict": "NO BETTER than the baseline",
+      "demote": true
+    }
+  },
+  "by_upwelling_phase": {
+    "neutral": {
+      "n": 904,
+      "n_days": 184,
+      "model_mae_c": 3.1869,
+      "model_bias_c": 2.5344,
+      "baseline_mae_c": 0.6649,
+      "skill_ratio": 4.7927,
+      "ci95": [
+        3.9069,
+        5.9611
+      ],
+      "verdict": "NO BETTER than the baseline"
+    },
+    "relaxation": {
+      "n": 13,
+      "n_days": 8,
+      "model_mae_c": 1.3489,
+      "model_bias_c": 1.2306,
+      "baseline_mae_c": 0.5533,
+      "skill_ratio": 2.4379,
+      "ci95": [
+        null,
+        null
+      ],
+      "verdict": "insufficient independent blocks (1)"
+    },
+    "peak": {
+      "n": 3,
+      "n_days": 3,
+      "model_mae_c": 0.265,
+      "model_bias_c": -0.265,
+      "baseline_mae_c": 0.9067,
+      "skill_ratio": 0.2923,
+      "ci95": [
+        null,
+        null
+      ],
+      "verdict": "insufficient independent blocks (1)"
+    }
+  },
+  "phase_coverage_note": "upwelling phases are too rare in this sample to support a verdict; the stratification is reported for transparency, not conclusion. Needs over-lake wind or a lower sustained-blow threshold before the regime question can be answered.",
+  "anomaly_skill": {
+    "0": {
+      "n": 184,
+      "anomaly_corr": 0.6322,
+      "model_anom_sd": 3.3176,
+      "obs_anom_sd": 1.4893,
+      "calibration_slope": 0.4539,
+      "raw_mae_holdout_c": 1.8257,
+      "calibrated_mae_holdout_c": 1.2125,
+      "persist_mae_holdout_c": 0.2203,
+      "clim_mae_holdout_c": 0.8662,
+      "calibration_intercept": -0.7031
+    },
+    "24": {
+      "n": 184,
+      "anomaly_corr": 0.6271,
+      "model_anom_sd": 3.4079,
+      "obs_anom_sd": 1.4895,
+      "calibration_slope": 0.426,
+      "raw_mae_holdout_c": 1.8594,
+      "calibrated_mae_holdout_c": 1.1545,
+      "persist_mae_holdout_c": 0.4143,
+      "clim_mae_holdout_c": 0.8732,
+      "calibration_intercept": -0.5651
+    },
+    "48": {
+      "n": 184,
+      "anomaly_corr": 0.6265,
+      "model_anom_sd": 3.3754,
+      "obs_anom_sd": 1.4892,
+      "calibration_slope": 0.45,
+      "raw_mae_holdout_c": 1.8404,
+      "calibrated_mae_holdout_c": 1.2603,
+      "persist_mae_holdout_c": 0.5805,
+      "clim_mae_holdout_c": 0.8787,
+      "calibration_intercept": -0.7346
+    },
+    "72": {
+      "n": 184,
+      "anomaly_corr": 0.6084,
+      "model_anom_sd": 3.4038,
+      "obs_anom_sd": 1.4882,
+      "calibration_slope": 0.473,
+      "raw_mae_holdout_c": 1.7875,
+      "calibrated_mae_holdout_c": 1.4018,
+      "persist_mae_holdout_c": 0.7375,
+      "clim_mae_holdout_c": 0.8883,
+      "calibration_intercept": -0.9854
+    },
+    "96": {
+      "n": 184,
+      "anomaly_corr": 0.593,
+      "model_anom_sd": 3.3556,
+      "obs_anom_sd": 1.4866,
+      "calibration_slope": 0.4945,
+      "raw_mae_holdout_c": 1.771,
+      "calibrated_mae_holdout_c": 1.4953,
+      "persist_mae_holdout_c": 0.8752,
+      "clim_mae_holdout_c": 0.8932,
+      "calibration_intercept": -1.1637
+    },
+    "120": {
+      "n": 184,
+      "anomaly_corr": 0.6132,
+      "model_anom_sd": 3.3359,
+      "obs_anom_sd": 1.4844,
+      "calibration_slope": 0.521,
+      "raw_mae_holdout_c": 1.7195,
+      "calibrated_mae_holdout_c": 1.5843,
+      "persist_mae_holdout_c": 0.9914,
+      "clim_mae_holdout_c": 0.8908,
+      "calibration_intercept": -1.3683
+    }
+  },
+  "regime_dependence": null,
+  "demote_leads": [
+    "24",
+    "48",
+    "72",
+    "96",
+    "120"
+  ],
+  "verdict": "leads ['24', '48', '72', '96', '120'] fail the ADR-006 bar at Thunder Bay",
+  "scope": "SURFACE ONLY. GLSEA cannot see the isotherm DEPTH, which is the product's actual claim, so a good result here is necessary and not sufficient. The subsurface profile at Thunder Bay remains unvalidated and needs a local measurement (Bare Point intake, task #8).",
+  "method": "Raw LSOFS surface vs satellite \u2014 NOT the bias-corrected product, which is anchored to GLSEA and would be scored against its own input. Baselines are satellite persistence (lagged one day, which is what an operational forecast could actually have had) and other-year satellite climatology, harder of the two per sample."
+}
