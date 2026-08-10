@@ -181,18 +181,38 @@ def main(argv) -> int:
         "demote_leads": demote,
         "nowcast_mae_c": (now or {}).get("fcst_mae_c"),
         "error_is_model_state_not_forecast_decay": state_not_forecast,
-        "verdict": ("EVERY forecast lead fails the ADR-006 bar" if all_lose else
-                    f"leads {demote} fail the ADR-006 bar" if demote else
+        # SITE-SCOPED, and this correction matters more than the number it qualifies. The first
+        # version of this line read "EVERY forecast lead fails the ADR-006 bar" full stop, which
+        # generalised a measurement at ONE mooring into a verdict on the product. It does not
+        # survive a look at the rest of the lake: on 2025-08-12 the same model hour puts the deep
+        # offshore stations at a textbook 17.6-21.7 C surface over a 3.97-3.99 C hypolimnion and
+        # Thunder Bay at 19.5 C, while LLO1 alone sits at 8.6 C. Independent satellite SST
+        # (GLSEA/ACSPO, 0.43 km away) tracks the BUOY, not the model — 21.3 vs 9.5 C on 2025-07-28.
+        # So what is measured here is a LOCAL LSOFS pathology at 45027, on the Minnesota upwelling
+        # coast. It is real, and it is not evidence about Thunder Bay.
+        "verdict": ((f"at {'/'.join(sorted({r['chain'] for r in recs}))}: every forecast lead "
+                     f"fails the ADR-006 bar")
+                    if all_lose else
+                    f"leads {demote} fail the ADR-006 bar at this site" if demote else
                     "no lead is shown to add nothing"),
+        "scope": ("SITE-SPECIFIC. This is the model's skill at the validation mooring only. "
+                  "Generalising it to the Thunder Bay nearshore is not supported and is "
+                  "contradicted by the model's own behaviour elsewhere in the lake."),
         "method": ("Scored in C at the observed sensor depths (never censored, stable units). "
                    "Paired samples; the baseline is the harder of observed persistence and "
                    "other-year climatology per sample; the CI is a block bootstrap whose block "
                    "length is the measured error decorrelation. A lead is benched only when the "
                    "interval EXCLUDES 1.0."),
-        "caveat": ("Scored at the Duluth LLO1 mooring (LSOFS station 45027, 0.11 km away), which "
-                   "is 271 km from Thunder Bay on an upwelling-dominated coast. This measures the "
-                   "model's OFFSHORE column there; transfer to the Thunder Bay nearshore is an "
-                   "assumption, not a measurement, and no subsurface profile exists nearer."),
+        "caveat": (
+            "Scored at the Duluth LLO1 mooring (LSOFS station 45027, 0.11 km away), 271 km from "
+            "Thunder Bay on the Minnesota upwelling coast. THE MODEL IS ANOMALOUS AT THIS NODE: "
+            "on 2025-08-12 12Z it puts the deep offshore stations at 17.6-21.7 C over a "
+            "3.97-3.99 C hypolimnion and Thunder Bay at 19.5 C, while 45027 alone reads 8.60 C "
+            "surface / 7.00 C bottom. Independent satellite SST (GLSEA/ACSPO, 0.43 km from the "
+            "buoy) tracks the buoy rather than the model (21.28 vs 9.54 C on 2025-07-28), so the "
+            "observation and the pipeline are sound and the model is locally wrong. The ADR-006 "
+            "numbers above therefore describe LSOFS AT THIS MOORING and must not be read as a "
+            "verdict on the Thunder Bay thermal layer, which this gate cannot reach."),
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, indent=2) + "\n")

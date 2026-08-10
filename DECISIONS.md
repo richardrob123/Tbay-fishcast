@@ -101,6 +101,52 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-050 — CORRECTION to ADR-049: the failure is local to the validation mooring, not a verdict
+  on the product.** Operator challenge, and it was right: "we aren't even getting the direction
+  right? Are you sure we don't have a bug?" There is no bug — and the conclusion was still wrong.
+
+  **What a third source says.** GLSEA/ACSPO satellite SST, sampled 0.43 km from the buoy and
+  independent of both the mooring and LSOFS, tracks the BUOY:
+
+      date          GLSEA    buoy 1 m    LSOFS top
+      2025-07-14    16.59      13.34        8.93
+      2025-07-28    21.28      16.82        9.54
+      2025-08-12    20.81      17.41        8.60
+      2025-09-12    15.08      15.25       15.47
+
+  So the observation is sound, the pipeline is sound (it already agreed with the product's own
+  `fields` reader to 0.000 C), and the model is genuinely 11-12 C too cold at that node in
+  midsummer.
+
+  **But only at that node.** Same model, same hour, 2025-08-12 12Z: the deep offshore stations
+  (45001, 45006, 45004, 45136) show a textbook Superior summer profile — 17.6-21.7 C surface over
+  a **3.97-3.99 C hypolimnion**, which is the physical signature of a model getting Lake Superior
+  right. Thunder Bay's own node (10050) reads 19.50 C surface / 11.28 C bottom, entirely normal.
+  **45027 is the only cold, unstratified station in the lake.**
+
+  **What that means.** ADR-049 measured a LOCAL LSOFS pathology at one mooring on the Minnesota
+  upwelling coast. The measurement is real and the statistics stand for that site. The sentence
+  "every forecast lead fails the ADR-006 bar" was scoped to the product and should have been
+  scoped to the mooring; `thermal_skill.json` now says "at llo1: ..." and carries an explicit
+  `scope` field plus the satellite evidence in its caveat. No demotion follows from this.
+
+  **The methodological lesson, which is the durable part.** Every check in ADR-049 was a check for
+  a bug in OUR pipeline — reader agreement, time axis, sigma mapping, selection bias, bootstrap
+  degeneracy — and all of them passed, which is exactly why the wrong conclusion looked so solid.
+  None of them asked the different question: *is the validation SITE representative of what we are
+  claiming about?* A single glance at the model's other 18 stations answered it in seconds. A
+  validation gate needs a site-validity check as much as it needs a statistics check, and this one
+  now has one: the model is cross-checked against independent satellite SST at the validation
+  point, and a site where the model contradicts the satellite cannot ground a product verdict.
+
+  **Where this leaves the local question.** Still unanswered, and now with a better route to an
+  answer: GLSEA is available historically at ANY location, and LSOFS station 10050 sits 2.3 km off
+  the Thunder Bay waterfront. The same machinery can score the model's SURFACE temperature at
+  Thunder Bay against satellite over a full season — a real, local, T1 validation the project has
+  never had. It does not reach the subsurface profile, which still needs the Bare Point intake
+  (task #8). The LLO1 result also leaves a hypothesis worth testing there rather than assuming:
+  LSOFS may fail specifically on upwelling-driven shores, and Thunder Bay's north shore is one.
+
 - **ADR-049 — Score the forecast in degrees, hindcast a whole season, and get a real ADR-006 answer:
   every lead loses to the cheap baseline.**
   Signed off after ADR-048 established that the isotherm-depth gate could not measure anything.
