@@ -94,8 +94,14 @@ def profile(r):
         pts, zf = pts[::-1], zf[::-1]
         dist = [dist[-1] - d for d in dist[::-1]]
     ws = hrdem.measure_widths(pts, stride=5)
+    # TWO widths, deliberately, because they answer different questions and confusing them is
+    # what put seams in the woods (see hrdem.local_width). w_ref is the 1 km reach median and is
+    # used ONLY to size the slope window; w_local is the measured channel width at the station and
+    # is used for everything positional — bank offsets, R/w, Manning.
     w_ref = hrdem.reach_width(ws, dist, smooth_m=1000.0)
-    return {"pts": pts, "dist": dist, "z": zf, "w_ref": w_ref}
+    # the gap limit is what this call actually did: 5 stations of STEP_M, doubled.
+    w_local = hrdem.local_width(ws, dist, max_gap_m=2.0 * 5 * STEP_M)
+    return {"pts": pts, "dist": dist, "z": zf, "w_ref": w_ref, "w_local": w_local}
 
 
 def main(argv) -> int:
@@ -126,7 +132,12 @@ def main(argv) -> int:
         if frozen and rid in frozen:
             f = frozen[rid]
             pr = {"pts": [tuple(x) for x in f["pts"]], "dist": f["dist"],
-                  "z": f["z"], "w_ref": f["w_ref"]}
+                  "z": f["z"], "w_ref": f["w_ref"], "w_local": f.get("w_local")}
+            if pr["w_local"] is None:
+                # A pre-ADR-047 freeze has no local width. Refusing is the point: silently
+                # falling back to w_ref is exactly the bug, and it looks fine on the map.
+                print(f"  {r['name']:22s} frozen geometry predates w_local — re-run --freeze")
+                continue
             pre_bends = f.get("bends")
         else:
             pr = profile(r)
@@ -136,11 +147,14 @@ def main(argv) -> int:
             continue
         meta = hydat.GAUGE_META.get(rid, {})
         q, qref = Q.get(rid), meta.get("q_ref_cms")
-        wm = [x for x in pr["w_ref"] if x]
+        w_loc = pr["w_local"]
+        wm = [x for x in w_loc if x]
         med_ref = sorted(wm)[len(wm) // 2] if wm else None
-        # WIDTH AT TODAY'S FLOW, not at the lidar date — see hydraulics.width_at_flow
+        # WIDTH AT TODAY'S FLOW, not at the lidar date — see hydraulics.width_at_flow.
+        # Manning wants the CHANNEL width at the station, so this is w_local: feeding it the 1 km
+        # reach median made a 10 m stream 148 m wide and the depth solution meaningless.
         w_now = [hy.width_at_flow(x, q, qref) if (x and q and qref) else None
-                 for x in pr["w_ref"]]
+                 for x in w_loc]
         med_now = None
         wn = [x for x in w_now if x]
         if wn:
@@ -160,13 +174,17 @@ def main(argv) -> int:
         vel = [st.velocity_ms for st in states]
         dv = hy.velocity_gradient(vel, pr["dist"])
         dw = rp.width_gradient(pr["w_ref"], pr["dist"])
+        # R/w is a ratio of BEND scale to CHANNEL scale, so the denominator is the local width.
+        # bend_seams already skips stations whose width is None, so saturation (an impoundment,
+        # a wetland, a drowned mouth — places with no channel) suppresses bends at the source
+        # rather than needing a special case.
         bends = (pre_bends if pre_bends is not None
-                 else rp.bend_seams(pr["pts"], pr["w_ref"], suppress=back, dists=pr["dist"]))
+                 else rp.bend_seams(pr["pts"], w_loc, suppress=back, dists=pr["dist"]))
         geom_out[rid] = {"pts": [[round(q[0], 6), round(q[1], 6)] for q in pr["pts"]],
                          "dist": [round(x, 1) for x in pr["dist"]],
                          "z": [round(x, 2) for x in pr["z"]],
-                         "w_ref": pr["w_ref"], "bends": bends}
-        P[rid] = {**pr, "r": r, "q": q, "q_ref": qref, "w_now": w_now, "slopes": slopes,
+                         "w_ref": pr["w_ref"], "w_local": w_loc, "bends": bends}
+        P[rid] = {**pr, "r": r, "q": q, "q_ref": qref, "w_local": w_loc, "w_now": w_now, "slopes": slopes,
                   "states": states, "dv": dv, "dw": dw, "bends": bends, "back": back,
                   "med_ref": med_ref, "med_now": med_now, "mean_slope": mean_slope}
         all_dv += [x for x in dv if x is not None and math.isfinite(x)]
@@ -196,17 +214,25 @@ def main(argv) -> int:
             print(f"  ramp {name:18s} NOT BUILT ({e})")
 
     feats = []
+    off_worst = 0.0
     for rid, p in P.items():
-        pts, w_ref, dist = p["pts"], p["w_ref"], p["dist"]
+        pts, w_loc, dist = p["pts"], p["w_local"], p["dist"]
         # ---- bend seams, offset to the outer bank, graded by the measured ramp
         for b in p["bends"]:
             side = 1 if b["side"] == "right" else -1
             coords = []
             for k in range(b["i0"], b["i1"] + 1):
-                wi = w_ref[k] or 0.0
+                wi = w_loc[k]
+                if not wi:
+                    continue          # no measured channel here: draw nothing, invent nothing
                 dlat, dlon = _normal(pts, k)
-                coords.append([round(pts[k][1] + dlon * side * wi / 2, 6),
-                               round(pts[k][0] + dlat * side * wi / 2, 6)])
+                lon_o = pts[k][1] + dlon * side * wi / 2
+                lat_o = pts[k][0] + dlat * side * wi / 2
+                off = math.hypot((lat_o - pts[k][0]) * 111320.0,
+                                 (lon_o - pts[k][1]) * 111320.0
+                                 * math.cos(math.radians(pts[k][0])))
+                off_worst = max(off_worst, off / (wi / 2))
+                coords.append([round(lon_o, 6), round(lat_o, 6)])
             if len(coords) < 2:
                 continue
             band = (hy.seam_band(1.0 / b["rw"], ramps["bend"])
@@ -298,6 +324,19 @@ def main(argv) -> int:
                    "width; velocity seams are T3 Manning derived and only exist where discharge is "
                    "usable; ramps are measured regional percentiles (ADR-039 discipline)"),
     }, indent=1) + "\n")
+    # AUDIT GATE (ADR-047). A seam is a claim about a place, and the way this layer failed on the
+    # live map was purely positional: bend seams offset by half the 1 km REACH median instead of
+    # half the LOCAL measured width drew 60-110 m off a 10 m stream, into the woods. Nothing threw.
+    # So the invariant is asserted where it is created, against the station the offset actually
+    # came from — comparing against the NEAREST centreline vertex instead would measure the 20 m
+    # densification spacing on a narrow river, not the bug.
+    print(f"  audit: worst bank offset = {off_worst:.3f} x the local channel half-width "
+          f"(1.000 is the outer bank)")
+    if off_worst > 1.0001:
+        print("  ABORT: a bend seam is offset further than half the measured channel width — "
+              "that is the reach-vs-local width bug (ADR-047), not a rendering choice.")
+        return 1
+
     print(f"\nwrote {len(feats)} seam features -> {a.out}")
     print(f"wrote {CALIB.relative_to(ROOT)}")
     from collections import Counter

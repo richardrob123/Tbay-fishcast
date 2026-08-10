@@ -101,6 +101,52 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-047 — River seams drew in the woods: reach width vs local width, and a channel needs banks.**
+  Operator, from the live map: "the river seams don't look right." Screenshots showed segments
+  sitting 60-110 m off a narrow meandering stream, in the trees and across a dirt road. Two
+  independent bugs, both silent, both positional.
+
+  **(1) The wrong width was used for a positional job.** `hrdem.reach_width` is a 1 km running
+  median, and its docstring justifies the smoothing correctly — for the SLOPE WINDOW, where a
+  width that tracked the local channel would make the classifier's resolution follow the very
+  property it is classifying. That reasoning does not transfer to anything positional, and the
+  bend-seam bank offset (half a width, to the outer bank) was using it. On the Neebing the local
+  measured width was 10 m and the 1 km median was 148 m, because the same window contained a wide
+  confluence; on the Current it was Boulevard Lake. The seam drew 74 m out. Fixed by measuring
+  both and keeping them apart: `local_width` fills ONLY the sampling stride (a longer run of
+  `None` is saturation — no bank found, so no channel — and stays `None`), and it now drives the
+  bank offset, the R/w bend criterion and Manning's channel width, while `reach_width` keeps the
+  slope window. Because `bend_seams` already skips stations with no width, impoundments and
+  drowned mouths suppress themselves rather than needing a special case.
+
+  **(2) A channel has banks, and the width measurement did not require them.** With local width
+  wired in, the Neebing still reported 228 m at some stations. The transect test was "everything
+  within 0.60 m of the water surface", which is the channel wherever the stream is incised and the
+  whole FIELD wherever it is not: at 48.4506,-89.3603 the ground west of a 12 m stream is a plain
+  at 280.0-281.0 m for 150 m, so it measured 152 m wide. The fix is the physical definition — the
+  wet run must be bounded, on BOTH sides, by ground unambiguously above the water (twice the
+  tolerance that defined "wet", not marginally) reached within 16 m, i.e. a bank slope of ~7.5%,
+  at or below the gentlest natural bank and far above any floodplain gradient. One side is not
+  enough: a stream at the toe of a valley wall has one good bank and one floodplain, and it is the
+  floodplain side that runs away. Measured across all five rivers at look distances 6/10/16/24 m,
+  the reach MEDIAN is unchanged everywhere while the maximum collapses to a plausible channel
+  (Neebing 252 -> 92-106 m, McVicar 196 -> 74-82 m, Current 220 -> 134 m) and the genuinely wide
+  Kam barely moves (258 -> 254 m). The choice inside 10-24 m is therefore not load-bearing; what
+  is load-bearing is requiring 2x the tolerance rather than 1x, which does nothing at all — the
+  first cell outside the run clears 1x by construction.
+
+  **Result and gate.** 388 -> 304 seam features; bends 131 -> 79, with the removals concentrated
+  exactly where no channel could be measured (Neebing 47 -> 17, McVicar 18 -> 9) and the Kam's
+  genuinely wide reaches retained. Every drawn bend vertex now sits at 1.000 x the local
+  half-width. Independent check against the frozen water masks — a different source (OSM water
+  polygons) from the lidar widths: of the four bends inside mask coverage, the two whose
+  centreline is on mapped water land exactly on the water's edge (0 m); the other two are upstream
+  of the coastal mask, where the nearest "water" is the lake. Because nothing about this failure
+  ever raised, the build now asserts the invariant where the geometry is created — no bend seam
+  may be offset by more than half the measured channel width, and it aborts rather than deploying.
+  The check is made against the ORIGINATING station, not the nearest centreline vertex: on a
+  narrow river the latter measures the 20 m densification spacing and false-positives at 1.49x.
+
 - **ADR-046 — Coloured shoreline access: Ontario land tenure on the very edge of the coast.**
   Operator asked for a public/private shoreline so the map shows where you may legally stand
   ("green is public and accessible, yellow is public but unknown accessibility, red is private").

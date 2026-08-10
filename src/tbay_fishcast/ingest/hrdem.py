@@ -167,6 +167,40 @@ WIDTH_SEARCH_HALF_M = 150.0
 WIDTH_STEP_M = 2.0
 WIDTH_TOL_M = 0.60          # water is flat: within this of the channel's own surface level
 
+# A CHANNEL HAS BANKS, and that is what these two constants encode (ADR-047).
+#
+# The flat-tolerance test alone finds "everything within 0.60 m of the water surface", which is
+# the channel wherever the stream is incised — and the whole FIELD wherever it is not. On the
+# Neebing at 48.4506,-89.3603 the ground west of the stream is a plain at 280.0-281.0 m for 150 m,
+# so a 12 m stream measured 152 m wide. Those over-measurements then drove the bend-seam bank
+# offset, and the seams drew in the woods on the live map.
+#
+# So the run must be bounded by ground that is UNAMBIGUOUSLY above the water — above it by twice
+# the tolerance that defined "wet" in the first place, rather than marginally — reached within a
+# short distance of the waterline. 1.2 m of rise within 16 m is a bank slope of ~7.5%, at or below
+# the gentlest natural bank and far above any floodplain gradient.
+#
+# MEASURED SENSITIVITY (all five rivers, stride 5, look distance varied 6/10/16/24 m): the reach
+# MEDIAN width is unchanged on every river at every setting, while the maximum collapses to a
+# plausible channel — Neebing 252 -> 92-106 m, McVicar 196 -> 74-82 m, Current 220 -> 134 m — and
+# the genuinely wide Kam barely moves (258 -> 254 m). The choice inside 10-24 m is therefore not
+# load-bearing; what matters is that the rise is 2x the tolerance rather than 1x, which does
+# nothing at all (the first cell outside the run already clears 1x by construction).
+BANK_RISE_TOL_MULT = 2.0
+BANK_LOOK_CELLS = 8         # x WIDTH_STEP_M = 16 m outside each edge of the wet run
+
+
+def _bank_confined(prof, lo: int, hi: int, base: float) -> bool:
+    """Is the wet run bounded by real banks on BOTH sides? (see BANK_RISE_TOL_MULT)
+
+    Both sides, not either: a stream running along the toe of a valley wall has one perfectly
+    good bank and one floodplain, and it is the floodplain side that runs away with the width.
+    """
+    need = base + BANK_RISE_TOL_MULT * WIDTH_TOL_M
+    left = [v for v in prof[max(0, lo - BANK_LOOK_CELLS):lo] if v is not None]
+    right = [v for v in prof[hi + 1:hi + 1 + BANK_LOOK_CELLS] if v is not None]
+    return bool(left) and bool(right) and max(left) >= need and max(right) >= need
+
 
 def measure_widths(points, *, url: str = DTM_URL, stride: int = 1):
     """Wetted width (m) at each station, or None where the transect saturates.
@@ -228,6 +262,8 @@ def measure_widths(points, *, url: str = DTM_URL, stride: int = 1):
             hi += 1
         if lo == 0 or hi == n - 1:
             out_sparse.append(None)          # saturated: not a channel here
+        elif not _bank_confined(prof, lo, hi, base):
+            out_sparse.append(None)          # no bank on one side: floodplain, not a channel
         else:
             out_sparse.append((hi - lo) * WIDTH_STEP_M)
 
@@ -239,8 +275,57 @@ def measure_widths(points, *, url: str = DTM_URL, stride: int = 1):
     return full
 
 
+def local_width(widths, dist_m, max_gap_m: float | None = None):
+    """Per-station wetted width, filling ONLY the sampling stride — never saturation.
+
+    :func:`measure_widths` runs on a stride, so most stations carry no measurement at all. Those
+    holes are an artefact of how often we sampled and are filled by linear interpolation between
+    their measured neighbours. A run of ``None`` LONGER than the stride is a different thing
+    entirely: the transect never found a bank, which means there is no channel at that station —
+    an impoundment, a wetland, a drowned mouth. Those stay ``None``, and callers must decline to
+    draw rather than invent a width.
+
+    THIS IS THE COUNTERPART TO :func:`reach_width`, AND THE DISTINCTION IS WHERE A REAL BUG LIVED.
+    ``reach_width``'s 1 km running median is the right scale for the SLOPE WINDOW (see its
+    docstring) and the wrong scale for anything positional. Offsetting a bend seam to the outer
+    bank by half of it put segments 60-110 m off a 10 m stream on the Neebing, because the same
+    1 km window contained a wide confluence — and on the Current, because it contained Boulevard
+    Lake. The measured local width there was 10 m; the reach median was 148 m. The seams drew in
+    the woods, which is exactly what the operator saw on the live map.
+
+    ``max_gap_m`` should be passed by the caller, which knows the stride it actually used
+    (``2 * stride * step_m``). The fallback — twice the SMALLEST observed gap, the smallest gap
+    being the stride whenever any adjacent pair was measured — is there so the function is usable
+    standalone, and it degenerates honestly: with only two measurements there is no evidence about
+    the sampling interval at all, and it will fill.
+    """
+    n = len(widths)
+    out = [None] * n
+    idx = [i for i in range(n) if widths[i] is not None]
+    if len(idx) < 2:
+        for i in idx:
+            out[i] = widths[i]
+        return out
+    if max_gap_m is None:
+        max_gap_m = 2.0 * min(dist_m[b] - dist_m[a] for a, b in zip(idx, idx[1:]))
+    for i in idx:
+        out[i] = widths[i]
+    for a, b in zip(idx, idx[1:]):
+        span = dist_m[b] - dist_m[a]
+        if span <= 0 or span > max_gap_m:
+            continue
+        for k in range(a + 1, b):
+            t = (dist_m[k] - dist_m[a]) / span
+            out[k] = widths[a] + t * (widths[b] - widths[a])
+    return out
+
+
 def reach_width(widths, dist_m, smooth_m: float = 1000.0):
     """Reach-scale width: a running median over `smooth_m`, with saturated gaps filled.
+
+    Use this ONLY where a reach-scale number is what the physics wants — the slope window. For
+    anything POSITIONAL (offsetting a seam to a bank, a bend's R/w, Manning's channel width) use
+    :func:`local_width`, whose docstring records what happens when they are confused.
 
     WHY SMOOTHED, and this is the subtle part. If the slope window scaled with the LOCAL width,
     then a wide slow pool would be smoothed harder than a narrow riffle — the classifier's own

@@ -244,3 +244,96 @@ def test_backwater_stations_are_suppressed():
            for t in range(40)]
     assert rp.bend_seams(arc, [28.0] * 40) != []
     assert rp.bend_seams(arc, [28.0] * 40, suppress=[True] * 40) == []
+
+
+# ---------------------------------------------------------------------------
+# ADR-047: local vs reach width. The bug this guards against was visible on the
+# live map — bend seams drawn 60-110 m off a 10 m stream, in the woods.
+# ---------------------------------------------------------------------------
+
+def test_local_width_fills_the_sampling_stride_but_not_saturation():
+    """measure_widths runs on a stride, so most stations have no measurement; those holes are an
+    artefact of sampling and interpolate. A LONGER run of None is saturation — no bank was found,
+    so there is no channel — and inventing a width there is what threw seams into the woods."""
+    from tbay_fishcast.ingest import hrdem
+
+    dist = [20.0 * i for i in range(21)]                     # 21 stations, 20 m apart
+    w = [None] * 21
+    for i in (0, 5, 10):                                     # measured every 100 m
+        w[i] = 10.0
+    w[15] = 20.0
+    # stations 16..20 unmeasured past the last sample; 11..14 fill; a synthetic saturated
+    # stretch is made by removing the sample at 10
+    out = hrdem.local_width(w, dist, max_gap_m=200.0)
+    assert out[0] == 10.0 and out[5] == 10.0
+    assert out[2] == 10.0, "inside the stride, interpolated"
+    assert 10.0 < out[12] < 20.0, "linear between 10 m and 20 m samples"
+    assert out[20] is None, "past the last measurement we do not extrapolate"
+
+    sat = list(w)
+    sat[5] = sat[10] = None                                  # 400 m with no bank found
+    out2 = hrdem.local_width(sat, dist, max_gap_m=200.0)
+    assert out2[5] is None and out2[7] is None, "saturation must not be filled"
+
+
+def test_local_width_tracks_the_stride_instead_of_a_constant():
+    """The gap limit is twice the MEASURED median sampling interval, so changing the stride does
+    not quietly turn saturation into interpolation."""
+    from tbay_fishcast.ingest import hrdem
+
+    dist = [10.0 * i for i in range(41)]
+    w = [None] * 41
+    for i in range(0, 41, 2):                                # dense sampling: every 20 m
+        w[i] = 12.0
+    w[20] = w[22] = w[24] = None                             # a 60 m hole = saturation at this stride
+    out = hrdem.local_width(w, dist, max_gap_m=40.0)
+    assert out[1] == 12.0, "one-station holes still fill"
+    assert out[22] is None, "a hole three times the sampling interval is not a sampling hole"
+
+
+def test_reach_and_local_width_disagree_where_the_bug_lived():
+    """The Neebing case, reduced: a 10 m stream whose 1 km window contains a 150 m confluence.
+    reach_width answers 'what is this reach like' (right for the slope window); local_width
+    answers 'how wide is the channel HERE' (right for a bank offset). Using the first for the
+    second is a 15x positional error."""
+    from tbay_fishcast.ingest import hrdem
+
+    # a narrow throat inside a wide reach — the Neebing near its confluence, and the Current
+    # either side of Boulevard Lake
+    dist = [20.0 * i for i in range(51)]
+    w = [None] * 51
+    for i in range(0, 51, 5):
+        w[i] = 150.0
+    w[25] = 10.0
+    local = hrdem.local_width(w, dist, max_gap_m=200.0)
+    reach = hrdem.reach_width(w, dist, smooth_m=1000.0)
+    assert local[25] == 10.0, "the measurement at the throat is 10 m and must survive"
+    assert reach[25] == 150.0, "the reach median is the wide water either side"
+    assert reach[25] / local[25] == 15.0, (
+        "offsetting a bend seam by half of the WRONG one of these is a 75 m positional error "
+        "on a 10 m stream")
+
+
+def test_width_requires_banks_on_both_sides():
+    """ADR-047: the flat-tolerance test alone finds 'everything within 0.60 m of the water', which
+    is the channel where the stream is incised and the whole FIELD where it is not. On the Neebing
+    that measured a 12 m stream as 152 m wide, and the bend seams drew in the woods."""
+    from tbay_fishcast.ingest import hrdem
+
+    base = 280.0
+    incised = [283.0] * 40 + [280.0] * 6 + [283.0] * 40
+    assert hrdem._bank_confined(incised, 40, 45, base)
+
+    # a bank that only marginally clears the wet tolerance is not a bank — it is noise on flat
+    # ground, and 1x the tolerance is cleared by construction at every edge
+    marginal = [280.9] * 40 + [280.0] * 6 + [280.9] * 40
+    assert not hrdem._bank_confined(marginal, 40, 45, base)
+
+    # BOTH sides, not either: a stream at the toe of a valley wall has one good bank and one
+    # floodplain, and it is the floodplain side that runs away with the width
+    one_sided = [280.4] * 40 + [280.0] * 6 + [286.0] * 40
+    assert not hrdem._bank_confined(one_sided, 40, 45, base)
+
+    # the bank must be reached CLOSE to the water; a rise 100 m away is a valley, not a bank
+    far = [280.2] * 20 + [280.3] * 20 + [280.0] * 6 + [280.3] * 20 + [286.0] * 20
+    assert not hrdem._bank_confined(far, 40, 45, base)
