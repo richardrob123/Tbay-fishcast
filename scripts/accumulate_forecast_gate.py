@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
-from tbay_fishcast.features.cross_shore import isotherm_depth  # noqa: E402
+from tbay_fishcast.features.cross_shore import isotherm_crossing, isotherm_depth  # noqa: E402
 from tbay_fishcast.ingest import glos, glsea, lsofs_grid  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns  # noqa: E402
@@ -37,17 +37,26 @@ LOG = Path(__file__).resolve().parents[1] / "data" / "forecast_gate_log.csv"
 FIELDS = ["valid_date", "chain", "lead_h", "issue_date", "obs_iso_m",
           "fcst_raw_iso_m", "fcst_corr_iso_m", "abs_err_m",
           "persist_iso_m", "persist_abs_err_m",
+          # ADR-048: obs_status is always "crossing" on rows written after the censoring fix —
+          # it is here so a row SAYS it is a measurement rather than leaving the reader to infer
+          # it. fcst_status records censoring on the MODEL side, which is not a reason to drop the
+          # row (a too-warm model column is a real error) but does bound how much of it we see.
+          "obs_status", "fcst_status",
           "bias_source", "glsea_anchor", "retrieved_utc"]
 
 
 def _migrate_log(path: Path) -> None:
-    """Add the persistence columns to an old-schema log (old rows keep blank persist fields —
-    they stay valid forecast-error samples, just without the baseline)."""
+    """Bring an old-schema log up to the current FIELDS (old rows keep blank new fields).
+
+    Blank is meaningful and different per column: a blank persist field means the row predates the
+    baseline and is still a valid absolute-error sample; a blank obs_status means the row predates
+    the ADR-048 censoring check and CANNOT be assumed to be a measurement — the analyzer quarantines
+    those explicitly rather than treating blank as 'fine'."""
     if not path.exists():
         return
     with path.open() as f:
         rows = list(csv.DictReader(f))
-    if rows and "persist_iso_m" in rows[0]:
+    if rows and all(k in rows[0] for k in ("persist_iso_m", "obs_status")):
         return
     with path.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
@@ -87,8 +96,14 @@ def fcst_row(cfg, chain, samples, valid_day: date, lead_h: int) -> dict | None:
     if len(obs) < 5:
         return None
     zs = sorted(obs)
-    obs_iso = isotherm_depth(zs, [obs[z] for z in zs], TARGET_C)
-    if obs_iso is None:
+    # ADR-048: only a genuine CROSSING is an observation. When the whole column is already
+    # colder than the target, isotherm_depth returns the top sensor depth — correct for the map
+    # ("the cold water reaches the surface") and a fabrication as a validation reference. The
+    # Duluth LLO1 chain runs 4.0-8.2 C over its whole 3-38 m column in August, so every row it
+    # produced read obs_iso_m = 3.00, exactly its shallowest thermistor. 30 of 35 accumulated
+    # rows were that bound, and the map's +/- metres band was computed from them.
+    obs_iso, obs_status = isotherm_crossing(zs, [obs[z] for z in zs], TARGET_C)
+    if obs_status != "crossing":
         return None
     f = LsofsFile(issue, "t12z", "f", lead_h)
     try:
@@ -103,7 +118,7 @@ def fcst_row(cfg, chain, samples, valid_day: date, lead_h: int) -> dict | None:
     finally:
         ds.close()
     z, raw = col.depths_m, col.temps_c
-    raw_iso = isotherm_depth(z, raw, TARGET_C)
+    raw_iso, fcst_status = isotherm_crossing(z, raw, TARGET_C)
     # anchor to the GLSEA available AT ISSUE TIME (what the forecast could have used), never
     # the valid-day profile — that would leak the truth being scored.
     try:
@@ -143,6 +158,7 @@ def fcst_row(cfg, chain, samples, valid_day: date, lead_h: int) -> dict | None:
         "obs_iso_m": _r(obs_iso), "fcst_raw_iso_m": _r(raw_iso),
         "fcst_corr_iso_m": _r(corr),
         "abs_err_m": _r(abs(corr - obs_iso)) if corr is not None else "",
+        "obs_status": obs_status, "fcst_status": fcst_status,
         "persist_iso_m": _r(persist),
         "persist_abs_err_m": _r(abs(persist - obs_iso)) if persist is not None else "",
         "bias_source": src, "glsea_anchor": anchor,

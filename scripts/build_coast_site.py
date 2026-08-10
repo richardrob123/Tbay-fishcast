@@ -196,6 +196,22 @@ def _load_forecast_error():
     if not all(k in d for k in ("pooled_mae_m", "lead_trend_detected", "n_effective_chains")):
         print("⚠ forecast_lead_error.json incomplete — ignoring (no numeric band)")
         return None
+    # ADR-048: pooled_mae_m is null whenever the usable sample is too thin to support a band —
+    # e.g. after the censoring quarantine dropped every row from a chain whose observed isotherm
+    # was the top-sensor bound rather than a measurement. Passing the dict through with a null
+    # MAE would leave the UI to decide, and it renders the tooltip on truthiness, so a null would
+    # merely hide the number while the manifest still advertised a "measured" figure.
+    if d.get("pooled_mae_m") is None:
+        # Pass the REASON through rather than None. Returning None here would make a withheld band
+        # indistinguishable from "the analysis has never run", and the UI would show nothing at
+        # all — silence where rule 5 wants noise. The map renders the number when there is one and
+        # the reason when there is not.
+        reason = d.get("band_blocked_reason") or "sample too thin"
+        print(f"forecast error: NO numeric band — {reason}")
+        return {"pooled_mae_m": None, "band_blocked_reason": reason, "n": d.get("n", 0),
+                "n_effective_chains": d.get("n_effective_chains", 0),
+                "lead_trend_detected": False,
+                "quarantined_chains": d.get("quarantined_chains") or []}
     return d
 
 

@@ -33,7 +33,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from tbay_fishcast.config import load_config  # noqa: E402
 from tbay_fishcast.features import bias_live, thermocline  # noqa: E402
-from tbay_fishcast.features.cross_shore import isotherm_depth  # noqa: E402
+from tbay_fishcast.features.cross_shore import isotherm_crossing, isotherm_depth  # noqa: E402
 from tbay_fishcast.ingest import glos, glsea, lsofs_grid  # noqa: E402
 from tbay_fishcast.ingest.backfill import _open_first  # noqa: E402
 from tbay_fishcast.ingest.lsofs_extract import extract_native_columns  # noqa: E402
@@ -67,8 +67,14 @@ def gate_for_day(cfg, chain, samples, day: date, live_bias) -> dict | None:
     if len(obs) < 5:
         return None
     zs = sorted(obs)
-    obs_iso = isotherm_depth(zs, [obs[z] for z in zs], TARGET_C)
-    if obs_iso is None:
+    # ADR-048: the same censoring guard as the forecast gate. isotherm_depth returns the TOP
+    # SENSOR DEPTH when the whole column is already colder than the target — deliberate for the
+    # map, a fabrication as a validation reference. Duluth LLO1 runs 4.0-8.2 C over its whole
+    # 3-38 m column in August, so it produced obs_iso_m = 3.00 (its shallowest thermistor) every
+    # single day. Note the asymmetry that let this hide for a week: a too-WARM column already
+    # returned None and was skipped, so only the too-cold direction leaked through.
+    obs_iso, obs_status = isotherm_crossing(zs, [obs[z] for z in zs], TARGET_C)
+    if obs_status != "crossing":
         return None
     f = LsofsFile(day, "t12z", "n", 6)
     try:

@@ -54,6 +54,37 @@ def main() -> int:
         print(f"no gate log at {LOG}")
         return 1
     rows = list(csv.DictReader(LOG.open()))
+    # ADR-048 QUARANTINE. Rows written before the censoring guard cannot be assumed to be
+    # measurements. Two cases, and both are decidable from the CSV alone:
+    #   * obs_status == "crossing"  -> written after the guard; a real crossing by construction.
+    #   * obs_status blank          -> pre-guard. Quarantine the chain when its observed isotherm
+    #                                  is CONSTANT ACROSS TWO OR MORE DISTINCT VALID DATES. That
+    #                                  is the pinned-reference signature: when the whole column
+    #                                  sits past the target, isotherm_depth returns depths[0]
+    #                                  exactly, so every day reports the identical value — which
+    #                                  is what LLO1 did (obs_iso_m = 3.00 = its shallowest
+    #                                  thermistor, six days running).
+    # Across DATES, not across rows: one valid date fans out into five lead rows that necessarily
+    # share an observation, so a per-row constancy test would quarantine any chain with a single
+    # logged day. It did, on the first version of this code — 45216 has one date, and its 8.25 m
+    # sits between sensors, i.e. an interpolated crossing rather than a bound. With one date there
+    # is no evidence of pinning either way, so the row survives here and is caught downstream by
+    # the sample-size bar instead of by a rule reaching past its evidence.
+    by_chain_obs = defaultdict(lambda: defaultdict(set))
+    for r in rows:
+        if not (r.get("obs_status") or "").strip():
+            by_chain_obs[r.get("chain")][r.get("obs_iso_m")].add(r.get("valid_date"))
+    quarantined = sorted(c for c, byobs in by_chain_obs.items()
+                         if len(byobs) == 1
+                         and len(next(iter(byobs.values()))) >= 2)
+    rows_before = len(rows)
+    rows = [r for r in rows
+            if (r.get("obs_status") or "").strip() == "crossing"
+            or r.get("chain") not in quarantined]
+    if quarantined:
+        print(f"ADR-048 quarantine: dropped {rows_before - len(rows)} pre-guard rows from "
+              f"chain(s) {quarantined} — a constant observed isotherm depth is the top-sensor "
+              f"bound, not a measurement")
     recs = []
     pairs = []          # (lead, fcst_err, persist_err) where BOTH exist — the skill sample
     for r in rows:
@@ -67,8 +98,27 @@ def main() -> int:
         except (KeyError, ValueError):
             pass
     if not recs:
-        print("no usable rows (need lead_h, abs_err_m)")
-        return 1
+        # WRITE THE EMPTY RESULT, do not bail. Returning early leaves the PREVIOUS
+        # forecast_lead_error.json in place — which, the day this quarantine first ran, was the
+        # fabricated 1.388 m band. A stale file that still says "measured" is worse than no file:
+        # the map would go on publishing it with nothing to indicate the sample had vanished.
+        reason = (f"no usable rows after the ADR-048 censoring quarantine "
+                  f"(chains {quarantined} dropped: a constant observed isotherm depth is the "
+                  f"top-sensor bound, not a measurement)" if quarantined
+                  else "no usable rows (need lead_h, abs_err_m)")
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps({
+            "source": str(LOG.relative_to(ROOT)), "n": 0, "chains": [],
+            "chains_with_moving_obs": [], "n_effective_chains": 0,
+            "pooled_mae_m": None, "band_blocked_reason": reason, "pooled_p90_m": None,
+            "per_lead": {}, "skill_vs_persistence": None,
+            "skill_blocked_reason": reason, "quarantined_chains": quarantined,
+            "lead_slope_m_per_h": None, "lead_trend_detected": False,
+            "note": f"NO NUMERIC BAND: {reason}.",
+        }, indent=2) + "\n")
+        print(reason)
+        print(f"wrote {OUT.relative_to(ROOT)} (empty)")
+        return 0
 
     by_lead = defaultdict(list)
     for lead, err, _c, _o in recs:
@@ -99,14 +149,32 @@ def main() -> int:
     trend_move = abs(slope) * span_h
     has_trend = bool(span_h and trend_move > mean_spread and len(all_err) >= 40)
 
-    pooled = round(_mae(all_err), 3)
+    # THE PUBLISHED BAND IS GATED THE SAME WAY AS THE SKILL BLOCK, and for the same reason. After
+    # the ADR-048 quarantine the usable sample can collapse to a handful of rows from a single day
+    # at a single mooring, and a mean of five numbers rendered as "+/- 1.4 m isotherm depth" on the
+    # map is not a measurement — it is the shape of one. Below the bar we publish null and the map
+    # shows no numeric band, which is the honest state (rule 5: staleness and thinness are loud).
+    MIN_BAND_N = 20
+    pooled = round(_mae(all_err), 3) if len(all_err) >= MIN_BAND_N else None
+    band_blocked = (None if pooled is not None else
+                    f"only {len(all_err)} usable rows after the ADR-048 censoring quarantine "
+                    f"(need {MIN_BAND_N}) — no numeric band is published")
 
     # SKILL vs the PERSISTENCE baseline (hindcast rows carry persist_abs_err_m): per lead,
     # MAE(forecast) / MAE(persistence) on the matched sample. Ratio < 1 = the forecast beats
     # "assume no change" at that lead; >= 1 at a lead = that lead adds nothing and is a
     # demotion candidate (ADR-006). Only reported when a real sample exists — never guessed.
+    # THE SKILL BLOCK IS GATED TWICE, and the second gate is the one that matters. A ratio needs
+    # a sample (>= 20 pairs) AND a reference that MOVES: with a pinned observed isotherm the
+    # forecast is being scored against a constant, so a sub-1.0 ratio measures nothing and would
+    # read as a passed ADR-006 demotion bar. Publishing null with a stated reason beats publishing
+    # a number that looks like an answer.
     skill = None
-    if len(pairs) >= 20:
+    skill_blocked = None
+    if len(pairs) >= 20 and not moving:
+        skill_blocked = ("observed reference does not move (0 chains with a varying observed "
+                         "isotherm) — a skill ratio against a constant is not skill")
+    if len(pairs) >= 20 and moving:
         by = defaultdict(lambda: ([], []))
         for L, fe, pe in pairs:
             by[L][0].append(fe); by[L][1].append(pe)
@@ -126,18 +194,26 @@ def main() -> int:
         "chains_with_moving_obs": moving,
         "n_effective_chains": len(moving),
         "pooled_mae_m": pooled,
-        "pooled_p90_m": round(_p90(all_err), 3),
+        "band_blocked_reason": band_blocked,
+        "pooled_p90_m": round(_p90(all_err), 3) if pooled is not None else None,
         "per_lead": per_lead,
         "skill_vs_persistence": skill,
+        "skill_blocked_reason": skill_blocked,
+        "quarantined_chains": quarantined,
         "lead_slope_m_per_h": round(slope, 5),
         "lead_trend_detected": has_trend,
         "note": (
             f"Isotherm-depth (thermal-field position) error, bias-corrected, from the "
-            f"accumulated forecast gate. Pooled MAE {pooled} m over leads "
-            f"{leads[0]}-{leads[-1]} h. Lead trend {'DETECTED' if has_trend else 'NOT detected'} "
+            f"accumulated forecast gate. "
+            + (f"NO NUMERIC BAND: {band_blocked}. " if band_blocked else "")
+            + (f"Pooled MAE {pooled} m over leads {leads[0]}-{leads[-1]} h. " if pooled is not None else "")
+            + f"Lead trend {'DETECTED' if has_trend else 'NOT detected'} "
             f"(OLS slope {slope:+.4f} m/h; per-lead means span {mean_spread:.2f} m). "
-            f"CAVEAT: n={len(all_err)}, {len(moving)} of {len(chains)} chains have a moving "
-            f"observed reference — treat as a provisional ABSOLUTE-error figure, not skill. "
+            f"CAVEAT: n={len(all_err)} usable rows"
+            + (f" (chains {quarantined} quarantined under ADR-048 — a constant observed isotherm "
+               f"depth is the top-sensor bound, not a measurement)" if quarantined else "")
+            + f", {len(moving)} of {len(chains)} chains have a moving observed reference — treat "
+            f"as a provisional ABSOLUTE-error figure, not skill. "
             f"Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead "
             f"thermal-zone decay; timing uncertainty lives in the phase banner instead."
         ),

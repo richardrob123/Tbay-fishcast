@@ -397,6 +397,14 @@ function renderLegend(){
     el.title = `Thermal-field position error ≈ ±${fe.pooled_mae_m} m isotherm depth — ${trend}. `
              + `Provisional: absolute error vs a stable reference (${fe.n_effective_chains|0} moving-obs `
              + `chains), not validated forecast skill.`;
+  } else if(fe && fe.band_blocked_reason){
+    // A WITHHELD band must SAY it is withheld. When the ADR-048 censoring quarantine dropped the
+    // chain whose observed isotherm was really the top-sensor bound, the measured band went from
+    // "±1.4 m" to nothing — and nothing, rendered as an empty tooltip, looks identical to a
+    // feature that was never built.
+    el.title = 'No measured thermal-field error band right now — ' + fe.band_blocked_reason
+             + '. The map still shows WHERE the model puts the water; it is not claiming a '
+             + 'validated ± on that depth.';
   } else { el.title = ''; }
 }
 

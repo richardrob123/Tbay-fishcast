@@ -37,41 +37,68 @@ class Transect:
     note: str
 
 
-def isotherm_depth(depths, temps, target_c: float, colder_is_target: bool = True) -> float | None:
-    """Shallowest depth at which the profile crosses `target_c`.
+def isotherm_crossing(depths, temps, target_c: float, colder_is_target: bool = True):
+    """(depth, status) — the same search as :func:`isotherm_depth`, but SAYING when it was censored.
 
-    depths ascending (surface→down), temps matching. `colder_is_target=True` (lakers,
-    cold-water) finds where temp drops THROUGH target going down; False (warm-water,
-    walleye) finds where it rises through / the band's top. Returns None if the profile
-    never reaches the target (whole column warmer, or colder, than the band edge).
+    WHY THIS EXISTS (ADR-048). ``isotherm_depth`` returns the TOP SENSOR DEPTH when the whole
+    column is already at/below the target. For the map that is the right answer and deliberately
+    so — "the cold water reaches the surface" is a real, useful statement about upwelling. As a
+    VALIDATION REFERENCE it is a fabrication: it is not an observed isotherm depth, it is the
+    bound "the isotherm is at or above the shallowest thermistor", and differencing a forecast
+    against it measures the distance to the top of the chain rather than to any isotherm.
+
+    This is not hypothetical. Every 2026-08 forecast-gate row from the Duluth LLO1 chain read
+    obs_iso_m = 3.00 — exactly its shallowest sensor — because its 3-38 m column runs 4.0-8.2 °C
+    in August and never reaches 12 °C. 30 of 35 accumulated rows were that bound, and the pooled
+    MAE the map showed as a +/- metres band was computed from them. Note the asymmetry that hid
+    it: a column too WARM to cross the target already returned None and was skipped, so only the
+    too-cold direction leaked through.
+
+    status is one of:
+      "crossing"     — the profile genuinely crosses target_c; depth is a measurement
+      "above_top"    — the whole column is already past the target; the isotherm is at or above
+                       depths[0]. Depth is returned (for the map) but it is a BOUND, not a datum.
+      "below_bottom" — the column never reaches the target within the profiled range; depth None
     """
     z = np.asarray(depths, dtype=float)
     t = np.asarray(temps, dtype=float)
+    if z.size == 0 or t.size == 0:
+        return None, "below_bottom"
     order = np.argsort(z)
     z, t = z[order], t[order]
     for i in range(len(z) - 1):
         t0, t1 = t[i], t[i + 1]
-        # crossing of target between layer i and i+1 (either endpoint exactly on
-        # target counts as the crossing — the sign-product test alone misses the
-        # t1 == target case and would fall through to the whole-column branches,
-        # reporting a bottom-only-cold column as cold-at-surface)
         if (t0 - target_c) == 0:
-            return float(z[i])
+            return float(z[i]), "crossing"
         if (t1 - target_c) == 0:
-            return float(z[i + 1])
+            return float(z[i + 1]), "crossing"
         if (t0 - target_c) * (t1 - target_c) < 0:
             frac = (target_c - t0) / (t1 - t0)
-            return float(z[i] + frac * (z[i + 1] - z[i]))
-    # no crossing found. Two whole-column cases:
+            return float(z[i] + frac * (z[i + 1] - z[i])), "crossing"
     if colder_is_target:
         if np.min(t) > target_c:
-            return None            # whole column warmer — no cold water anywhere
-        # whole column at/below target (fully cold, e.g. strong upwelling): the target
-        # water reaches the surface, so the isotherm is at the top, not the bottom.
-        return float(z[0])
+            return None, "below_bottom"
+        return float(z[0]), "above_top"
     if np.max(t) < target_c:
-        return None                # whole column colder than a warm-water target
-    return float(z[0])
+        return None, "below_bottom"
+    return float(z[0]), "above_top"
+
+
+def isotherm_depth(depths, temps, target_c: float, colder_is_target: bool = True) -> float | None:
+    """Shallowest depth at which the profile crosses `target_c`.
+
+    depths ascending (surface->down), temps matching. `colder_is_target=True` (lakers,
+    cold-water) finds where temp drops THROUGH target going down; False (warm-water,
+    walleye) finds where it rises through / the band's top. Returns None if the column never
+    reaches the target, and the TOP DEPTH if the whole column is already past it (strong
+    upwelling: the target water reaches the surface, so the isotherm is at the top, not the
+    bottom) — deliberate for the map, and a censored BOUND rather than a measurement.
+
+    Callers that are validating a forecast must use :func:`isotherm_crossing` and keep only
+    ``status == "crossing"``; see ADR-048 for the 30 fabricated gate rows this distinction
+    exists to prevent.
+    """
+    return isotherm_crossing(depths, temps, target_c, colder_is_target)[0]
 
 
 def depth_to_distance(bathy_dist, bathy_depth, target_depth_m: float) -> float | None:

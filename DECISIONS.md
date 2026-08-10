@@ -101,6 +101,56 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-048 — The forecast gate was scoring against a censored bound: 30 of 35 rows were not observations.**
+  Chasing why `skill_vs_persistence` was still null (only 10 rows carried the persistence column,
+  which shipped 2026-08-08 — a benign wait), the analyzer's own `n_effective_chains: 0` pointed at
+  something worse. `obs_iso_m` was a single constant per chain: **3.00 m on every Duluth LLO1 row,
+  six days running**. Pulling the raw profiles from GLOS ERDDAP settled it — LLO1's entire
+  3-38 m column runs **4.0-8.2 °C** in August and never reaches the 12 °C target, so
+  `cross_shore.isotherm_depth` fell into its whole-column-colder branch and returned `depths[0]`,
+  the shallowest thermistor. That branch is CORRECT for the map ("the cold water reaches the
+  surface" is a real statement about upwelling) and a fabrication as a validation reference: it is
+  the bound "the isotherm is at or above the top of the chain", and differencing a forecast
+  against it measures the distance to the top of the chain rather than to any isotherm.
+
+  **The asymmetry that hid it for a week.** A column too WARM to reach the target already returned
+  `None` and was skipped — which is why Ontonagon 45216 (16-19 °C over 2-12 m, also censored)
+  contributed almost nothing while LLO1 contributed 30 rows. Only the too-cold direction leaked
+  through, and it leaked as a plausible number rather than as an error.
+
+  **What it was feeding.** `pooled_mae_m` = 1.388 m, published by the build into the manifest and
+  rendered on the map as "Thermal-field position error ≈ ±1.4 m". Computed almost entirely from
+  differencing two censored quantities that both sat near the top of the chain, which is exactly
+  why it looked so good. The five genuinely uncensored rows we have — 45216 on 2026-08-04, a real
+  interpolated crossing at 8.25 m — show per-lead MAE of **2.74-4.61 m**. The band was not merely
+  unvalidated; it was optimistic by roughly a factor of three.
+
+  **Fixes.** (1) `cross_shore.isotherm_crossing()` returns `(depth, status)` with status in
+  {crossing, above_top, below_bottom}; `isotherm_depth` is now a thin wrapper so the map's
+  behaviour is unchanged and the two can never diverge. (2) Both gates keep only
+  `status == "crossing"`, and the log records `obs_status` / `fcst_status` so a row SAYS what it
+  is instead of leaving a reader to infer it — model-side censoring is recorded but not dropped,
+  since a too-warm model column is a real error. (3) The analyzer quarantines pre-guard rows whose
+  observed isotherm is constant ACROSS TWO OR MORE DISTINCT VALID DATES — the pinned-reference
+  signature. Across dates, not across rows: one valid date fans out into five lead rows that
+  necessarily share an observation, and the first version of the rule duly quarantined 45216 for
+  having a single logged day. (4) `pooled_mae_m` and `skill_vs_persistence` are both withheld —
+  the band below 20 usable rows, the skill ratio whenever `n_effective_chains == 0`, because a
+  ratio under 1.0 against a constant reference is not skill and would read as a passed ADR-006
+  demotion bar. Each writes its reason into the file. (5) When nothing is usable the analyzer now
+  WRITES the empty result instead of returning early: bailing would have left the previous
+  `forecast_lead_error.json` — the fabricated 1.388 m — in place, still labelled "measured".
+  (6) The map states the withheld band rather than dropping the tooltip, since silence is
+  indistinguishable from a feature that was never built.
+
+  **Standing consequence.** The map currently publishes NO measured ± on thermal-field position,
+  which is the honest state. The deeper problem is unresolved and needs a decision: both GLOS
+  chains are 180-200 km from Thunder Bay and NEITHER brackets 12 °C in August — LLO1 is far too
+  cold, 45216 far too warm — so this gate can only ever validate on the handful of days one of
+  them happens to cross. The proposed replacement is to validate TEMPERATURE AT FIXED SENSOR
+  DEPTHS rather than the depth of an isotherm: never censored, ~9 samples per chain per day
+  instead of 1, and it tests the same model field. That is a design change and awaits sign-off.
+
 - **ADR-047 — River seams drew in the woods: reach width vs local width, and a channel needs banks.**
   Operator, from the live map: "the river seams don't look right." Screenshots showed segments
   sitting 60-110 m off a narrow meandering stream, in the trees and across a dirt road. Two
