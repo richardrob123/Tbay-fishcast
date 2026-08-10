@@ -234,6 +234,9 @@
   <label class="strow"><span>River seams<br>
     <small style="opacity:.62;font-weight:400">zoom into a river to see them · not shown for lake trout</small></span>
     <input type="checkbox" id="seamview" /></label>
+  <label class="strow"><span>Shoreline access<br>
+    <small style="opacity:.62;font-weight:400">green = public land · red = private title · yellow = unclear. Ownership only — not a legal check, and not a promise you can reach the water</small></span>
+    <input type="checkbox" id="shoreview" /></label>
   <label class="strow"><span>Overlay strength</span>
     <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
 </div>
@@ -521,7 +524,14 @@ function renderMapKey(){
     `<span class="k"><i class="sw" style="background:#28b58c;width:11px;height:11px;margin:0"></i>temp (moves)</span>`+
     `<span class="k"><i class="sw" style="background:linear-gradient(90deg,#c8963a,#ffd75e);width:22px;height:11px;margin:0"></i>breaks (brighter = stronger, fixed)</span>`+
     `<span class="k"><span class="tear" style="background:#2f80ed"></span>river mouth — tap for run + flow</span>`+
-    `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`;
+    `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`+
+    // shoreline swatches only appear when the layer is on — a key for an invisible layer is
+    // noise, and this key already lives inside a collapsed panel
+    (window.SHORE_ON ?
+      `<span class="k"><i class="sw" style="background:#2fbf5f;width:22px;height:4px;margin:0"></i>shore: public land</span>`+
+      `<span class="k"><i class="sw" style="background:repeating-linear-gradient(90deg,#f0b429 0 5px,transparent 5px 8px);width:22px;height:4px;margin:0"></i>shore: unclear</span>`+
+      `<span class="k"><i class="sw" style="background:repeating-linear-gradient(90deg,#e14b4b 0 2px,transparent 2px 6px);width:22px;height:4px;margin:0"></i>shore: private title</span>`
+      : '');
 }
 
 let STATIONS = [];
@@ -888,6 +898,65 @@ map.on('load', async () => {
   }
   sv.addEventListener('change', () => setSeams(sv.checked));
   if(localStorage.getItem('fc_seams') === '1'){ sv.checked = true; setSeams(true); }
+
+  // SHORELINE ACCESS (ADR-046). Ontario land tenure painted on the very edge of the coast:
+  // public / private / unknown. Three deliberate choices are visible here.
+  //
+  // 1. Colour is NOT the only channel. Red-green is the operator's explicit call, so line STYLE
+  //    carries the same distinction — solid public, dashed unknown, dotted private — and the
+  //    layer stays readable for the ~8% of men with red-green colour vision deficiency.
+  // 2. A dark casing sits under all three. These lines are drawn on satellite imagery, where a
+  //    2 px stroke over a bright beach or a dark conifer stand can vanish entirely.
+  // 3. Every segment is clickable and every segment can state its reason. A colour with no
+  //    receipt is exactly the kind of confident-looking claim this project keeps refusing to make
+  //    — especially here, where red is an instruction to stay off.
+  const SHORE_COL = { public:'#2fbf5f', unknown:'#f0b429', private:'#e14b4b' };
+  const SHORE_DASH = { public:null, unknown:[2.2,1.6], private:[0.5,1.5] };
+  let shoreLoaded = false;
+  window.SHORE_ON = false;
+  async function loadShore(){
+    shoreLoaded = true;
+    try {
+      const r = await fetch('data/shore_access.geojson' + V);
+      if(!r.ok) throw new Error('no shore_access.geojson');
+      map.addSource('shoreacc', { type:'geojson', data: await r.json() });
+    } catch(e){ console.warn('shoreline access unavailable', e); return; }
+    const width = ['interpolate',['linear'],['zoom'], 8,1.8, 11,2.6, 14,4.0, 17,6.0];
+    map.addLayer({ id:'shore-case', type:'line', source:'shoreacc',
+      layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' },
+      paint:{ 'line-color':'#0b1017', 'line-opacity':0.55,
+              'line-width':['interpolate',['linear'],['zoom'], 8,3.4, 11,4.6, 14,6.6, 17,9.0] } });
+    for(const cls of ['public','unknown','private']){
+      const p = { 'line-color':SHORE_COL[cls], 'line-width':width, 'line-opacity':0.95 };
+      if(SHORE_DASH[cls]) p['line-dasharray'] = SHORE_DASH[cls];
+      map.addLayer({ id:'shore-'+cls, type:'line', source:'shoreacc',
+        filter:['==', ['get','cls'], cls],
+        layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' }, paint:p });
+    }
+    const SHORE_LAYERS = ['shore-public','shore-unknown','shore-private'];
+    map.on('click', SHORE_LAYERS, (ev) => {
+      const f = ev.features && ev.features[0]; if(!f) return;
+      const cls = f.properties.cls, why = f.properties.why;
+      new maplibregl.Popup({offset:8, closeButton:false}).setLngLat(ev.lngLat).setHTML(
+        `<b style="color:${SHORE_COL[cls]}">${esc(cls === 'unknown' ? 'access unclear' : cls + ' land')}</b><br>`
+        + `<small>${esc(why || 'no tenure record here')}</small><br>`
+        + `<small style="opacity:.6">Ontario parcel fabric · ownership, not a legal access ruling</small>`
+      ).addTo(map);
+    });
+    map.on('mouseenter', SHORE_LAYERS, () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', SHORE_LAYERS, () => { map.getCanvas().style.cursor = ''; });
+  }
+  function setShore(on){
+    window.SHORE_ON = on;
+    for(const id of ['shore-case','shore-public','shore-unknown','shore-private']){
+      if(map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    }
+    localStorage.setItem('fc_shore', on ? '1' : '0');
+    renderMapKey();
+  }
+  const shv = document.getElementById('shoreview');
+  shv.addEventListener('change', async () => { if(shv.checked && !shoreLoaded) await loadShore(); setShore(shv.checked); });
+  if(localStorage.getItem('fc_shore') === '1'){ shv.checked = true; loadShore().then(() => setShore(true)); }
   // open on the frame you're DECIDING on: the first snapshot still in the future
   // (walkthrough finding #3 — Friday 9 pm should land on Saturday dawn, not this morning)
   let start0 = 0;

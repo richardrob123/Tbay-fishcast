@@ -101,6 +101,71 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-046 — Coloured shoreline access: Ontario land tenure on the very edge of the coast.**
+  Operator asked for a public/private shoreline so the map shows where you may legally stand
+  ("green is public and accessible, yellow is public but unknown accessibility, red is private").
+  Built as a FROZEN artifact (`web/data/shore_access.geojson`, `scripts/build_shore_access.py`) for
+  the same reason as `data/river_geometry.json`: both inputs are static — the water masks are
+  already committed and the parcel fabric changes on the timescale of land transactions — so
+  rebuilding it four times a day would burn ~3,000 ArcGIS requests to reproduce the same bytes.
+  Result: 227.7 km of traced shoreline, 39.2% public / 8.0% unknown / 52.9% private, 146 KB.
+
+  **The trap the whole design is built around.** "Patented land = private" is the obvious rule and
+  it is wrong: patented merely means granted out of the Crown, and a city park is patented land.
+  That rule marks Marina Park, Silver Harbour and the Mountdale launch RED. `TITLE_HOLDER_TYPE`
+  fixes it (of 1,591 patented parcels here, 334 are Municipal / provincial-agency / Federal) — but
+  title records who OWNS land, not who may walk on it, and Conservation Authorities hold theirs as
+  "Private". So conflicting evidence is DEMOTED to `unknown` rather than resolved: private title
+  beside an official provincial Fishing Access Point yields yellow, not red. That single move took
+  official access points reading PRIVATE from 8 to 0, and the build now FAILS if that count is
+  ever non-zero again.
+
+  **The asymmetry that sets every tie-break:** a false GREEN sends someone onto private property, a
+  false RED only keeps them off legal water. Both are errors; the first is worse. Hence (a) First
+  Nation reserve land (LIO Indian Reserve, T1) OVERRIDES every other signal — 3.6 km of our traced
+  shoreline is Fort William 52, which carries exactly the federal/Crown attributes read as public
+  elsewhere, and nothing may promote it; (b) the OSM conservation-area layer is DEMOTION-ONLY —
+  it is T3 and CLAUDE.md rule 3 puts access-legality at T1-or-field-verified, so it may withdraw a
+  red claim (6.0 km inside Big Trout Bay Nature Reserve went red→yellow) but may never manufacture
+  a green one; (c) `Conservation Authority Admin Area` is deliberately NOT used — it is
+  jurisdiction, not ownership (its polygons are whole 450 km² watersheds), and using it would paint
+  every private cottage lot inside a CA's jurisdiction green.
+
+  **Two fetch bugs that ship as confident wrong colours, not as errors.** `resultOffset` paging
+  silently returned a short page on the Crown layer (996 of 1,380 parcels) with no
+  `exceededTransferLimit` flag — the missing polygons then read as unclassified, a fetch bug
+  wearing a data gap's clothes. Fetch is now id-list-first so completeness is CHECKABLE, and it is
+  asserted. Separately, ArcGIS packs exterior and interior rings into one list; treating each ring
+  as a solid turned every HOLE into fake coverage, which is how Silver Harbour first came out
+  private (it sits in the hole of the surrounding parcel).
+
+  **Geometry.** The coast is traced as the exact lattice boundary of the frozen water mask — every
+  4-adjacent water/land pixel pair contributes the unit edge they share — rather than a smoothed
+  contour: no interpolation, no marching-squares ambiguity, no new dependency, and each edge
+  remembers which side was land so the classification point is genuinely on the bank. The frozen
+  set is a tile pyramid (coarse masks sit wholly inside finer ones; the 6 m tiles overlap 13–40%),
+  so edges are de-duplicated finest-first — without that, 124 km of coast would be drawn twice, at
+  two resolutions, with two independent classifications fighting over the same pixel.
+
+  **An inland probe was built and then deleted, on its own evidence.** Where the bank pixel found
+  no tenure record the first version walked up to four mask pixels inland, justified as closing the
+  registration gap between a raster waterline and a surveyed parcel fabric. If that were the cause
+  it would resolve at ONE pixel; the measured histogram was flat (22/20/20/20 at 1/2/3/4 pixels),
+  the signature of walking inland until something is hit. It bought 2.2% of samples by attributing
+  parcels that do not front the shore, so it is gone and those samples are `unknown`.
+
+  **What ships, stated in the artifact itself (`meta.means` / `meta.validation`) so no consumer can
+  strip it:** green means the land behind the shore is PUBLIC — it does NOT mean the bank is
+  walkable or reachable, and accessibility is published in none of these layers. ACCURACY REMAINS
+  UNVALIDATED against surveyed points; the ownership is T1 but the three hand-typed ground-truth
+  misses each have a public parcel within ~330 m, which is equally consistent with my coordinates
+  being wrong. The operator's GPS pins are the real test. Known gap: Silver Harbour Conservation
+  Area is not tagged in OSM, so only the frontage covered by the province's own access point is
+  demoted. Red/green retained at the operator's explicit request; line STYLE (solid/dashed/dotted)
+  carries the same distinction so the layer survives red-green colour vision deficiency, and every
+  segment is clickable and states its reason — a colour with no receipt is exactly the kind of
+  confident-looking claim this project refuses to make, especially where red means "stay off".
+
 - **ADR-042 — Research agent: observation ledger + run confirmation + pre-registered catch back test.**
   Operator request: a daily agent researching runs/catches, a FULL historical scan of all viable
   sources, and true integration — "not just another 'layer' of reports" — up to back-testing our
