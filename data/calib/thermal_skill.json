@@ -1,147 +1,147 @@
 {
   "source": "data/thermal_gate_log.csv",
-  "built_utc": "2026-08-11T16:51:45+00:00",
-  "n": 6441,
-  "n_days": 136,
+  "built_utc": "2026-08-12T16:48:27+00:00",
+  "n": 6453,
+  "n_days": 137,
   "window": [
     "2025-05-15",
-    "2026-08-10"
+    "2026-08-11"
   ],
   "chains": [
     "llo1"
   ],
-  "block_days_measured": 8,
+  "block_days_measured": 9,
   "baseline": "per-sample harder of OBSERVED persistence and other-year climatology",
   "per_lead": {
     "0": {
-      "n": 1078,
-      "n_days": 129,
-      "fcst_mae_c": 2.8627,
-      "fcst_bias_c": 0.0871,
-      "fcst_rmse_c": 3.5659,
+      "n": 1080,
+      "n_days": 130,
+      "fcst_mae_c": 2.8595,
+      "fcst_bias_c": 0.089,
+      "fcst_rmse_c": 3.5629,
       "persist_mae_c": 0.0,
-      "clim_mae_c": 2.5296,
+      "clim_mae_c": 2.5405,
       "baseline_mae_c": 0.0,
       "skill_ratio": null,
       "ci95": [
         null,
         null
       ],
-      "n_blocks": 17,
+      "n_blocks": 15,
       "interval_quality": "none",
       "days_forecast_better": 0,
-      "days_forecast_worse": 129,
-      "sign_test_p": 2.938735877055719e-39,
-      "verdict": "insufficient independent blocks (17)",
+      "days_forecast_worse": 130,
+      "sign_test_p": 1.4693679385278594e-39,
+      "verdict": "insufficient independent blocks (15)",
       "demote": false
     },
     "24": {
-      "n": 1077,
-      "n_days": 128,
-      "fcst_mae_c": 2.8471,
-      "fcst_bias_c": 0.2636,
-      "fcst_rmse_c": 3.4802,
-      "persist_mae_c": 1.0807,
-      "clim_mae_c": 2.5187,
-      "baseline_mae_c": 0.8433,
-      "skill_ratio": 3.3781,
+      "n": 1079,
+      "n_days": 129,
+      "fcst_mae_c": 2.8446,
+      "fcst_bias_c": 0.2659,
+      "fcst_rmse_c": 3.4776,
+      "persist_mae_c": 1.0809,
+      "clim_mae_c": 2.5297,
+      "baseline_mae_c": 0.844,
+      "skill_ratio": 3.3724,
       "ci95": [
-        2.6125,
-        4.5552
+        2.6482,
+        4.4614
       ],
-      "n_blocks": 16,
+      "n_blocks": 15,
       "interval_quality": "approximate",
       "days_forecast_better": 9,
-      "days_forecast_worse": 119,
-      "sign_test_p": 1.2103259925670795e-25,
+      "days_forecast_worse": 120,
+      "sign_test_p": 6.50123528816466e-26,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "48": {
-      "n": 1075,
-      "n_days": 127,
-      "fcst_mae_c": 2.7698,
-      "fcst_bias_c": 0.3801,
-      "fcst_rmse_c": 3.356,
-      "persist_mae_c": 1.588,
-      "clim_mae_c": 2.5047,
-      "baseline_mae_c": 1.1704,
-      "skill_ratio": 2.3692,
+      "n": 1077,
+      "n_days": 128,
+      "fcst_mae_c": 2.7679,
+      "fcst_bias_c": 0.3826,
+      "fcst_rmse_c": 3.3538,
+      "persist_mae_c": 1.5852,
+      "clim_mae_c": 2.5157,
+      "baseline_mae_c": 1.1684,
+      "skill_ratio": 2.3716,
       "ci95": [
-        1.8915,
-        3.205
+        1.8658,
+        3.2172
       ],
-      "n_blocks": 16,
+      "n_blocks": 15,
       "interval_quality": "approximate",
       "days_forecast_better": 17,
-      "days_forecast_worse": 110,
-      "sign_test_p": 7.38676723472209e-18,
+      "days_forecast_worse": 111,
+      "sign_test_p": 4.2523665426607935e-18,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "72": {
-      "n": 1072,
-      "n_days": 126,
-      "fcst_mae_c": 2.7647,
-      "fcst_bias_c": 0.1076,
-      "fcst_rmse_c": 3.3967,
-      "persist_mae_c": 1.8796,
-      "clim_mae_c": 2.5053,
-      "baseline_mae_c": 1.3333,
-      "skill_ratio": 2.0778,
+      "n": 1074,
+      "n_days": 127,
+      "fcst_mae_c": 2.7634,
+      "fcst_bias_c": 0.1112,
+      "fcst_rmse_c": 3.3947,
+      "persist_mae_c": 1.8776,
+      "clim_mae_c": 2.5164,
+      "baseline_mae_c": 1.3324,
+      "skill_ratio": 2.0782,
       "ci95": [
-        1.743,
-        2.606
+        1.62,
+        2.7895
       ],
-      "n_blocks": 16,
+      "n_blocks": 15,
       "interval_quality": "approximate",
       "days_forecast_better": 16,
-      "days_forecast_worse": 110,
-      "sign_test_p": 1.957096744537166e-18,
+      "days_forecast_worse": 111,
+      "sign_test_p": 1.1179658505994963e-18,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "96": {
-      "n": 1071,
-      "n_days": 125,
-      "fcst_mae_c": 2.8008,
-      "fcst_bias_c": 0.0095,
-      "fcst_rmse_c": 3.4978,
-      "persist_mae_c": 2.0547,
-      "clim_mae_c": 2.5175,
-      "baseline_mae_c": 1.3997,
-      "skill_ratio": 2.0054,
+      "n": 1073,
+      "n_days": 126,
+      "fcst_mae_c": 2.8,
+      "fcst_bias_c": 0.0139,
+      "fcst_rmse_c": 3.4961,
+      "persist_mae_c": 2.0536,
+      "clim_mae_c": 2.5285,
+      "baseline_mae_c": 1.3999,
+      "skill_ratio": 2.0046,
       "ci95": [
-        1.6779,
-        2.4991
+        1.5356,
+        2.6877
       ],
-      "n_blocks": 16,
+      "n_blocks": 14,
       "interval_quality": "approximate",
       "days_forecast_better": 23,
-      "days_forecast_worse": 102,
-      "sign_test_p": 4.566404786467658e-13,
+      "days_forecast_worse": 103,
+      "sign_test_p": 2.785639130957218e-13,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "120": {
-      "n": 1068,
-      "n_days": 124,
-      "fcst_mae_c": 2.8585,
-      "fcst_bias_c": -0.089,
-      "fcst_rmse_c": 3.5814,
-      "persist_mae_c": 2.1821,
-      "clim_mae_c": 2.5177,
-      "baseline_mae_c": 1.4431,
-      "skill_ratio": 1.9868,
+      "n": 1070,
+      "n_days": 125,
+      "fcst_mae_c": 2.8564,
+      "fcst_bias_c": -0.0855,
+      "fcst_rmse_c": 3.5789,
+      "persist_mae_c": 2.1781,
+      "clim_mae_c": 2.5287,
+      "baseline_mae_c": 1.4406,
+      "skill_ratio": 1.9888,
       "ci95": [
-        1.6014,
-        2.5905
+        1.515,
+        2.7081
       ],
-      "n_blocks": 16,
+      "n_blocks": 14,
       "interval_quality": "approximate",
       "days_forecast_better": 27,
-      "days_forecast_worse": 97,
-      "sign_test_p": 1.8545612885631625e-10,
+      "days_forecast_worse": 98,
+      "sign_test_p": 1.178445298472636e-10,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     }
@@ -151,9 +151,9 @@
       "lead_h": 0,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 254,
-      "rmse_c": 4.7242,
-      "bias_c": -1.0489
+      "n": 256,
+      "rmse_c": 4.7068,
+      "bias_c": -1.0319
     },
     "0|2": {
       "lead_h": 0,
@@ -191,9 +191,9 @@
       "lead_h": 24,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 253,
-      "rmse_c": 4.5126,
-      "bias_c": -0.7018
+      "n": 255,
+      "rmse_c": 4.4969,
+      "bias_c": -0.6847
     },
     "24|2": {
       "lead_h": 24,
@@ -231,9 +231,9 @@
       "lead_h": 48,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 251,
-      "rmse_c": 4.2336,
-      "bias_c": -0.4531
+      "n": 253,
+      "rmse_c": 4.2197,
+      "bias_c": -0.4357
     },
     "48|2": {
       "lead_h": 48,
@@ -271,9 +271,9 @@
       "lead_h": 72,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 249,
-      "rmse_c": 4.2675,
-      "bias_c": -0.9628
+      "n": 251,
+      "rmse_c": 4.2545,
+      "bias_c": -0.9388
     },
     "72|2": {
       "lead_h": 72,
@@ -311,9 +311,9 @@
       "lead_h": 96,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 249,
-      "rmse_c": 4.4179,
-      "bias_c": -0.9899
+      "n": 251,
+      "rmse_c": 4.4057,
+      "bias_c": -0.963
     },
     "96|2": {
       "lead_h": 96,
@@ -351,9 +351,9 @@
       "lead_h": 120,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 247,
-      "rmse_c": 4.5005,
-      "bias_c": -1.0722
+      "n": 249,
+      "rmse_c": 4.4852,
+      "bias_c": -1.0494
     },
     "120|2": {
       "lead_h": 120,
@@ -395,7 +395,7 @@
     "96",
     "120"
   ],
-  "nowcast_mae_c": 2.8627,
+  "nowcast_mae_c": 2.8595,
   "error_is_model_state_not_forecast_decay": true,
   "verdict": "at llo1: every forecast lead fails the ADR-006 bar",
   "scope": "SITE-SPECIFIC. This is the model's skill at the validation mooring only. Generalising it to the Thunder Bay nearshore is not supported and is contradicted by the model's own behaviour elsewhere in the lake.",
