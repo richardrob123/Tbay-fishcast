@@ -1,7 +1,7 @@
 {
   "source": "data/thermal_gate_log.csv",
-  "built_utc": "2026-08-12T16:48:27+00:00",
-  "n": 6453,
+  "built_utc": "2026-08-13T16:52:16+00:00",
+  "n": 6518,
   "n_days": 137,
   "window": [
     "2025-05-15",
@@ -14,13 +14,13 @@
   "baseline": "per-sample harder of OBSERVED persistence and other-year climatology",
   "per_lead": {
     "0": {
-      "n": 1080,
+      "n": 1106,
       "n_days": 130,
-      "fcst_mae_c": 2.8595,
-      "fcst_bias_c": 0.089,
-      "fcst_rmse_c": 3.5629,
+      "fcst_mae_c": 2.8315,
+      "fcst_bias_c": 0.1153,
+      "fcst_rmse_c": 3.5315,
       "persist_mae_c": 0.0,
-      "clim_mae_c": 2.5405,
+      "clim_mae_c": 2.5118,
       "baseline_mae_c": 0.0,
       "skill_ratio": null,
       "ci95": [
@@ -36,62 +36,62 @@
       "demote": false
     },
     "24": {
-      "n": 1079,
+      "n": 1098,
       "n_days": 129,
-      "fcst_mae_c": 2.8446,
-      "fcst_bias_c": 0.2659,
-      "fcst_rmse_c": 3.4776,
-      "persist_mae_c": 1.0809,
-      "clim_mae_c": 2.5297,
-      "baseline_mae_c": 0.844,
-      "skill_ratio": 3.3724,
+      "fcst_mae_c": 2.8248,
+      "fcst_bias_c": 0.2867,
+      "fcst_rmse_c": 3.4553,
+      "persist_mae_c": 1.069,
+      "clim_mae_c": 2.5094,
+      "baseline_mae_c": 0.8356,
+      "skill_ratio": 3.3823,
       "ci95": [
-        2.6482,
-        4.4614
+        2.6775,
+        4.4637
       ],
       "n_blocks": 15,
       "interval_quality": "approximate",
-      "days_forecast_better": 9,
-      "days_forecast_worse": 120,
-      "sign_test_p": 6.50123528816466e-26,
+      "days_forecast_better": 8,
+      "days_forecast_worse": 121,
+      "sign_test_p": 4.790588028455648e-27,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "48": {
-      "n": 1077,
+      "n": 1091,
       "n_days": 128,
-      "fcst_mae_c": 2.7679,
-      "fcst_bias_c": 0.3826,
-      "fcst_rmse_c": 3.3538,
-      "persist_mae_c": 1.5852,
-      "clim_mae_c": 2.5157,
-      "baseline_mae_c": 1.1684,
-      "skill_ratio": 2.3716,
+      "fcst_mae_c": 2.7521,
+      "fcst_bias_c": 0.3971,
+      "fcst_rmse_c": 3.3374,
+      "persist_mae_c": 1.579,
+      "clim_mae_c": 2.5015,
+      "baseline_mae_c": 1.162,
+      "skill_ratio": 2.371,
       "ci95": [
-        1.8658,
-        3.2172
+        1.8672,
+        3.2134
       ],
       "n_blocks": 15,
       "interval_quality": "approximate",
-      "days_forecast_better": 17,
-      "days_forecast_worse": 111,
-      "sign_test_p": 4.2523665426607935e-18,
+      "days_forecast_better": 16,
+      "days_forecast_worse": 112,
+      "sign_test_p": 6.379225013648831e-19,
       "verdict": "NO BETTER than the baseline",
       "demote": true
     },
     "72": {
-      "n": 1074,
+      "n": 1080,
       "n_days": 127,
-      "fcst_mae_c": 2.7634,
-      "fcst_bias_c": 0.1112,
-      "fcst_rmse_c": 3.3947,
-      "persist_mae_c": 1.8776,
-      "clim_mae_c": 2.5164,
-      "baseline_mae_c": 1.3324,
-      "skill_ratio": 2.0782,
+      "fcst_mae_c": 2.7565,
+      "fcst_bias_c": 0.119,
+      "fcst_rmse_c": 3.3872,
+      "persist_mae_c": 1.8753,
+      "clim_mae_c": 2.5119,
+      "baseline_mae_c": 1.3323,
+      "skill_ratio": 2.0731,
       "ci95": [
-        1.62,
-        2.7895
+        1.6196,
+        2.7747
       ],
       "n_blocks": 15,
       "interval_quality": "approximate",
@@ -151,121 +151,121 @@
       "lead_h": 0,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 256,
-      "rmse_c": 4.7068,
-      "bias_c": -1.0319
+      "n": 259,
+      "rmse_c": 4.6869,
+      "bias_c": -1.0432
     },
     "0|2": {
       "lead_h": 0,
       "depth_lo": 10,
       "depth_hi": 15,
-      "n": 126,
-      "rmse_c": 4.2498,
-      "bias_c": -1.2631
+      "n": 128,
+      "rmse_c": 4.2171,
+      "bias_c": -1.2343
     },
     "0|3": {
       "lead_h": 0,
       "depth_lo": 15,
       "depth_hi": 20,
-      "n": 123,
-      "rmse_c": 3.7539,
-      "bias_c": -0.9266
+      "n": 125,
+      "rmse_c": 3.7273,
+      "bias_c": -0.8912
     },
     "0|4": {
       "lead_h": 0,
       "depth_lo": 20,
       "depth_hi": 30,
-      "n": 237,
-      "rmse_c": 2.8197,
-      "bias_c": 0.3416
+      "n": 244,
+      "rmse_c": 2.7987,
+      "bias_c": 0.3872
     },
     "0|5": {
       "lead_h": 0,
       "depth_lo": 30,
       "depth_hi": 45,
-      "n": 338,
-      "rmse_c": 2.5192,
-      "bias_c": 1.6344
+      "n": 350,
+      "rmse_c": 2.4954,
+      "bias_c": 1.6361
     },
     "24|1": {
       "lead_h": 24,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 255,
-      "rmse_c": 4.4969,
-      "bias_c": -0.6847
+      "n": 256,
+      "rmse_c": 4.4901,
+      "bias_c": -0.6905
     },
     "24|2": {
       "lead_h": 24,
       "depth_lo": 10,
       "depth_hi": 15,
-      "n": 125,
-      "rmse_c": 4.0786,
-      "bias_c": -1.0396
+      "n": 127,
+      "rmse_c": 4.0472,
+      "bias_c": -1.0139
     },
     "24|3": {
       "lead_h": 24,
       "depth_lo": 15,
       "depth_hi": 20,
-      "n": 123,
-      "rmse_c": 3.6749,
-      "bias_c": -0.761
+      "n": 125,
+      "rmse_c": 3.6495,
+      "bias_c": -0.7269
     },
     "24|4": {
       "lead_h": 24,
       "depth_lo": 20,
       "depth_hi": 30,
-      "n": 237,
-      "rmse_c": 2.8466,
-      "bias_c": 0.4468
+      "n": 242,
+      "rmse_c": 2.8335,
+      "bias_c": 0.4807
     },
     "24|5": {
       "lead_h": 24,
       "depth_lo": 30,
       "depth_hi": 45,
-      "n": 339,
-      "rmse_c": 2.5658,
-      "bias_c": 1.7083
+      "n": 348,
+      "rmse_c": 2.5482,
+      "bias_c": 1.7094
     },
     "48|1": {
       "lead_h": 48,
       "depth_lo": 5,
       "depth_hi": 10,
-      "n": 253,
-      "rmse_c": 4.2197,
-      "bias_c": -0.4357
+      "n": 254,
+      "rmse_c": 4.2114,
+      "bias_c": -0.4349
     },
     "48|2": {
       "lead_h": 48,
       "depth_lo": 10,
       "depth_hi": 15,
-      "n": 124,
-      "rmse_c": 3.887,
-      "bias_c": -0.9541
+      "n": 126,
+      "rmse_c": 3.8573,
+      "bias_c": -0.9264
     },
     "48|3": {
       "lead_h": 48,
       "depth_lo": 15,
       "depth_hi": 20,
-      "n": 123,
-      "rmse_c": 3.5631,
-      "bias_c": -0.6824
+      "n": 125,
+      "rmse_c": 3.5397,
+      "bias_c": -0.6472
     },
     "48|4": {
       "lead_h": 48,
       "depth_lo": 20,
       "depth_hi": 30,
-      "n": 237,
-      "rmse_c": 2.8439,
-      "bias_c": 0.496
+      "n": 240,
+      "rmse_c": 2.8355,
+      "bias_c": 0.5152
     },
     "48|5": {
       "lead_h": 48,
       "depth_lo": 30,
       "depth_hi": 45,
-      "n": 340,
-      "rmse_c": 2.5765,
-      "bias_c": 1.7854
+      "n": 346,
+      "rmse_c": 2.5649,
+      "bias_c": 1.7851
     },
     "72|1": {
       "lead_h": 72,
@@ -279,33 +279,33 @@
       "lead_h": 72,
       "depth_lo": 10,
       "depth_hi": 15,
-      "n": 123,
-      "rmse_c": 4.0244,
-      "bias_c": -1.3453
+      "n": 124,
+      "rmse_c": 4.0091,
+      "bias_c": -1.3269
     },
     "72|3": {
       "lead_h": 72,
       "depth_lo": 15,
       "depth_hi": 20,
-      "n": 122,
-      "rmse_c": 3.6084,
-      "bias_c": -0.9647
+      "n": 123,
+      "rmse_c": 3.5969,
+      "bias_c": -0.9433
     },
     "72|4": {
       "lead_h": 72,
       "depth_lo": 20,
       "depth_hi": 30,
-      "n": 237,
-      "rmse_c": 2.8282,
-      "bias_c": 0.2936
+      "n": 238,
+      "rmse_c": 2.8242,
+      "bias_c": 0.2991
     },
     "72|5": {
       "lead_h": 72,
       "depth_lo": 30,
       "depth_hi": 45,
-      "n": 341,
-      "rmse_c": 2.629,
-      "bias_c": 1.6677
+      "n": 344,
+      "rmse_c": 2.622,
+      "bias_c": 1.6673
     },
     "96|1": {
       "lead_h": 96,
@@ -395,7 +395,7 @@
     "96",
     "120"
   ],
-  "nowcast_mae_c": 2.8595,
+  "nowcast_mae_c": 2.8315,
   "error_is_model_state_not_forecast_decay": true,
   "verdict": "at llo1: every forecast lead fails the ADR-006 bar",
   "scope": "SITE-SPECIFIC. This is the model's skill at the validation mooring only. Generalising it to the Thunder Bay nearshore is not supported and is contradicted by the model's own behaviour elsewhere in the lake.",
