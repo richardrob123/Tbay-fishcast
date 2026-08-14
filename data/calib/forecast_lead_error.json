@@ -1,38 +1,39 @@
 {
   "source": "data/forecast_gate_log.csv",
-  "n": 5,
+  "n": 10,
   "chains": [
-    "45216"
+    "45216",
+    "llo1"
   ],
   "chains_with_moving_obs": [],
   "n_effective_chains": 0,
   "pooled_mae_m": null,
-  "band_blocked_reason": "only 5 usable rows after the ADR-048 censoring quarantine (need 20) \u2014 no numeric band is published",
+  "band_blocked_reason": "only 10 usable rows after the ADR-048 censoring quarantine (need 20) \u2014 no numeric band is published",
   "pooled_p90_m": null,
   "per_lead": {
     "24": {
-      "n": 1,
-      "mae_m": 4.61,
+      "n": 2,
+      "mae_m": 4.115,
       "p90_m": 4.61
     },
     "48": {
-      "n": 1,
-      "mae_m": 3.5,
+      "n": 2,
+      "mae_m": 3.29,
       "p90_m": 3.5
     },
     "72": {
-      "n": 1,
-      "mae_m": 3.45,
+      "n": 2,
+      "mae_m": 2.895,
       "p90_m": 3.45
     },
     "96": {
-      "n": 1,
-      "mae_m": 2.74,
+      "n": 2,
+      "mae_m": 1.64,
       "p90_m": 2.74
     },
     "120": {
-      "n": 1,
-      "mae_m": 3.84,
+      "n": 2,
+      "mae_m": 1.985,
       "p90_m": 3.84
     }
   },
@@ -41,7 +42,7 @@
   "quarantined_chains": [
     "llo1"
   ],
-  "lead_slope_m_per_h": -0.00958,
+  "lead_slope_m_per_h": -0.02462,
   "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. NO NUMERIC BAND: only 5 usable rows after the ADR-048 censoring quarantine (need 20) \u2014 no numeric band is published. Lead trend NOT detected (OLS slope -0.0096 m/h; per-lead means span 1.87 m). CAVEAT: n=5 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 0 of 1 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. NO NUMERIC BAND: only 10 usable rows after the ADR-048 censoring quarantine (need 20) \u2014 no numeric band is published. Lead trend NOT detected (OLS slope -0.0246 m/h; per-lead means span 2.48 m). CAVEAT: n=10 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
 }
