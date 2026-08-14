@@ -80,7 +80,7 @@ def test_a_smoothed_analysis_is_refused_as_a_skill_baseline():
     smooth = {d: 10.0 + 3.0 * math.sin(i * 0.12) for i, d in enumerate(days)}   # relaxed
     v = sv.reference_variability(smooth, water)
     assert not v["usable_as_skill_baseline"]
-    assert "SMOOTHER than the water" in v["reason"]
+    assert "SMOOTHER" in v["reason"] and "water" in v["reason"]   # default quantity
     assert v["variability_ratio"] < 0.5
 
 

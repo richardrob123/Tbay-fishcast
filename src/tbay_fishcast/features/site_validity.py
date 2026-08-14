@@ -90,12 +90,18 @@ VARIABILITY_RATIO_MIN = 0.5      # below this the reference is too smooth to be 
 MIN_CHANGES = 30
 
 
-def reference_variability(ref_daily: dict, insitu_daily: dict) -> dict:
-    """Is a candidate reference as variable as the real water? (ADR-053)
+def reference_variability(ref_daily: dict, insitu_daily: dict, *,
+                          quantity: str = "water", unit: str = "C") -> dict:
+    """Is a candidate reference as variable as the real thing? (ADR-053)
 
     Both arguments are ``{ISO day: value}`` at the SAME place. Returns the day-to-day change
     statistics of each and a verdict on which jobs the reference can do. Run this before any
     reference is used as truth for a skill comparison — not after a verdict has been published.
+
+    ``quantity`` names what is being compared, and it is not cosmetic: this was written for water
+    temperature and its verdict string said so, so the first time it was reused on WIND it
+    reported a ratio "of the real water's". A guard whose output misdescribes what it measured
+    invites exactly the misreading it exists to prevent.
     """
     import statistics as _st
     from datetime import date as _date
@@ -126,11 +132,12 @@ def reference_variability(ref_daily: dict, insitu_daily: dict) -> dict:
         "reference_daily_change_sd_c": round(rs, 3),
         "insitu_daily_change_sd_c": round(os_, 3),
         "variability_ratio": round(ratio, 3) if ratio is not None else None,
+        "quantity": quantity,
         "usable_as_skill_baseline": ok,
-        "reason": (f"reference day-to-day variability is {ratio:.2f} of the real water's — "
+        "reason": (f"reference day-to-day variability is {ratio:.2f} of the real {quantity}'s — "
                    f"usable as a skill baseline" if ok else
-                   f"reference is {1 / ratio:.1f}x SMOOTHER than the water "
-                   f"({rs:.2f} vs {os_:.2f} C day-to-day sd). Persisting it scores its own "
+                   f"reference is {1 / ratio:.1f}x SMOOTHER than the real {quantity} "
+                   f"({rs:.2f} vs {os_:.2f} {unit} day-to-day sd). Persisting it scores its own "
                    f"smoothness, not forecast difficulty, and its damped variance makes a "
                    f"physical model look over-dispersed. Usable for mean bias and the seasonal "
                    f"cycle; NOT for skill or variance."),

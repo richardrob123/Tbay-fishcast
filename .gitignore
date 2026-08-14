@@ -60,3 +60,5 @@ knowledge/observations/candidates/*.tmp
 # Station-file extracts are a CACHE (the .nc is fetched, read and discarded); regenerable.
 data/lsofs_station_cache/
 data/wind_archive_cache/
+data/eccc_wind_cache/
+data/prev_runs_cache/

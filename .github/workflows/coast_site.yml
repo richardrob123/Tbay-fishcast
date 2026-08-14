@@ -167,6 +167,20 @@ jobs:
           python scripts/backfill_surface_gate.py \
             --start "$(date -u -d '10 days ago' +%F)" --end "$(date -u -d '1 day ago' +%F)"
           python scripts/analyze_surface_skill.py
+      # WIND-LEAD GATE (ADR-055). The one that can change what ships: the map publishes upwelling
+      # to +120 h, and this measures how far out the wind forecast actually carries information
+      # about it — truth being a real anemometer INSIDE the bay (Welcome Island), not a buoy
+      # 200 km away. A 14-day trailing window keeps the daily cost small; the committed log
+      # already holds the 120-day backfill, and the record only needs to keep growing. The event
+      # verdict stays withheld until enough distinct blows accumulate, which is the main reason
+      # this runs forward at all.
+      - name: Extend the wind-lead gate + re-analyze
+        id: windlead
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
+        continue-on-error: true
+        run: |
+          python scripts/backfill_wind_lead_gate.py --past-days 14 --clim-years 8
+          python scripts/analyze_wind_lead_skill.py
       - name: Accumulate the isotherm-depth gate (GLOS vs product)
         id: gate
         if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
@@ -212,6 +226,7 @@ jobs:
                    data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md \
                    data/thermal_gate_log.csv data/calib/thermal_skill.json \
                    data/surface_gate_log.csv data/calib/surface_skill.json \
+                   data/wind_lead_gate_log.csv data/calib/wind_lead_skill.json \
                    data/calib/run_windows_fitted.json \
                    knowledge/observations/observations.jsonl; do
             [ -f "$f" ] && git add "$f"
@@ -246,11 +261,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.thermal.outcome == 'failure' || steps.surface.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.thermal.outcome == 'failure' || steps.surface.outcome == 'failure' || steps.windlead.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} thermal:${{ steps.thermal.outcome }} surface:${{ steps.surface.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} thermal:${{ steps.thermal.outcome }} surface:${{ steps.surface.outcome }} windlead:${{ steps.windlead.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then

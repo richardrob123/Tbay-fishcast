@@ -101,6 +101,80 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-055 — Measure the forecast horizon instead of assuming it. A real anemometer inside
+  Thunder Bay, and the first lead-decay curve the project has ever had.**
+
+  The map publishes upwelling to **+120 h**, and every hour of that rests on a wind forecast
+  crossing the Wedderburn bar. `data/wind_gate_log.csv` scored that forecast — with columns
+  `issue,buoy,n_hours,mae_kn,bias_kn`, **no lead at all**, against buoys 130 and 200 km away.
+  Aggregated over every lead at once, it could never say whether the +120 h forecast can call a
+  sustained west-quadrant blow, which is exactly what the long-lead map claims. The horizon has
+  been an assumption since day one.
+
+  **A better instrument was here the whole time.** ECCC **STN_ID 4061, WELCOME ISLAND (AUT)**, at
+  48.36917,-89.11944 — an automatic station on an island IN Thunder Bay, **~4 km** from the LSOFS
+  node the product forecasts at — reports wind hourly and has since **1994-02-01**, continuously,
+  to now. Measured: 2497 hourly records over a 2496-hour window, every one unflagged. Against
+  that, `previous-runs-api` supplies the forecast issued 1–7 days earlier for each valid hour,
+  complete for all seven leads across 121 days. **20,195 paired hours** with 8 years of
+  same-instrument climatology — by a wide margin the largest and cleanest validation set in this
+  project, and it took a day to build because nobody had looked for a station inside the bay.
+
+  Scored quantity is the upwelling **DRIVE** — the trailing 24 h favorable wind-run integral from
+  the product's own `wind.favorable_wind_run` — not raw speed. A forecast can be 3 kt off and call
+  the mechanism perfectly, or 1 kt off and invert it. The event bar is `OBSERVED_THRESHOLD_KN *
+  WINDOW_H` = 312 kt·h: arithmetic on two existing constants, not a third picked one.
+
+      lead    drive MAE   bias      vs persist   vs clim   vs oracle (CI)        sign agreement
+      + 24 h    31.1      + 4.6       0.58        0.60     0.95 [0.76, 1.19]         0.76
+      + 48 h    29.0      -12.4       0.41        0.56     0.73 [0.57, 0.94]  <       0.73
+      + 72 h    32.0      -20.5       0.45        0.62     0.80 [0.64, 1.00]  <       0.71
+      + 96 h    37.9      -24.1       0.50        0.74     0.90 [0.76, 1.08]         0.68
+      +120 h    40.1      -29.9       0.53        0.78     0.96 [0.81, 1.13]         0.64
+      +144 h    47.9      -18.0       0.69        0.93     1.20 [0.99, 1.49]         0.66
+      +168 h    52.0      -23.1       0.76        1.01     1.34 [1.17, 1.58]         0.63
+
+  **Three findings, in order of consequence.**
+
+  (1) **The wind forecast beats persistence at every lead we publish, by a lot** (0.41–0.53), and
+  beats climatology through +144 h. It dies at +168 h — ratio 1.01 against climatology, interval
+  entirely above 1 against the oracle. That is outside what ships, and it is the anchor that
+  makes the rest of the curve readable rather than a set of numbers with no zero point.
+
+  (2) **A systematic, growing under-forecast**: bias +4.6 → −12.4 → −20.5 → −24.1 → −29.9 kt·h.
+  The long-lead forecast does not get noisier so much as it gets **timid** — it damps the
+  favorable wind run toward zero. That is a correctable defect, not irreducible error, and it is
+  the first thing this record makes actionable.
+
+  (3) **Directional agreement decays from 0.76 to 0.63.** At +120 h the forecast calls
+  upwelling-vs-downwelling correctly 64% of the time against a 50% coin. That is real information
+  and it is much weaker than an undecorated map implies. **Proposed, requiring sign-off per
+  rule 11:** drive the upwelling layer's confidence from this measured curve rather than
+  presenting all leads alike. No product change is made in this ADR.
+
+  **The verdict I nearly published, and the guard that now stops it.** The first run reported the
+  EVENT forecast at +24 h as PSS **0.87, CI [0.75, 0.98]** — tight, decisive, and worthless. The
+  record holds 44 observed event hours, and those 44 hours are **three storms** (24 h in April,
+  19 h in May, 1 h in June). A day-block bootstrap cannot rescue that: most resamples contain a
+  copy of the April blow, so the interval tightens around *how it did on one storm* and reports
+  that tightness as confidence. Distinct **episodes**, not event hours, are the sample size.
+  `MIN_EVENT_EPISODES = 5` now withholds the event verdict, and the gate runs forward daily for
+  the sole purpose of accumulating blows. Same lesson as ADR-050 and ADR-053 in a new costume: the
+  statistics were fine, the sample was not what it appeared to be.
+
+  Two smaller corrections found by self-audit rather than by failure. **CSI is reported beside
+  PSS** — at a 1.53% base rate PSS ≈ POD, so a forecast catching most blows scores 0.87 while
+  **72% of its calls are false alarms** (CSI 0.27), and PSS alone would have flattered it.
+  And the headline `skill_ratio` is against an **oracle** composite (the smaller of the two
+  baseline errors *per sample*, which no forecaster could pick in advance); the single-baseline
+  ratios are now published beside it, because 0.95-against-the-oracle and
+  0.58-against-persistence are the same forecast and only one of those numbers reads as useless.
+
+  **ADR-032 audited in passing, and it stands.** That decision picked GFS over ICON by scoring
+  both against ERA5 reanalysis — structurally the same move that ADR-053 had to withdraw. Running
+  the same reference guard on ERA5 against the in-bay anemometer: variability ratio **0.84**,
+  comfortably above the 0.5 bar. ERA5 is not GLSEA; the wind reference was legitimate.
+
 - **ADR-054 — Put the guards in the path, and clamp every request that can outrun its source.**
   ADR-052 and ADR-053 each ended with a module that would have caught the wrong conclusion. A
   status check asked the boring question — is it actually running? — and the answer was no on both
