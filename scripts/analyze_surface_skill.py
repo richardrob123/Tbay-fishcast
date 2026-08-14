@@ -230,17 +230,40 @@ def main(argv) -> int:
     # Measured against a real thermistor at the same place, GLSEA's day-to-day change sd is
     # 0.383 C where the water's is 1.930 C — five times smoother. Persisting it scored 0.295 C,
     # which is simply GLSEA's own mean day-to-day change (0.294 C). That is not a forecast bar.
+    #
+    # The two sd's below are a RECORDED MEASUREMENT, not a constant to be edited: Thunder Bay has
+    # no in-situ thermistor, so the disqualification is inherited from the nearest place the
+    # reference product COULD be measured against real water. What is not hardcoded is the
+    # verdict — the ratio is recomputed here and judged against the live bar in site_validity, so
+    # loosening that bar can never leave this file asserting a disqualification the guard no
+    # longer agrees with (or, worse, the reverse).
+    REF_SD_C, INSITU_SD_C = 0.383, 1.930
+    _ratio = REF_SD_C / INSITU_SD_C
     REFERENCE_DISQUALIFIED = {
         "reference": "GLSEA/ACSPO satellite SST",
-        "reference_daily_change_sd_c": 0.383,
-        "insitu_daily_change_sd_c": 1.930,
+        "reference_daily_change_sd_c": REF_SD_C,
+        "insitu_daily_change_sd_c": INSITU_SD_C,
+        "variability_ratio": round(_ratio, 3),
+        "variability_ratio_bar": site_validity.VARIABILITY_RATIO_MIN,
+        "disqualified": _ratio < site_validity.VARIABILITY_RATIO_MIN,
         "measured_at": "LLO1 thermistor vs GLSEA at the same pixel, 99 paired days, 2025",
+        "inherited_because": ("Thunder Bay has no in-situ subsurface sensor, so the reference "
+                              "product is judged where it can be judged and the verdict carried "
+                              "here — it is a property of the ANALYSIS, not of the site"),
         "usable_for": ["mean bias", "seasonal cycle"],
         "NOT_usable_for": ["forecast skill baselines", "variance/dispersion comparisons"],
         "reason": ("a persistence baseline built on a temporally relaxed analysis scores the "
                    "analysis's own smoothness rather than forecast difficulty, and its damped "
                    "variance makes a physical model look over-dispersed"),
     }
+    if not REFERENCE_DISQUALIFIED["disqualified"]:
+        # Fail loudly rather than silently start issuing skill verdicts off a bar someone
+        # widened. Rule 5: a check that quietly turns itself off is worse than no check.
+        raise SystemExit(
+            f"reference variability ratio {_ratio:.3f} now passes the "
+            f"{site_validity.VARIABILITY_RATIO_MIN} bar — ADR-053's withheld skill verdict was "
+            f"written against a failing ratio. Re-measure the reference and revise ADR-053 "
+            f"deliberately; do not let this script start issuing skill verdicts by default.")
     demote = []          # withheld: see REFERENCE_DISQUALIFIED
     result = {
         "source": str(LOG.relative_to(ROOT)),

@@ -101,6 +101,57 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-054 — Put the guards in the path, and clamp every request that can outrun its source.**
+  ADR-052 and ADR-053 each ended with a module that would have caught the wrong conclusion. A
+  status check asked the boring question — is it actually running? — and the answer was no on both
+  counts. `site_validity` had **zero call sites** in `analyze_thermal_skill.py`, and the Thunder
+  Bay surface gate had **zero references** in any workflow: `backfill_surface_gate.py` and
+  `analyze_surface_skill.py` existed, had produced a season of rows, and were never scheduled.
+  A guard that is not in the path is documentation, and a gate that runs once by hand is a
+  screenshot. Both are now wired: the thermal analyzer runs `check()` and
+  `reference_variability()` before it issues anything, and the surface gate runs daily in
+  `coast_site.yml`.
+
+  **The surface gate is a BIAS track, not a skill track**, and the step is labelled that way in
+  the workflow so nobody re-reads it as skill later. Per ADR-053 GLSEA cannot support a skill
+  verdict; what it can do — and nothing else we have can — is track the model's mean bias at the
+  product's OWN node, 2.3 km off the waterfront, instead of at a mooring 180 km away. Standing
+  measurement, now accumulating forward: **+2.4 to +2.6 C warm bias**, flat across all six leads.
+  `analyze_surface_skill.py` now recomputes the reference's variability ratio against the live
+  bar in `site_validity` and **exits nonzero** if it ever passes, so widening that bar can never
+  silently resurrect the withdrawn skill verdict.
+
+  **Wiring the guards immediately caught two of their own misfires**, both fixed before shipping:
+  fed a 6 m thermistor against a satellite SKIN temperature the check confidently blamed the
+  BUOY for what was simply the thermocline (fixed: `MAX_SKIN_COMPARE_DEPTH_M = 3.0`, and the
+  check refuses rather than misattributes); and a 16-day slice certified "usable, ratio 1.10"
+  for the same product a 99-day record measures at 5x too smooth (fixed: `MIN_CHANGES = 30` — a
+  variance ratio on ~10 changes cannot separate 1.0 from 0.5). A one-armed pass now says so in
+  its own reason, because "the model is not grossly wrong here" and "the observation checks out"
+  had been reading as the same sentence.
+
+  **The failure MODE this ADR names: a request that outruns its source disables a check while the
+  run reports success.** Three upstreams, same shape, and it is not a coincidence — every
+  hindcast legitimately asks past the end of coverage, because it needs data out to its longest
+  lead's valid time, which is in the future by construction.
+
+      GLSEA / ERDDAP      end past coverage -> 404 for the WHOLE range, not a short series.
+                          Ran a week with an empty satellite series; both guards judged nothing.
+      Open-Meteo archive  end past today -> hard error for the WHOLE request. The surface gate
+                          would have failed on its first scheduled run (caught in smoke test).
+
+  So "don't ask for the future" is not the fix. Clamping is, at the one boundary that knows each
+  API's contract: `glsea.coverage_end()` for satellite, today-UTC inside `wind_archive` for wind
+  — with the cache keyed on the CLAMPED dates so tomorrow's wider window is a fresh fetch rather
+  than a truncated hit. `tests/test_gate_range_clamps.py` pins the mode rather than the three
+  instances. Two consequences fell out of the same audit: the surface gate's climatology years
+  were a literal `2019..2024` written in a 2025 session, which would have quietly dropped 2025
+  from every 2026 run — now derived as `CLIM_FIRST_YEAR..(run year - 1)`, other-years-only per
+  rule 6; and the upwelling phase was being classified from `hist[-240:]`, the last 240 h that
+  EXIST rather than the 240 h before the valid time, which after clamping would staple last
+  week's wind regime onto every future row. Blank is the honest answer, and is now what it
+  writes.
+
 - **ADR-053 — CORRECTION to ADR-051: the reference was not truth. Withdraw the Thunder Bay skill
   verdict.** Operator challenge, for the second time and correct for the second time: "we can't
   even get the direction right? I feel like we're missing something."

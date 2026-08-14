@@ -35,6 +35,13 @@ from dataclasses import dataclass
 # which a disagreement stops being instrumentation and starts being a different body of water.
 GROSS_DISAGREEMENT_C = 3.0
 MIN_DAYS = 5
+# A satellite SST is a SKIN temperature. In a stratified lake the water a few metres down is
+# genuinely colder — often by several degrees — so comparing a deep sensor against it is not a
+# like-for-like check at all. Fed a 6 m thermistor, this module confidently reported that the
+# BUOY was suspect when the difference was simply the thermocline. Only observations shallow
+# enough to sit in the mixed layer may be compared against a skin temperature; deeper ones make
+# the check refuse rather than misattribute.
+MAX_SKIN_COMPARE_DEPTH_M = 3.0
 
 
 @dataclass(frozen=True)
@@ -75,6 +82,12 @@ class SiteVerdict:
 # seasonal cycle well (amplitude 4.09 C against the buoy's 5.08 C) and is fine for a mean-bias
 # check. The failure was using it for the two jobs it cannot do.
 VARIABILITY_RATIO_MIN = 0.5      # below this the reference is too smooth to be a skill baseline
+# The sampling distribution of a VARIANCE RATIO is wide: at ~10 paired daily changes it cannot
+# separate 1.0 from 0.5, so a thin sample can cheerfully certify a reference the full record
+# disqualifies. Seen live — a 16-day slice returned "usable, ratio 1.10" for the same satellite
+# product a 99-day slice had measured at 5x too smooth. 30 changes is where the ratio starts to
+# be worth acting on; below it the honest answer is that we cannot tell.
+MIN_CHANGES = 30
 
 
 def reference_variability(ref_daily: dict, insitu_daily: dict) -> dict:
@@ -98,14 +111,18 @@ def reference_variability(ref_daily: dict, insitu_daily: dict) -> dict:
     common = sorted(set(ref_daily) & set(insitu_daily))
     r = _chg({d: ref_daily[d] for d in common})
     o = _chg({d: insitu_daily[d] for d in common})
-    if len(r) < 10 or len(o) < 10:
-        return {"n_days": len(common), "usable_as_skill_baseline": False,
-                "reason": f"only {len(common)} paired days — cannot characterise the reference"}
+    if len(r) < MIN_CHANGES or len(o) < MIN_CHANGES:
+        return {"n_days": len(common), "n_changes": min(len(r), len(o)),
+                "usable_as_skill_baseline": False,
+                "reason": (f"only {min(len(r), len(o))} paired day-to-day changes "
+                           f"(need {MIN_CHANGES}) — a variance ratio this thin cannot separate "
+                           f"a faithful reference from a smoothed one, so the reference is "
+                           f"unjudged rather than approved")}
     rs, os_ = _st.pstdev(r), _st.pstdev(o)
     ratio = (rs / os_) if os_ > 0 else None
     ok = bool(ratio is not None and ratio >= VARIABILITY_RATIO_MIN)
     return {
-        "n_days": len(common),
+        "n_days": len(common), "n_changes": len(r),
         "reference_daily_change_sd_c": round(rs, 3),
         "insitu_daily_change_sd_c": round(os_, 3),
         "variability_ratio": round(ratio, 3) if ratio is not None else None,
@@ -126,13 +143,24 @@ def _mean(v):
 
 
 def check(triples, *, bar_c: float = GROSS_DISAGREEMENT_C,
-          min_days: int = MIN_DAYS) -> SiteVerdict:
+          min_days: int = MIN_DAYS, obs_depth_m: float | None = None) -> SiteVerdict:
     """``triples`` = [(model_c, obs_c, satellite_c)] at the site, one per day near the surface.
 
     Returns a verdict on whether measurements here may be generalised to the product. `obs_c` may
     be None when only a model-vs-satellite check is possible; the observation arm is then skipped
     and the reason says so rather than passing silently.
+
+    ``obs_depth_m`` is the depth the in-situ values come from. Pass it: against a satellite SKIN
+    temperature, anything below the mixed layer is a different quantity, and the check refuses
+    rather than blaming the instrument for the thermocline.
     """
+    if obs_depth_m is not None and obs_depth_m > MAX_SKIN_COMPARE_DEPTH_M:
+        return SiteVerdict(
+            False, 0, None, None,
+            f"the shallowest usable observation is at {obs_depth_m:.1f} m, below the "
+            f"{MAX_SKIN_COMPARE_DEPTH_M:.0f} m limit for comparison against a satellite SKIN "
+            f"temperature — in a stratified column that difference is the thermocline, not an "
+            f"error, so this site cannot be judged with this reference")
     m_d, o_d, n = [], [], 0
     for model_c, obs_c, sat_c in triples:
         if sat_c is None or not math.isfinite(sat_c):
@@ -147,9 +175,14 @@ def check(triples, *, bar_c: float = GROSS_DISAGREEMENT_C,
         return SiteVerdict(False, n, mm, oo,
                            f"only {n} day(s) with satellite coverage — cannot judge the site")
     if mm is not None and abs(mm) <= bar_c and (oo is None or abs(oo) <= bar_c):
+        # Say out loud when only one arm ran. A model-only pass means "the model is not grossly
+        # wrong here", NOT "the observation checks out" — there was no observation. Reporting
+        # both cases with the same sentence would let a one-armed check read as a two-armed one.
+        arm = ("" if oo is not None else
+               " (model arm only — no in-situ observation was supplied to cross-check)")
         return SiteVerdict(True, n, mm, oo,
                            f"model within {bar_c:.0f} C of satellite here "
-                           f"({mm:+.1f} C mean) — the site can ground a product claim")
+                           f"({mm:+.1f} C mean) — the site can ground a product claim{arm}")
     # COMPARATIVE, NOT ABSOLUTE, and a test caught why. On the real LLO1 case the buoy sits 4.5 C
     # below the satellite — a perfectly ordinary skin-vs-bulk difference on calm sunny days, since
     # a satellite sees the top microns and a 1 m thermistor sees mixed water — while the model

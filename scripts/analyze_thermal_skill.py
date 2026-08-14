@@ -41,7 +41,7 @@ def _f(x):
 
 
 def main(argv) -> int:
-    from tbay_fishcast.features import thermal_skill as ts
+    from tbay_fishcast.features import site_validity, thermal_skill as ts
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--min-days", type=int, default=10,
@@ -60,7 +60,9 @@ def main(argv) -> int:
             continue
         base_err, which = ts.best_baseline(None if p is None else p - o,
                                            None if c is None else c - o)
-        recs.append({"day": r["issue_date"], "lead_h": int(r["lead_h"]),
+        recs.append({"day": r["issue_date"], "valid": r["valid_utc"][:10],
+                     "sat_c": _f(r.get("sat_c")), "obs_c": o, "fcst_c": f,
+                     "lead_h": int(r["lead_h"]),
                      "depth_m": _f(r["depth_m"]), "err_c": f - o,
                      "persist_err": None if p is None else p - o,
                      "clim_err": None if c is None else c - o,
@@ -77,6 +79,7 @@ def main(argv) -> int:
     # season. Left in, that cell reported a +5 to +6 C bias on n=11-15 and looked like a finding.
     # Any (lead, depth) cell present on fewer than half the issue days is dropped, and the drop
     # is reported rather than done quietly.
+    all_recs = list(recs)          # pre-MNAR, for the site check (see below)
     all_days = {r["day"] for r in recs}
     cell_days = defaultdict(set)
     for r in recs:
@@ -162,12 +165,44 @@ def main(argv) -> int:
         print(f"    lead {v['lead_h']:3d} h  {v['depth_lo']:>3.0f}-{v['depth_hi']:<4.0f} m  "
               f"n={v['n']:5d}  rmse={v['rmse_c']:.3f}  bias={v['bias_c']:+.3f}")
 
-    demote = [L for L, v in per_lead.items() if v["demote"] and int(L) > 0]
+    # ==== THE GUARDS, IN THE PATH THIS TIME (ADR-054) ====
+    # ADR-052 and ADR-053 were both written after being wrong, and both were then wired only into
+    # the analyzer that did not need them. A guard outside the path it protects is documentation.
+    # These two now run here, on the gate that produced the wrong verdict in the first place, and
+    # they GATE it rather than annotating it.
+    #
+    # (1) SITE: is the model grossly out of line with an independent third party HERE? At LLO1 it
+    #     is — the satellite tracks the buoy, not the model — so this site measures that node and
+    #     cannot ground a claim about the product.
+    # (2) REFERENCE: is the truth actually as variable as the water? Here it IS, because the
+    #     reference is a real thermistor rather than a smoothed analysis. Running it proves the
+    #     check discriminates instead of only ever refusing.
+    # Use the shallowest observation the LOG has, not the shallowest that survived the MNAR
+    # filter: that filter exists to keep the skill statistics honest and has nothing to say about
+    # whether a sensor can be compared with a satellite.
+    shallow = min((r["depth_m"] for r in all_recs if r["depth_m"] is not None), default=None)
+    surf = [r for r in all_recs if r["lead_h"] == 0 and r["depth_m"] == shallow]
+    site = site_validity.check([(r["fcst_c"], r["obs_c"], r["sat_c"]) for r in surf],
+                               obs_depth_m=shallow)
+    print(f"\n  SITE CHECK ({len(surf)} days at {shallow} m): {site.reason}")
+
+    obs_daily = {r["valid"]: r["obs_c"] for r in surf if r["obs_c"] is not None}
+    sat_daily = {r["valid"]: r["sat_c"] for r in surf if r["sat_c"] is not None}
+    ref = site_validity.reference_variability(sat_daily, obs_daily)
+    print(f"  REFERENCE CHECK: {ref['reason']}")
+
+    # Two different lists, and conflating them erased the finding. `failed_here` is what was
+    # MEASURED at this node and must survive; `demote` is what the product should ACT on, which a
+    # site that cannot represent the product may not populate. The first version zeroed the
+    # measurement before computing the verdict, so a node where every lead failed reported "no
+    # lead is shown to add nothing" — over-correction is its own kind of dishonesty.
+    failed_here = [L for L, v in per_lead.items() if v["demote"] and int(L) > 0]
+    demote = failed_here if site.usable else []
     now = per_lead.get("0")
     far = per_lead.get(str(max(fcst_leads))) if fcst_leads else None
     state_not_forecast = bool(
         now and far and now["fcst_mae_c"] > 0.75 * far["fcst_mae_c"])
-    all_lose = len(demote) == len(fcst_leads) and demote
+    all_lose = len(failed_here) == len(fcst_leads) and failed_here
     result = {
         "source": str(LOG.relative_to(ROOT)),
         "built_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
@@ -179,6 +214,9 @@ def main(argv) -> int:
         "per_lead": per_lead,
         "sigma_t": sigma,
         "demote_leads": demote,
+        "failed_at_this_node": failed_here,
+        "site_check": site.as_dict(),
+        "reference_check": ref,
         "nowcast_mae_c": (now or {}).get("fcst_mae_c"),
         "error_is_model_state_not_forecast_decay": state_not_forecast,
         # SITE-SCOPED, and this correction matters more than the number it qualifies. The first
@@ -190,11 +228,14 @@ def main(argv) -> int:
         # (GLSEA/ACSPO, 0.43 km away) tracks the BUOY, not the model — 21.3 vs 9.5 C on 2025-07-28.
         # So what is measured here is a LOCAL LSOFS pathology at 45027, on the Minnesota upwelling
         # coast. It is real, and it is not evidence about Thunder Bay.
-        "verdict": ((f"at {'/'.join(sorted({r['chain'] for r in recs}))}: every forecast lead "
-                     f"fails the ADR-006 bar")
-                    if all_lose else
-                    f"leads {demote} fail the ADR-006 bar at this site" if demote else
-                    "no lead is shown to add nothing"),
+        "verdict": (
+            (f"at {'/'.join(sorted({r['chain'] for r in recs}))}: every forecast lead fails the "
+             f"ADR-006 bar AT THIS NODE — but the site check refuses to generalise it "
+             f"({site.reason})") if (all_lose and not site.usable) else
+            (f"at {'/'.join(sorted({r['chain'] for r in recs}))}: every forecast lead fails the "
+             f"ADR-006 bar") if all_lose else
+            f"leads {failed_here} fail the ADR-006 bar at this site" if failed_here else
+            "no lead is shown to add nothing"),
         "scope": ("SITE-SPECIFIC. This is the model's skill at the validation mooring only. "
                   "Generalising it to the Thunder Bay nearshore is not supported and is "
                   "contradicted by the model's own behaviour elsewhere in the lake."),

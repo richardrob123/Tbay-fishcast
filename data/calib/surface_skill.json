@@ -1,6 +1,6 @@
 {
   "source": "data/surface_gate_log.csv",
-  "built_utc": "2026-08-10T15:57:32+00:00",
+  "built_utc": "2026-08-14T18:58:10+00:00",
   "site": "Thunder Bay (LSOFS station 10050, 2.3 km off the waterfront)",
   "truth": "GLSEA/ACSPO satellite SST",
   "n": 1104,
@@ -261,7 +261,11 @@
     "reference": "GLSEA/ACSPO satellite SST",
     "reference_daily_change_sd_c": 0.383,
     "insitu_daily_change_sd_c": 1.93,
+    "variability_ratio": 0.198,
+    "variability_ratio_bar": 0.5,
+    "disqualified": true,
     "measured_at": "LLO1 thermistor vs GLSEA at the same pixel, 99 paired days, 2025",
+    "inherited_because": "Thunder Bay has no in-situ subsurface sensor, so the reference product is judged where it can be judged and the verdict carried here \u2014 it is a property of the ANALYSIS, not of the site",
     "usable_for": [
       "mean bias",
       "seasonal cycle"

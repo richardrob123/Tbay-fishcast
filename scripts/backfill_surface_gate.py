@@ -49,6 +49,8 @@ FIELDS = ["valid_date", "site", "lead_h", "issue_date", "sat_c", "model_c",
 LEADS_H = [0, 24, 48, 72, 96, 120]
 TBAY = (48.43, -89.21)
 CLIM_WINDOW_D = 7
+CLIM_FIRST_YEAR = 2019
+WIND_FRESH_H = 3          # wind must reach within this of the valid time to classify its phase
 # GLSEA for day D publishes on D+1, so the freshest satellite an operational forecast issued at
 # 12Z on D could have used is D-1. Using D-1 makes persistence slightly WEAKER, which flatters the
 # model — but it is what was actually available, and an honest baseline beats a flattering one in
@@ -67,7 +69,11 @@ def main(argv) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="2025-05-01")
     ap.add_argument("--end", default="2025-10-31")
-    ap.add_argument("--clim-years", default="2019,2020,2021,2022,2023,2024")
+    # Default is AUTO, not a literal list: hardcoded "2019..2024" was written in a 2025 session
+    # and would have silently dropped 2025 out of the climatology for every run in 2026 onward —
+    # a baseline that quietly weakens with age is worse than one that is obviously wrong.
+    ap.add_argument("--clim-years", default="auto",
+                    help="comma-separated years, or 'auto' for CLIM_FIRST_YEAR..(run year - 1)")
     ap.add_argument("--timeout", type=float, default=240.0)
     a = ap.parse_args(argv)
 
@@ -97,15 +103,24 @@ def main(argv) -> int:
                     (pin.pixel_lon - stn_lon) * 111.32 * _m.cos(_m.radians(stn_lat)))
     print(f"  satellite pixel is {_sep:.2f} km from the model station")
     print(f"satellite pixel: {pin.pixel_lat:.4f},{pin.pixel_lon:.4f}")
+    # CLAMP TO COVERAGE. ERDDAP answers a range that runs past the dataset's last day with a 404
+    # for the WHOLE range, not a short series — so once this runs daily with an end date a few
+    # days ahead (leads reach +120 h), every request would return nothing and the gate would
+    # quietly stop accumulating while reporting success. The same off-by-a-week silently disabled
+    # the subsurface guards for a week before it was caught.
+    sat_end = min((end + timedelta(days=6)).isoformat(), glsea.coverage_end())
     sat = glsea.fetch_series(pin.pixel_lat, pin.pixel_lon,
-                             (start - timedelta(days=PERSIST_LAG_D + 1)).isoformat(),
-                             (end + timedelta(days=6)).isoformat())
-    print(f"  {len(sat)} cloud-free satellite days in the window")
+                             (start - timedelta(days=PERSIST_LAG_D + 1)).isoformat(), sat_end)
+    print(f"  {len(sat)} cloud-free satellite days in the window (through {sat_end})")
 
     print("climatology (other years only — a row is never scored against a baseline that saw it)")
     clim_acc = defaultdict(list)
     used_years = []
-    for y in [int(x) for x in a.clim_years.split(",")]:
+    if a.clim_years == "auto":
+        clim_years = list(range(CLIM_FIRST_YEAR, start.year))
+    else:
+        clim_years = [int(x) for x in a.clim_years.split(",")]
+    for y in clim_years:
         if y == start.year:
             continue
         s, err = None, None
@@ -167,9 +182,14 @@ def main(argv) -> int:
             # which is the right thing to compare with a satellite SST product.
             model_c = prof["temp_c"][0]
             hist = [(t, d_, k) for t, d_, k in zip(wt, wdir, wkn) if t <= vt]
+            # The phase is a property of the 240 h BEFORE vt. When the archive stops short of vt
+            # — which it now does by design for valid times in the future — hist[-240:] is the
+            # last 240 h that EXIST, not the 240 h that matter, and classifying it would staple
+            # last week's wind regime to a future row. Blank is the honest answer.
+            fresh = bool(hist) and (vt - hist[-1][0]).total_seconds() <= WIND_FRESH_H * 3600
             ph = up.classify([h[0] for h in hist[-240:]], [h[1] for h in hist[-240:]],
-                             [h[2] for h in hist[-240:]], vt) if len(hist) > 24 else None
-            near = hist[-1] if hist else None
+                             [h[2] for h in hist[-240:]], vt) if fresh and len(hist) > 24 else None
+            near = hist[-1] if fresh else None      # same staleness rule as the phase above
             rows.append({
                 "valid_date": vd, "site": "tbay", "lead_h": str(L),
                 "issue_date": day.isoformat(), "sat_c": f"{truth:.3f}",

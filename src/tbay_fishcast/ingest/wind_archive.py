@@ -37,6 +37,15 @@ def fetch_hourly_wind(start: date, end: date, *, lat: float = TBAY_LAT, lon: flo
     Knots are requested from the API rather than converted here, so the unit the product's
     thresholds are written in (the Wedderburn bar is 12-17 kt) is the unit that arrives.
     """
+    # CLAMP TO THE ARCHIVE'S RANGE. Open-Meteo answers an end_date past its coverage with a hard
+    # error for the WHOLE request, not a short series. Callers legitimately ask past today —
+    # a hindcast needs wind out to its longest lead's valid time — so an unclamped request fails
+    # every single run rather than returning what exists. Clamping here, at the one place that
+    # knows the API's contract, keeps every caller from having to know it. The cache key uses the
+    # CLAMPED dates so tomorrow's wider window is a fresh fetch rather than a truncated hit.
+    end = min(end, datetime.now(timezone.utc).date())
+    if end < start:
+        return [], [], []
     key = json.dumps(["om-archive", lat, lon, start.isoformat(), end.isoformat()])
     cp = _cache_path(key)
     if cp.exists():

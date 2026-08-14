@@ -75,7 +75,7 @@ def test_a_smoothed_analysis_is_refused_as_a_skill_baseline():
     the water's is 1.93 C, so persisting it scored 0.295 C — its own smoothness — and nothing
     physical can beat that. The reference has to be checked before it is used, not after."""
     import math
-    days = [f"2025-06-{d:02d}" for d in range(1, 29)]
+    days = _days_span(40)
     water = {d: 10.0 + 3.0 * math.sin(i * 1.7) for i, d in enumerate(days)}     # lively
     smooth = {d: 10.0 + 3.0 * math.sin(i * 0.12) for i, d in enumerate(days)}   # relaxed
     v = sv.reference_variability(smooth, water)
@@ -86,13 +86,42 @@ def test_a_smoothed_analysis_is_refused_as_a_skill_baseline():
 
 def test_a_reference_that_tracks_the_water_is_accepted():
     import math
-    days = [f"2025-06-{d:02d}" for d in range(1, 29)]
+    days = _days_span(40)
     water = {d: 10.0 + 3.0 * math.sin(i * 1.7) for i, d in enumerate(days)}
     good = {d: v + 0.2 for d, v in water.items()}
     v = sv.reference_variability(good, water)
     assert v["usable_as_skill_baseline"] and v["variability_ratio"] > 0.9
 
 
+def _days_span(n):
+    import datetime as dt
+    d0 = dt.date(2025, 6, 1)
+    return [(d0 + dt.timedelta(days=i)).isoformat() for i in range(n)]
+
+
 def test_a_thin_overlap_cannot_characterise_the_reference():
     v = sv.reference_variability({"2025-06-01": 10.0}, {"2025-06-01": 10.0})
-    assert not v["usable_as_skill_baseline"] and "cannot characterise" in v["reason"]
+    assert not v["usable_as_skill_baseline"] and "unjudged" in v["reason"]
+
+
+def test_a_thin_sample_cannot_CERTIFY_a_reference_either():
+    """SEEN LIVE. A 16-day slice returned 'usable, ratio 1.10' for the same satellite product a
+    99-day slice had measured at 5x too smooth. A variance ratio is wide at small n, and a guard
+    that can be talked into approving on thin evidence is worse than no guard."""
+    import math
+    days = _days_span(16)
+    water = {d: 10.0 + 3.0 * math.sin(i * 1.7) for i, d in enumerate(days)}
+    smooth = {d: 10.0 + 3.0 * math.sin(i * 0.12) for i, d in enumerate(days)}
+    v = sv.reference_variability(smooth, water)
+    assert not v["usable_as_skill_baseline"], "16 days must not certify a reference"
+    assert "unjudged" in v["reason"]
+
+
+def test_a_deep_sensor_is_not_compared_against_a_skin_temperature():
+    """MISATTRIBUTION CAUGHT LIVE. Fed a 6 m thermistor against satellite SST, the check blamed
+    the BUOY for what was simply the thermocline. Below the mixed layer they are not the same
+    quantity and the check must refuse."""
+    v = sv.check([(18.0, 8.0, 18.2)] * 30, obs_depth_m=6.0)
+    assert not v.usable and "thermocline" in v.reason
+    ok = sv.check([(18.0, 17.6, 18.2)] * 30, obs_depth_m=1.0)
+    assert ok.usable

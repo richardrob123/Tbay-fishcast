@@ -149,6 +149,24 @@ jobs:
           python scripts/backfill_thermal_gate.py \
             --start "$(date -u -d '10 days ago' +%F)" --end "$(date -u -d '1 day ago' +%F)"
           python scripts/analyze_thermal_skill.py
+      # THUNDER BAY SURFACE BIAS TRACK (ADR-051, scoped by ADR-053). Deliberately NOT a skill
+      # track: GLSEA is a cloud-gap-filled, temporally relaxed analysis whose day-to-day change
+      # sd is 0.38 C where the real water's is 1.93 C, so a persistence baseline built on it
+      # measures the analysis's own smoothness, not forecast difficulty. What it CAN do — and
+      # what nothing else we have can do — is track the model's MEAN BIAS and seasonal cycle at
+      # the product's own node, 2.3 km off the waterfront, rather than at a mooring 180 km away.
+      # The analyzer withholds a skill verdict by construction; this step keeps the bias record
+      # growing so the correction stays honest as the season turns.
+      # Ten-day trailing window: truth for the +120 h lead only exists at issue+5 d, plus GLSEA's
+      # one-day publish lag, so a shorter window would permanently leave the long leads empty.
+      - name: Extend the Thunder Bay surface bias gate + re-analyze
+        id: surface
+        if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
+        continue-on-error: true
+        run: |
+          python scripts/backfill_surface_gate.py \
+            --start "$(date -u -d '10 days ago' +%F)" --end "$(date -u -d '1 day ago' +%F)"
+          python scripts/analyze_surface_skill.py
       - name: Accumulate the isotherm-depth gate (GLOS vs product)
         id: gate
         if: github.event_name != 'schedule' || github.event.schedule == '45 15 * * *'
@@ -193,6 +211,7 @@ jobs:
                    data/offshore_check_log.csv data/wind_gate_log.csv \
                    data/calib/forecast_lead_error.json docs/ACCURACY_SCORECARD.md \
                    data/thermal_gate_log.csv data/calib/thermal_skill.json \
+                   data/surface_gate_log.csv data/calib/surface_skill.json \
                    data/calib/run_windows_fitted.json \
                    knowledge/observations/observations.jsonl; do
             [ -f "$f" ] && git add "$f"
@@ -227,11 +246,11 @@ jobs:
       # means nobody would ever learn they've been failing. Push a phone alert when
       # anything in this run failed. (NTFY_TOPIC unset => step prints only.)
       - name: Alert on any step failure
-        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.thermal.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
+        if: always() && (failure() || steps.gate.outcome == 'failure' || steps.anchor.outcome == 'failure' || steps.fcstgate.outcome == 'failure' || steps.datacommit.outcome == 'failure' || steps.inat.outcome == 'failure' || steps.seams.outcome == 'failure' || steps.thermal.outcome == 'failure' || steps.surface.outcome == 'failure' || steps.reddit.outcome == 'failure' || steps.shards.outcome == 'failure' || steps.fitwin.outcome == 'failure')
         env:
           NTFY_TOPIC: ${{ vars.NTFY_TOPIC || secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ vars.NTFY_SERVER || secrets.NTFY_SERVER }}
-          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} thermal:${{ steps.thermal.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MSG: "coast-site run had failures — build:${{ steps.build.outcome }} gate:${{ steps.gate.outcome }} anchor:${{ steps.anchor.outcome }} fcstgate:${{ steps.fcstgate.outcome }} data-commit:${{ steps.datacommit.outcome }} inat:${{ steps.inat.outcome }} seams:${{ steps.seams.outcome }} thermal:${{ steps.thermal.outcome }} surface:${{ steps.surface.outcome }} reddit:${{ steps.reddit.outcome }} shards:${{ steps.shards.outcome }} refit:${{ steps.fitwin.outcome }} (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         run: |
           echo "$MSG"
           if [ -n "$NTFY_TOPIC" ]; then

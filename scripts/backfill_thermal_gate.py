@@ -42,7 +42,31 @@ sys.path.insert(0, str(ROOT / "src"))
 LOG = ROOT / "data" / "thermal_gate_log.csv"
 FIELDS = ["valid_utc", "chain", "lead_h", "issue_date", "depth_m",
           "obs_c", "fcst_c", "persist_obs_c", "clim_c", "qc", "model_station",
-          "model_dist_km", "retrieved_utc"]
+          "model_dist_km",
+          # ADR-054: the INDEPENDENT third party, carried in the row so the analyzer can run the
+          # site- and reference-validity guards offline. Without it those guards were built and
+          # then left out of the path they exist to protect — documentation, not a guard.
+          "sat_c",
+          "retrieved_utc"]
+
+
+def _migrate_log(path: Path) -> None:
+    """Bring an old-schema log up to the current FIELDS; old rows keep a blank sat_c.
+
+    Blank means "no third party recorded for this row", which the analyzer treats as unable to
+    judge rather than as agreement — the same discipline as the ADR-048 obs_status migration."""
+    if not path.exists():
+        return
+    with path.open() as f:
+        rows = list(csv.DictReader(f))
+    if not rows or all(k in rows[0] for k in FIELDS):
+        return
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in FIELDS})
+    print(f"migrated {path.name} to the satellite-cross-check schema ({len(rows)} rows kept)")
 # Lead 0 is the NOWCAST at issue time, and it is in this file for free. It is the decisive
 # diagnostic: if the error at lead 0 matches the error at lead 120, the problem is the model's
 # STATE at this location, not its ability to forecast — and no amount of lead-tuning would help.
@@ -99,6 +123,7 @@ def main(argv) -> int:
     a = ap.parse_args(argv)
 
     from tbay_fishcast.ingest import glos_archive as ga
+    from tbay_fishcast.ingest import glsea
     from tbay_fishcast.ingest import lsofs_stations as ls
 
     start, end = date.fromisoformat(a.start), date.fromisoformat(a.end)
@@ -125,6 +150,44 @@ def main(argv) -> int:
     if len(clim_years) < CLIM_MIN_YEARS:
         print(f"  only {len(clim_years)} usable year(s) {clim_years} — climatology will be "
               f"recorded where present but is too thin to be a reference on its own")
+
+    # INDEPENDENT THIRD PARTY at the chain, for the ADR-052/053 guards. One series call; a
+    # failure costs the guards, not the gate, so it degrades to blank rather than aborting.
+    sat = {}
+    try:
+        pin = glsea.fetch_sst(lat, lon, start.isoformat())
+        # CLAMP TO COVERAGE. Asking past the dataset's last day returns a 404 for the WHOLE
+        # range, so a request running a few days into the future silently cost every guard its
+        # evidence — a validation check disabled by an off-by-a-week.
+        last = min((end + timedelta(days=6)).isoformat(), glsea.coverage_end())
+        sat = glsea.fetch_series(pin.pixel_lat, pin.pixel_lon, start.isoformat(), last)
+        print(f"  satellite cross-check: {len(sat)} cloud-free days "
+              f"({pin.dist_km:.2f} km from the chain)")
+    except Exception as e:  # noqa: BLE001
+        print(f"    WARN: satellite cross-check unavailable ({str(e)[:60]}) — the site and "
+              f"reference guards will have nothing to judge with")
+
+    _migrate_log(LOG)
+    # SELF-HEALING, not just forward-filling. The guards need sat_c on the HISTORIC rows too, and
+    # a column that only ever populates for new rows would leave the checks unable to judge for
+    # months — which is indistinguishable from the checks not being wired at all, the exact
+    # failure this is fixing.
+    if sat and LOG.exists():
+        with LOG.open() as f:
+            old = list(csv.DictReader(f))
+        filled = 0
+        for r in old:
+            if not (r.get("sat_c") or "").strip():
+                d = (r.get("valid_utc") or "")[:10]
+                if d in sat:
+                    r["sat_c"] = f"{sat[d]:.3f}"
+                    filled += 1
+        if filled:
+            with LOG.open("w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=FIELDS)
+                w.writeheader()
+                w.writerows([{k: r.get(k, "") for k in FIELDS} for r in old])
+            print(f"  filled sat_c on {filled} existing rows")
 
     done = _load_existing(LOG)
     rows, missing_files, skipped = [], 0, 0
@@ -176,7 +239,10 @@ def main(argv) -> int:
                     "clim_c": (f"{clim[(doy, round(z, 1))]:.3f}"
                                if (doy, round(z, 1)) in clim else ""),
                     "qc": str(qc), "model_station": str(st.get("name", "")),
-                    "model_dist_km": str(st.get("dist_km", "")), "retrieved_utc": now})
+                    "model_dist_km": str(st.get("dist_km", "")),
+                    "sat_c": (f"{sat[wt.date().isoformat()]:.3f}"
+                              if wt.date().isoformat() in sat else ""),
+                    "retrieved_utc": now})
         if day.day == 1 or day == start:
             print(f"  {day}: {len(rows)} rows so far")
         day += timedelta(days=1)
