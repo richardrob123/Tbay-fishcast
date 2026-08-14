@@ -1,0 +1,119 @@
+{
+  "built_utc": "2026-08-14T21:39:48+00:00",
+  "land": "CYQT METAR via the Iowa State ASOS archive \u2014 the stream ingest/metar.py reads",
+  "lake": "WELCOME ISLAND (AUT), ECCC 4061, an island station inside Thunder Bay",
+  "separation_km": 16.0,
+  "train_years_requested": [
+    2018,
+    2024
+  ],
+  "train_years_used": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "holdout_years_requested": [
+    2025,
+    2026
+  ],
+  "holdout_years_used": [
+    2025,
+    2026
+  ],
+  "n_train": 38184,
+  "n_holdout": 8567,
+  "fits": {
+    "multiplicative": {
+      "form": "multiplicative",
+      "scale": 1.326,
+      "offset_kn": 0.0,
+      "n_train": 38184
+    },
+    "additive": {
+      "form": "additive",
+      "scale": 1.0,
+      "offset_kn": 3.4147,
+      "n_train": 38184
+    },
+    "affine": {
+      "form": "affine",
+      "scale": 0.8296,
+      "offset_kn": 4.5308,
+      "n_train": 38184
+    }
+  },
+  "holdout_scores": {
+    "multiplicative": {
+      "n_holdout": 8567,
+      "corrected_mae_kn": 4.0495,
+      "corrected_bias_kn": -0.8712,
+      "uncorrected_mae_kn": 4.3318,
+      "uncorrected_bias_kn": -2.9741
+    },
+    "additive": {
+      "n_holdout": 8567,
+      "corrected_mae_kn": 3.6819,
+      "corrected_bias_kn": 0.4405,
+      "uncorrected_mae_kn": 4.3318,
+      "uncorrected_bias_kn": -2.9741
+    },
+    "affine": {
+      "n_holdout": 8567,
+      "corrected_mae_kn": 3.6309,
+      "corrected_bias_kn": 0.4571,
+      "uncorrected_mae_kn": 4.3318,
+      "uncorrected_bias_kn": -2.9741
+    }
+  },
+  "strong_wind_scores": {
+    "multiplicative": {
+      "n_holdout": 1815,
+      "corrected_mae_kn": 5.2188,
+      "corrected_bias_kn": 2.3398,
+      "uncorrected_mae_kn": 4.8106,
+      "uncorrected_bias_kn": -1.7524
+    },
+    "additive": {
+      "n_holdout": 1815,
+      "corrected_mae_kn": 5.0098,
+      "corrected_bias_kn": 1.6623,
+      "uncorrected_mae_kn": 4.8106,
+      "uncorrected_bias_kn": -1.7524
+    },
+    "affine": {
+      "n_holdout": 1815,
+      "corrected_mae_kn": 4.8206,
+      "corrected_bias_kn": 0.6387,
+      "uncorrected_mae_kn": 4.8106,
+      "uncorrected_bias_kn": -1.7524
+    }
+  },
+  "best_form": "affine",
+  "direction_offset": {
+    "n": 7902,
+    "mean_offset_deg": 21.62,
+    "concentration": 0.6311
+  },
+  "decision_flip_raw": {
+    "n_hours": 8066,
+    "disagree": 101,
+    "disagree_rate": 0.0125,
+    "missed_blows": 101,
+    "false_blows": 0
+  },
+  "decision_flip_corrected": {
+    "n_hours": 8066,
+    "disagree": 103,
+    "disagree_rate": 0.0128,
+    "missed_blows": 50,
+    "false_blows": 53
+  },
+  "lake_event_hours_holdout": 142,
+  "caveat": "Welcome Island is an ISLAND station, not a buoy \u2014 its anemometer stands on land and so under-reads a true over-water wind by an unknown amount. It is far closer to the lake than the airport is, and it is not the lake. Every scale factor here is therefore a LOWER BOUND on the real land-to-water speed-up.",
+  "split_note": "This fits parameters, so rule 6 applies and it splits temporally: the scale is fitted on the early years and every number reported above is from years the fit never saw.",
+  "status": "MEASUREMENT ONLY. Applying a correction to the phase classifier's input, or giving the airport its own threshold, is a product change and needs an ADR and sign-off per rule 11. Nothing here is wired into the heartbeat."
+}

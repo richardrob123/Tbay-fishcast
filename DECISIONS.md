@@ -101,6 +101,75 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-056 — The airport is not the lake, the offset is not "within noise", and no correction
+  fixes it. Read the in-bay station instead.** (Proposed product change — needs sign-off.)
+
+  `docs/ACCURACY_SCORECARD.md` has carried this line for months: *"the airport offset is what a
+  separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is
+  used."* That −1.19 kn offset was measured against NDBC buoys 130–200 km away, where land-vs-lake
+  exposure and 200 km of geography are the same number. Welcome Island (ADR-055) sits **16 km**
+  from CYQT under one synoptic system, which is what makes exposure separable at all.
+
+  **38,184 paired hours** (2018–2024, April–November) fitted, **8,567 held out** (2025–2026).
+  CYQT comes from the Iowa State ASOS archive — deliberately, because that is the *same METAR
+  stream* `ingest/metar.py` reads live, so a correction fitted here would apply to what the
+  heartbeat actually consumes rather than to a cousin of it.
+
+      airport under-reads the lake by     -2.97 kn        (scorecard said -1.19; ~2.5x understated)
+      lake ~ 4.53 + 0.83 * airport        MAE 3.63 kn     affine, best on held-out years
+      lake ~ 1.33 * airport               MAE 4.05 kn     multiplicative — the WORST of the three
+      uncorrected                         MAE 4.33 kn
+      direction, lake minus land          +21.6 deg       concentration 0.63 — loose
+
+  **Three findings, and the third kills the obvious fix.**
+
+  (1) **"Within noise" was wrong.** Measured at Thunder Bay the airport under-reads the lake by
+  ~3 kn, not ~1. The scorecard's note is superseded.
+
+  (2) **My physical prior was wrong and the data said so.** A roughness change scales wind
+  multiplicatively, so I expected `lake = b * land` to win. It came last. The affine fit —
+  slope 0.83 with a +4.5 kn intercept — is *compressive*: the lake is much windier than the
+  airport when the airport is calm, and the gap narrows as it blows. Both forms were fitted and
+  scored on held-out years precisely so this would be measured rather than asserted.
+
+  (3) **The correction buys nothing where the threshold fires.** For airport ≥ 10 kn, corrected
+  MAE is **4.821** against uncorrected **4.811** — identical. It removes the bias (−1.75 → +0.64)
+  and removes no error. A fit dominated by the light-wind bulk is worthless in the tail, which is
+  the only place a threshold is ever consulted.
+
+  **The decision flip, which is the only number here that decides anything.** Over 8,066 held-out
+  hours containing 142 lake blow-hours, running the phase classifier on the airport instead of
+  the lake:
+
+      airport raw          101 disagreements — 101 MISSED blows, 0 false
+      airport corrected    103 disagreements —  50 missed, 53 false
+
+  Reading the airport, the classifier **misses 71% of the hours the lake is actually blowing**,
+  and the best available correction merely trades misses for false alarms at the same total. That
+  is the signature of information that is absent rather than mis-scaled: the disagreement is
+  regime-dependent and directional (+21.6° at concentration 0.63 — a quarter of the 90° favorable
+  sector), not a constant a scalar can absorb.
+
+  **PROPOSED, requiring sign-off per rule 11: feed the phase classifier Welcome Island, not
+  CYQT.** It is not archive-only — MSC **6049443** is in the live `swob-realtime` network with
+  hourly `avg_wnd_spd_10m_pst1hr` and QA flags, current to the hour. CYQT keeps its place as a
+  fallback when the island station drops out, and the fallback should say so loudly (rule 5)
+  rather than silently reverting to a reading that misses seven blows in ten. **Nothing is wired
+  into the heartbeat by this ADR.**
+
+  **Caveat that bounds every number above:** Welcome Island is an ISLAND station. Its anemometer
+  stands on land, so it under-reads a true over-water wind by an unknown amount. Every scale
+  factor here is a LOWER bound on the real land-to-water speed-up, and the 71% miss rate is
+  likewise conservative.
+
+  **Operational note:** Iowa State rate-limits by returning a plain-text notice **with HTTP 200**.
+  The first run of this fit silently lost 2021 and 2024 out of a "2018–2024" training set while
+  the label kept saying 2018–2024. Retries added, and the years that actually made it in are now
+  published in the artifact as `train_years_used` rather than inferred from the request. This
+  analysis is a calibration refit, not an accumulator — it is deliberately NOT wired into the
+  daily workflow (nine multi-year fetches against a rate-limited host, to re-derive a number that
+  changes on the timescale of years). Refit annually, or when the station set changes.
+
 - **ADR-055 — Measure the forecast horizon instead of assuming it. A real anemometer inside
   Thunder Bay, and the first lead-decay curve the project has ever had.**
 
