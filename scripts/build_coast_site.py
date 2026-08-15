@@ -1143,7 +1143,11 @@ def main(argv) -> int:
                          "iso": round(p.isotherm_depth_m, 1) if p.isotherm_depth_m is not None else None,
                          "iso_band_m": round(band_m, 1) if band_m is not None else None,
                          "iso_band_why": (None if band_m is not None else band_why),
-                         "grad_c_per_m": round(p.gradient_c_per_m, 3) if p.gradient_c_per_m else None,
+                         # A gradient of exactly 0 is a MEASURED isothermal column, not a
+                         # missing measurement; truthiness reported "no gradient" for a fully
+                         # mixed water column, which is a different claim entirely.
+                         "grad_c_per_m": (round(p.gradient_c_per_m, 3)
+                                          if p.gradient_c_per_m is not None else None),
                          "reach": bool(p.reachable), "certain": bool(p.reachable_certain),
                          "possible": bool(p.reachable_possible)})
         verdict = summarize(pts, wins)

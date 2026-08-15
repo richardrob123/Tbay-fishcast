@@ -121,7 +121,12 @@ def main(argv) -> int:
                 continue
             depths = col.depths_m
             raw = col.temps_c
-            surf_bias = (raw[0] - g_sst) if g_sst else 0.0
+            # `is not None`, NOT truthiness: a surface reading of exactly 0.0 C is a real
+            # Lake Superior temperature (and what GLSEA reports over ice), and truthiness
+            # zeroes the bias correction in precisely the near-freezing regime where the
+            # model is most wrong. build_coast_site.py:761 and forecast_window.py:113 already
+            # get this right — this file and backtest_upwelling.py had drifted from them.
+            surf_bias = (raw[0] - g_sst) if g_sst is not None else 0.0
             bm = thermocline.BiasModel(surf_bias, central, lo, hi, n_buoys=n)
             zc = thermocline.isotherm_band(depths, raw, bm, TARGET_C)["central"]
             if zc is not None:
@@ -195,7 +200,7 @@ def _page(issue, sat_b64, frames, res, g_sst):
   <div class="legend">
     <span><span class="sw" style="background:#ff1e3c"></span>12&nbsp;°C line</span>
     <span><span class="sw" style="background:#39d353;opacity:.6"></span>reachable cold water</span>
-    <span id="hint">surface {('%.1f°C' % g_sst) if g_sst else 'n/a'} · pooled correction applied</span>
+    <span id="hint">surface {('%.1f°C' % g_sst) if g_sst is not None else 'n/a'} · pooled correction applied</span>
   </div>
   <div class="note">Tier-1 view: a self-contained, embedded stretch of the harbour shore
     (Marina Park + north shore). Absolute reachability carries the same ±band as the

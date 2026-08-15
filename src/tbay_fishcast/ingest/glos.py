@@ -23,6 +23,7 @@ Two layers, same split as ndbc.py / nonna.py:
 from __future__ import annotations
 
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -96,13 +97,26 @@ def fetch_chain(station_id: str, start: date, end: date,
     """
     station = CHAINS[station_id]
     url = _erddap_url(station.dataset, start, end)
-    raw = subprocess.run(["curl", "-s", "-m", str(int(timeout)), url],
-                         capture_output=True).stdout
-    text = raw.decode("utf-8", "replace")
-    if not text.strip().lower().startswith("time,depth,sea_water_temperature"):
-        head = text[:200]
-        raise RuntimeError(f"GLOS ERDDAP did not return CSV for {station_id}: {head!r}")
-    return parse_chain_csv(text)
+    # RETRY AND CHECK THE RETURN CODE. This was the only remote client in ingest/ with neither
+    # (eccc_wind, openmeteo_prev_runs and asos_archive all retry; nonna.py retries with a comment
+    # that the server "drops the connection mid-stream"). It matters because a partially delivered
+    # body still STARTS with the CSV header, so a header check passes and a truncated series is
+    # returned as complete — and backfill_thermal_gate.py issues five unretried 8-month ERDDAP
+    # requests every morning to build its climatology. A year lost to a dropped connection was
+    # silently discarded, so the climatology baseline underlying the ADR-006 demotion decision
+    # varied day to day with nothing in the log recording it.
+    text = ""
+    for attempt in range(4):
+        proc = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
+                              capture_output=True)
+        text = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode == 0 and text.strip().lower().startswith(
+                "time,depth,sea_water_temperature"):
+            return parse_chain_csv(text)
+        time.sleep(2 ** attempt * 2)
+    raise RuntimeError(
+        f"GLOS ERDDAP did not return a complete CSV for {station_id} after 4 tries: "
+        f"{text[:200]!r}")
 
 
 def profile_at(samples: list[ProfileSample], target: datetime,

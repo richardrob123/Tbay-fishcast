@@ -163,7 +163,8 @@ def main(argv) -> int:
     if points is None:
         return 1
     print(f"    subsurface bias {central:+.1f}C (band {lo:+.1f}..{hi:+.1f}); surface anchor "
-          f"{'GLSEA %.1fC' % meta['surf_sst'] if meta.get('surf_sst') else 'none'} held across leads\n")
+          f"{'GLSEA %.1fC' % meta['surf_sst'] if meta.get('surf_sst') is not None else 'none'}"
+          f" held across leads\n")
     for p in points:
         # GO = reachable across the whole bias band; go? = central says yes but the
         # band disagrees; ~? = only the optimistic end reaches (honest, not binary)

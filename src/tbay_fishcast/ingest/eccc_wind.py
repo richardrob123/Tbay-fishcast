@@ -132,6 +132,17 @@ def _parse(props: dict) -> WindObs | None:
                    None if d == 0 else float(d) * 10.0, air)
 
 
+def fetch_hourly_report(start: date, end: date, *, station: str = "welcome_island",
+                        timeout: float = 240.0):
+    """-> (records, FetchReport). The evidence-carrying form.
+
+    Use this when an analysis can legitimately proceed on a partial record but must SAY that it
+    did — a calibration over many seasons, say, where one gappy season is worth keeping as long
+    as the output records which. `fetch_hourly` is the strict form and raises instead.
+    """
+    return _fetch(start, end, station=station, timeout=timeout, allow_partial=True)
+
+
 def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
                  timeout: float = 240.0, allow_partial: bool = False) -> list[WindObs]:
     """Observed hourly wind over [start, end], oldest first. Cached; chunked; retried.
@@ -144,7 +155,22 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
     the label kept saying 2018-2024. Pass ``allow_partial=True`` to accept a hole knowingly; use
     `fetch_hourly_report` if you also want the evidence of what is missing.
     """
+    return _fetch(start, end, station=station, timeout=timeout,
+                  allow_partial=allow_partial)[0]
+
+
+def _fetch(start: date, end: date, *, station: str, timeout: float, allow_partial: bool):
     st = STATIONS[station]
+    # ECCC returns HTTP 200 with features:[] for a window in the future, so chunks past today
+    # come back "empty" and would trip PartialFetch — reporting a request that merely outran its
+    # source as a failed fetch, and dropping a whole season. Clamp before keying, so the cache
+    # cannot freeze a truncated series under a key that claims the full range.
+    _s, end, _c, _w = windowed.clamp_window(start, end, not_after_today=True)
+    if end < start:
+        rep = windowed.FetchReport(requested_start=start, requested_end=end,
+                                   effective_start=start, effective_end=end,
+                                   chunk_days=CHUNK_DAYS)
+        return [], rep
     # SCHEMA VERSION IN THE KEY. Adding air temperature did not invalidate the cache, so
     # an analysis ran with air_c=None on 95% of its rows and reported the resulting
     # n=104 partial correlation as if it were the n=2179 one. A cached row must never
@@ -158,8 +184,12 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
         except ValueError:
             rows = None
         if rows is not None:
-            return [WindObs(datetime.fromisoformat(r[0]).replace(tzinfo=timezone.utc), r[1],
-                            r[2], r[3] if len(r) > 3 else None) for r in rows]
+            cached = [WindObs(datetime.fromisoformat(r[0]).replace(tzinfo=timezone.utc), r[1],
+                              r[2], r[3] if len(r) > 3 else None) for r in rows]
+            rep = windowed.FetchReport(requested_start=start, requested_end=end,
+                                       effective_start=start, effective_end=end,
+                                       chunk_days=CHUNK_DAYS, records=len(cached))
+            return cached, rep
 
     # CHUNK/RETRY/REPORT is delegated to ingest/windowed (ADR-059) rather than reimplemented.
     # Measured here and encoded there: 2024-04-01..11-30 returns 6.0 MB in 1.5 s, while the same
@@ -193,4 +223,4 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
     _CACHE.mkdir(parents=True, exist_ok=True)
     cp.write_text(json.dumps([[w.time.replace(tzinfo=None).isoformat(), w.speed_kn, w.dir_deg,
                                w.air_c] for w in out]))
-    return out
+    return out, report

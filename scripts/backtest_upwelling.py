@@ -85,7 +85,8 @@ def series(cfg, silver, buoy_recs, wind):
             g_last = g
         except Exception:  # noqa: BLE001
             g = g_last
-        bm = thermocline.BiasModel((raw[0] - g) if g else 0.0, CENTRAL, LO, HI)
+        # `is not None` — a real 0.0 C surface observation must not zero the bias correction.
+        bm = thermocline.BiasModel((raw[0] - g) if g is not None else 0.0, CENTRAL, LO, HI)
         corr6 = l6 + bm.correction([6.0])[0]
         band = thermocline.isotherm_band(depths, raw, bm, 12.0)
         # daily wind at buoy

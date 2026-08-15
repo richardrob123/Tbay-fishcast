@@ -30,6 +30,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from . import windowed
+
 _ROOT = Path(__file__).resolve().parents[3]
 _CACHE = _ROOT / "data" / "asos_cache"
 
@@ -74,6 +76,14 @@ def parse_row(r: dict) -> WindObs | None:
 def fetch(start: date, end: date, *, station: str = CYQT,
           timeout: float = 300.0) -> list[WindObs]:
     """All wind observations over [start, end), oldest first. Cached per (station, range)."""
+    # CLAMP FIRST, THEN KEY (ADR-059). Keying on the REQUESTED range froze a truncated series:
+    # data/asos_cache/9f9c9982467d16201c22.json was keyed 2026-04-01..2026-11-30 and held data
+    # only to 2026-08-14, so every later run in 2026 would have replayed mid-August data while
+    # wind_exposure.json asserted the holdout covered the whole season. Verified on disk, not
+    # supposed. The clamp is the shared one so the rule cannot drift per module.
+    _s, end, _clamped, _why = windowed.clamp_window(start, end, not_after_today=True)
+    if end < start:
+        return []
     key = json.dumps(["asos", station, start.isoformat(), end.isoformat()])
     cp = _cache_path(key)
     if cp.exists():
@@ -93,15 +103,21 @@ def fetch(start: date, end: date, *, station: str = CYQT,
     # rather than an error code. Without a retry a multi-year fetch quietly loses whole years —
     # seen live: a 2018-2024 training pull came back missing 2021 and 2024 entirely, which a
     # caller that only checks for exceptions would have fitted on without noticing.
+    # A HEADER IS NOT A COMPLETE RESPONSE. Checking only the first 200 bytes accepted any body
+    # that merely STARTED with the CSV header — including one cut short by the timeout or dropped
+    # mid-stream, which then got cached as if whole. curl exits non-zero on an incomplete
+    # transfer, so its RETURN CODE is the signal the content check cannot give us.
     raw = ""
     for attempt in range(5):
-        raw = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
-                             capture_output=True).stdout.decode("utf-8", "replace")
-        if "station,valid" in raw[:200]:
+        proc = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
+                              capture_output=True)
+        raw = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode == 0 and "station,valid" in raw[:200]:
             break
+        raw = ""
         time.sleep(2 ** attempt * 3)
-    if "station,valid" not in raw[:200]:
-        raise RuntimeError(f"ASOS archive unavailable after 5 tries: {raw[:160]!r}")
+    if not raw:
+        raise RuntimeError(f"ASOS archive unavailable or truncated after 5 tries: {url[-60:]!r}")
     out = [w for w in (parse_row(r) for r in csv.DictReader(io.StringIO(raw))) if w is not None]
     out.sort(key=lambda w: w.time)
     _CACHE.mkdir(parents=True, exist_ok=True)

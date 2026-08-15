@@ -18,6 +18,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+import time
+
 import numpy as np
 import requests
 
@@ -106,6 +108,31 @@ def fetch_recent_sst(lat: float, lon: float, day, *, dataset: str = DATASET_TRUT
     return None
 
 
+# ERDDAP DROPS CONNECTIONS, and a season is the unit that goes missing when it does. Measured:
+# a multi-year calibration lost its entire 2025 season to a single "Connection aborted" while
+# every other year succeeded — so the published result was built on 12 seasons instead of 14 and
+# nothing but a stdout line said so. A one-shot request against this host makes an analysis a
+# network lottery; the retry makes a re-run reproducible.
+_RETRIES = 4
+
+
+def _rows_with_retry(url: str, timeout: float, *, what: str = "request"):
+    last = None
+    for attempt in range(_RETRIES):
+        try:
+            r = requests.get(url, timeout=timeout)
+            r.raise_for_status()
+            return r.json()["table"]["rows"]     # parse inside the try (stress-test H2)
+        except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+            last = e
+            # A 404 here means the RANGE is wrong, not that the host is busy — retrying an
+            # out-of-range window just burns four round trips to get the same answer.
+            if getattr(getattr(e, "response", None), "status_code", None) == 404:
+                break
+            time.sleep(2 ** attempt * 2)
+    raise SourceUnavailable(f"GLSEA {what} unreachable/malformed: {last}") from last
+
+
 _COVERAGE_CACHE: dict = {}
 
 
@@ -162,12 +189,7 @@ def fetch_series(pixel_lat: float, pixel_lon: float, start: str, end: str,
     q = (f"{ERDDAP}/{dataset}.json?sst"
          f"%5B({start}T12:00:00Z):({end}T12:00:00Z)%5D"
          f"%5B({pixel_lat})%5D%5B({pixel_lon})%5D")
-    try:
-        r = requests.get(q, timeout=timeout)
-        r.raise_for_status()
-        rows = r.json()["table"]["rows"]        # parse inside the try (stress-test H2)
-    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
-        raise SourceUnavailable(f"GLSEA series unreachable/malformed: {e}") from e
+    rows = _rows_with_retry(q, timeout, what="series")
     out: dict[str, float] = {}
     for t, _plat, _plon, sst in rows:
         if sst is not None:

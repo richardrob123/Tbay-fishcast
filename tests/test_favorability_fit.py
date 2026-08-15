@@ -125,3 +125,35 @@ def test_the_published_calibration_withholds_what_it_cannot_support():
     # a detected mechanism and a usable curve are separate claims and must not be conflated
     if not d["recommend_recalibrate"]:
         assert "prior stands" in d["verdict"]
+
+
+# --- the falsy-zero class, as a repo-wide invariant (ADR-060) ---------------------------------
+
+def test_no_surface_temperature_or_gradient_is_gated_on_truthiness():
+    """A 0.0 C Lake Superior surface reading is REAL (and is what GLSEA reports over ice), and a
+    0.0 C/m gradient is a measured isothermal column. Both were being read as "missing".
+
+    The sweep that found this showed the tell: the SAME expression was already correct in
+    build_coast_site.py and forecast_window.py and wrong in build_dynamic_map.py and
+    backtest_upwelling.py — copy-drift, fixed in two places and missed in two. This test exists
+    so the next copy cannot drift back.
+    """
+    import re
+    # NAMES THAT HOLD A NUMBER. Bare `g` is excluded deliberately: it is used for both a
+    # temperature (backtest_upwelling.py) and for the fetch RESULT OBJECT
+    # (accumulate_forecast_gate.py:126, `g.sst_c if g else None`). Guarding an object against
+    # None with truthiness is correct; guarding a measurement that way is not, and a test that
+    # cannot tell them apart would either miss real bugs or train people to ignore it.
+    NUMERIC = r"(g_sst|surf_sst|sst_c|gradient_c_per_m|p\.gradient_c_per_m|temp_c|bottom_c)"
+    bad = []
+    for p in sorted(ROOT.glob("scripts/*.py")) + sorted(ROOT.rglob("src/tbay_fishcast/**/*.py")):
+        for i, line in enumerate(p.read_text().splitlines(), 1):
+            m = re.search(r"if\s+" + NUMERIC + r"\s+else", line)
+            if not m or "is not None" in line:
+                continue
+            name = m.group(1)
+            # `X.attr if X else ...` is an OBJECT guard, not a numeric one.
+            if re.search(re.escape(name) + r"\s*\.", line):
+                continue
+            bad.append(f"{p.relative_to(ROOT)}:{i}: {line.strip()}")
+    assert not bad, "measured quantities gated on truthiness (zero is real here):\n" + "\n".join(bad)

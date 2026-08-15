@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+import pytest
+
 from tbay_fishcast.ingest import windowed as w
 
 TODAY = date(2026, 8, 15)
@@ -138,3 +140,37 @@ def test_records_count_is_measured_not_assumed():
     recs, rep = w.fetch_windowed(date(2026, 1, 1), date(2026, 6, 30), fetch=fetch,
                                  chunk_days=90, sleep=lambda _s: None)
     assert rep.records == len(recs) == 7 * rep.chunks
+
+
+# --- clamp-then-key: the bug the repo-wide sweep found on disk (ADR-059) ----------------------
+
+def test_a_future_window_is_clamped_before_the_cache_key_is_built(monkeypatch, tmp_path):
+    """THE LIVE INSTANCE. data/asos_cache/9f9c9982467d16201c22.json was keyed
+    2026-04-01..2026-11-30 and held data only through 2026-08-14, so every later run in 2026
+    would have replayed mid-August data while wind_exposure.json asserted the holdout covered the
+    whole season. Clamping AFTER keying is not a smaller version of this bug — it IS this bug."""
+    from datetime import date as _date
+    from tbay_fishcast.ingest import asos_archive as asos
+
+    monkeypatch.setattr(asos, "_CACHE", tmp_path / "asos")
+    today = _date.today()
+    far = _date(today.year + 1, 11, 30)
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen["url"] = cmd[-1]
+        raise AssertionError("stop before the network")
+
+    monkeypatch.setattr(asos.subprocess, "run", fake_run)
+    with pytest.raises(AssertionError):
+        asos.fetch(today - timedelta(days=10), far)
+    # the request itself must carry the clamped end, not the requested one
+    assert f"year2={today.year}" in seen["url"]
+    assert f"month2={today.month}" in seen["url"]
+
+
+def test_a_window_wholly_in_the_future_never_reaches_the_network():
+    from datetime import date as _date
+    from tbay_fishcast.ingest import asos_archive as asos
+    today = _date.today()
+    assert asos.fetch(today + timedelta(days=5), today + timedelta(days=20)) == []

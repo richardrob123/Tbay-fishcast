@@ -32,6 +32,7 @@ import csv
 import io
 import re
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -68,11 +69,24 @@ def _url(dataset: str, sensors, start: date, end: date) -> str:
             f"&time%3C={end.isoformat()}T00:00:00Z")
 
 
-def _get(url: str, timeout: float) -> str:
-    # curl via subprocess, matching glos.py/nonna.py — no extra HTTP dependency.
-    raw = subprocess.run(["curl", "-s", "-m", str(int(timeout)), url],
-                         capture_output=True).stdout
-    return raw.decode("utf-8", "replace")
+def _get(url: str, timeout: float, *, tries: int = 4, expect: str = "time,") -> str:
+    # RETRY AND CHECK THE RETURN CODE. This was the only remote client in ingest/ with neither
+    # (eccc_wind, openmeteo_prev_runs and asos_archive all retry; nonna.py retries with a comment
+    # that the server "drops the connection mid-stream"). It matters because a partially delivered
+    # body still STARTS with the CSV header, so a header check passes and a truncated series is
+    # returned as complete — and backfill_thermal_gate.py issues five unretried 8-month ERDDAP
+    # requests every morning to build its climatology. A year lost to a dropped connection was
+    # silently discarded, so the climatology baseline underlying the ADR-006 demotion decision
+    # varied day to day with nothing in the log recording it.
+    last = ""
+    for attempt in range(tries):
+        proc = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
+                              capture_output=True)
+        last = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode == 0 and last.strip().lower().startswith(expect):
+            return last
+        time.sleep(2 ** attempt * 2)
+    return last
 
 
 def fetch_chain(station_id: str, start: date, end: date, *, sensors=None,
