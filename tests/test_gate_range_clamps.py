@@ -142,11 +142,15 @@ def test_a_multi_year_request_is_split_into_bounded_chunks(monkeypatch, tmp_path
     from tbay_fishcast.ingest import eccc_wind
     seen = []
 
-    def fake_get(url, timeout, tries=4):
+    def fake_get(url, timeout, tries=1):
         import re
         a, b = re.findall(r"datetime=([0-9-]+)T[^/]+/([0-9-]+)T", url)[0]
         seen.append((a, b))
-        return {"features": []}
+        # Return ONE feature, not none. Since ADR-059 an empty window is a retryable failure, so
+        # a fake that returns nothing would exercise the backoff path instead of chunk geometry —
+        # which is what this test is about. Retry behaviour is covered in test_windowed.py.
+        return {"features": [{"properties": {"UTC_DATE": a + "T00:00:00", "WIND_SPEED": 10,
+                                             "WIND_DIRECTION": 27}}]}
 
     monkeypatch.setattr(eccc_wind, "_get", fake_get)
     # tmp_path, not a fixed fake dir: fetch_hourly WRITES its cache on the way out, so a

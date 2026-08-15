@@ -33,6 +33,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from . import windowed
+
 _ROOT = Path(__file__).resolve().parents[3]
 _CACHE = _ROOT / "data" / "eccc_wind_cache"
 
@@ -41,6 +43,14 @@ PAGE = 10000                    # server honours this; larger windows paginate b
 CHUNK_DAYS = 120                # ~2900 records / ~3 MB — well inside the measured wall
 KMH_TO_KN = 1.0 / 1.852
 SCHEMA = 2                      # bump whenever the cached row shape changes
+
+
+class PartialFetch(RuntimeError):
+    """Some window returned nothing after every retry. Carries the report."""
+
+    def __init__(self, msg, report):
+        super().__init__(msg)
+        self.report = report
 
 
 @dataclass(frozen=True)
@@ -123,11 +133,16 @@ def _parse(props: dict) -> WindObs | None:
 
 
 def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
-                 timeout: float = 240.0) -> list[WindObs]:
-    """Observed hourly wind over [start, end], oldest first. Cached; paginated.
+                 timeout: float = 240.0, allow_partial: bool = False) -> list[WindObs]:
+    """Observed hourly wind over [start, end], oldest first. Cached; chunked; retried.
 
     Records ECCC has flagged, or that carry no direction, are DROPPED rather than guessed at —
     a wind gate that silently substitutes for missing observations is measuring itself.
+
+    Raises `PartialFetch` if any window came back empty after every retry, because a silently
+    short record is how a rate-limited year once vanished out of a "2018-2024" training set while
+    the label kept saying 2018-2024. Pass ``allow_partial=True`` to accept a hole knowingly; use
+    `fetch_hourly_report` if you also want the evidence of what is missing.
     """
     st = STATIONS[station]
     # SCHEMA VERSION IN THE KEY. Adding air temperature did not invalidate the cache, so
@@ -146,31 +161,34 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
             return [WindObs(datetime.fromisoformat(r[0]).replace(tzinfo=timezone.utc), r[1],
                             r[2], r[3] if len(r) > 3 else None) for r in rows]
 
-    # CHUNKED, and by DAYS rather than calendar years because the limit is on RESPONSE SIZE.
-    # Measured directly: 2024-04-01..11-30 returns 6.0 MB in 1.5 s, while the same request
-    # extended one month further is killed with "connection reset by peer" — no HTTP error, no
+    # CHUNK/RETRY/REPORT is delegated to ingest/windowed (ADR-059) rather than reimplemented.
+    # Measured here and encoded there: 2024-04-01..11-30 returns 6.0 MB in 1.5 s, while the same
+    # request one month longer is killed with "connection reset by peer" — no HTTP error, no
     # partial page, an empty body indistinguishable from "this station has no wind". `limit` and
-    # `offset` do not help, because the server dies composing the response before paging applies.
-    out: list[WindObs] = []
-    chunk_start = start
-    while chunk_start <= end:
-        chunk_end = min(chunk_start + timedelta(days=CHUNK_DAYS - 1), end)
+    # `offset` do not help; the server dies composing the response before paging applies.
+    def _chunk(cs, ce):
+        rows: list[WindObs] = []
         offset = 0
         while True:
             url = (f"{API}?STN_ID={st.stn_id}"
-                   f"&datetime={chunk_start.isoformat()}T00:00:00Z/"
-                   f"{chunk_end.isoformat()}T23:59:59Z"
+                   f"&datetime={cs.isoformat()}T00:00:00Z/{ce.isoformat()}T23:59:59Z"
                    f"&limit={PAGE}&offset={offset}&f=json")
-            d = _get(url, timeout)
+            d = _get(url, timeout, tries=1)      # windowed owns the retry policy
             feats = d.get("features") or []
             for f in feats:
                 w = _parse(f.get("properties") or {})
                 if w is not None:
-                    out.append(w)
+                    rows.append(w)
             if len(feats) < PAGE:
                 break
             offset += PAGE
-        chunk_start = chunk_end + timedelta(days=1)
+        return rows
+
+    out, report = windowed.fetch_windowed(start, end, fetch=_chunk, chunk_days=CHUNK_DAYS)
+    # SILENCE IS NOT AN OPTION BY DEFAULT. A window that never returned is a hole in a validation
+    # record; a caller that genuinely wants partial data has to ask, and is handed the evidence.
+    if report.partial and not allow_partial:
+        raise PartialFetch(f"{st.name} {start}..{end}: {report.describe()}", report)
     out.sort(key=lambda w: w.time)
     _CACHE.mkdir(parents=True, exist_ok=True)
     cp.write_text(json.dumps([[w.time.replace(tzinfo=None).isoformat(), w.speed_kn, w.dir_deg,

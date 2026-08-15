@@ -106,6 +106,17 @@ def fetch_recent_sst(lat: float, lon: float, day, *, dataset: str = DATASET_TRUT
     return None
 
 
+_COVERAGE_CACHE: dict = {}
+
+
+def _coverage_end_cached(dataset: str, *, timeout: float = 60.0) -> str:
+    """coverage_end memoised per process — fetch_series must not add a metadata round trip to
+    every call just to be safe."""
+    if dataset not in _COVERAGE_CACHE:
+        _COVERAGE_CACHE[dataset] = coverage_end(dataset, timeout=timeout)
+    return _COVERAGE_CACHE[dataset]
+
+
 def coverage_end(dataset: str = DATASET_TRUTH, timeout: float = 60.0) -> str:
     """Dataset's last available day (ISO 'YYYY-MM-DD') from ERDDAP metadata, so callers
     can clamp a requested window and avoid ERDDAP's 404 on an out-of-range end."""
@@ -123,13 +134,31 @@ def coverage_end(dataset: str = DATASET_TRUTH, timeout: float = 60.0) -> str:
 
 
 def fetch_series(pixel_lat: float, pixel_lon: float, start: str, end: str,
-                 *, dataset: str = DATASET_TRUTH, timeout: float = 120.0) -> dict:
+                 *, dataset: str = DATASET_TRUTH, timeout: float = 120.0,
+                 clamp: bool = True) -> dict:
     """Daily SST time series at ONE fixed pixel over [start, end] (ISO days).
 
     Pass a pre-resolved VALID water pixel (e.g. fetch_sst(...).pixel_lat/lon) so the
     series is at a consistent location; cloud-gapped days come back absent (null).
     Returns {ISO-day: sst_c}. One ERDDAP griddap request over the time range.
+
+    THE END IS CLAMPED HERE, not by the caller (ADR-059). ERDDAP answers a range that runs past
+    the dataset's last day with a **404 for the WHOLE range** — not a short series — so one day
+    of overreach returns nothing at all. Callers legitimately ask past coverage: a hindcast needs
+    data out to its longest lead's valid time, which is in the future by construction. Leaving the
+    clamp to them has now failed twice in this project (ADR-054 fixed it in one script; a season
+    was still lost in another months later). The module that knows its own coverage owns the
+    clamp. `clamp=False` is available for a caller that genuinely wants the raw failure.
     """
+    if clamp:
+        try:
+            ce = _coverage_end_cached(dataset, timeout=timeout)
+            if ce and end[:10] > ce:
+                end = ce
+        except SourceUnavailable:
+            pass          # cannot clamp -> proceed unclamped rather than block the caller
+    if end[:10] < start[:10]:
+        return {}         # window entirely past coverage; empty beats a reversed-range error
     q = (f"{ERDDAP}/{dataset}.json?sst"
          f"%5B({start}T12:00:00Z):({end}T12:00:00Z)%5D"
          f"%5B({pixel_lat})%5D%5B({pixel_lon})%5D")
