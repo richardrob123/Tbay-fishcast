@@ -40,6 +40,7 @@ API = "https://api.weather.gc.ca/collections/climate-hourly/items"
 PAGE = 10000                    # server honours this; larger windows paginate below
 CHUNK_DAYS = 120                # ~2900 records / ~3 MB — well inside the measured wall
 KMH_TO_KN = 1.0 / 1.852
+SCHEMA = 2                      # bump whenever the cached row shape changes
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,11 @@ class WindObs:
     time: datetime          # UTC
     speed_kn: float
     dir_deg: float | None   # None == calm (ECCC reports direction 0 with speed 0)
+    # AIR temperature at the same in-bay mast. Carried because it is the cleanest available
+    # control for the confound that ruins a wind-vs-cooling test: the west wind that drives
+    # upwelling also brings cold air, which cools the surface on its own. Controlling for air
+    # temperature separates the two at the SAME place, which no second satellite pixel can do.
+    air_c: float | None = None
 
     @property
     def calm(self) -> bool:
@@ -89,6 +95,13 @@ def _get(url: str, timeout: float, tries: int = 4) -> dict:
 
 def _parse(props: dict) -> WindObs | None:
     t, spd, drc = props.get("UTC_DATE"), props.get("WIND_SPEED"), props.get("WIND_DIRECTION")
+    air = props.get("TEMP")
+    if props.get("TEMP_FLAG"):
+        air = None
+    try:
+        air = None if air is None else float(air)
+    except (TypeError, ValueError):
+        air = None
     if t is None or spd is None or drc is None:
         return None
     # Any flag at all means ECCC has qualified the value; a validation record should not quietly
@@ -105,7 +118,8 @@ def _parse(props: dict) -> WindObs | None:
     when = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
     if when.tzinfo is None:
         when = when.replace(tzinfo=timezone.utc)
-    return WindObs(when.astimezone(timezone.utc), kn, None if d == 0 else float(d) * 10.0)
+    return WindObs(when.astimezone(timezone.utc), kn,
+                   None if d == 0 else float(d) * 10.0, air)
 
 
 def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
@@ -116,7 +130,12 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
     a wind gate that silently substitutes for missing observations is measuring itself.
     """
     st = STATIONS[station]
-    key = json.dumps(["eccc-hourly", st.stn_id, start.isoformat(), end.isoformat()])
+    # SCHEMA VERSION IN THE KEY. Adding air temperature did not invalidate the cache, so
+    # an analysis ran with air_c=None on 95% of its rows and reported the resulting
+    # n=104 partial correlation as if it were the n=2179 one. A cached row must never
+    # outlive the shape it was written for.
+    key = json.dumps(["eccc-hourly", SCHEMA, st.stn_id, start.isoformat(),
+                      end.isoformat()])
     cp = _cache_path(key)
     if cp.exists():
         try:
@@ -124,8 +143,8 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
         except ValueError:
             rows = None
         if rows is not None:
-            return [WindObs(datetime.fromisoformat(t).replace(tzinfo=timezone.utc), s, d)
-                    for t, s, d in rows]
+            return [WindObs(datetime.fromisoformat(r[0]).replace(tzinfo=timezone.utc), r[1],
+                            r[2], r[3] if len(r) > 3 else None) for r in rows]
 
     # CHUNKED, and by DAYS rather than calendar years because the limit is on RESPONSE SIZE.
     # Measured directly: 2024-04-01..11-30 returns 6.0 MB in 1.5 s, while the same request
@@ -154,6 +173,6 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
         chunk_start = chunk_end + timedelta(days=1)
     out.sort(key=lambda w: w.time)
     _CACHE.mkdir(parents=True, exist_ok=True)
-    cp.write_text(json.dumps([[w.time.replace(tzinfo=None).isoformat(), w.speed_kn, w.dir_deg]
-                              for w in out]))
+    cp.write_text(json.dumps([[w.time.replace(tzinfo=None).isoformat(), w.speed_kn, w.dir_deg,
+                               w.air_c] for w in out]))
     return out

@@ -1,0 +1,140 @@
+{
+  "built_utc": "2026-08-15T20:49:56+00:00",
+  "status": "MEASUREMENT ONLY \u2014 not wired; a curve change needs sign-off (rule 11)",
+  "wind": "WELCOME ISLAND (AUT), ECCC 4061 \u2014 in the bay, 4 km from the product's node",
+  "response": "GLSEA/ACSPO shore pixel minus an offshore reference, plus shore-alone controlled for in-bay AIR temperature at the same mast",
+  "shore_pixel": [
+    48.4055389772726,
+    -89.2103972662858
+  ],
+  "offshore_pixel": [
+    48.0551510440909,
+    -88.5516679519042
+  ],
+  "pixel_separation_km": 62.4,
+  "seasons": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2017,
+    2018,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "n_days": 2232,
+  "lag_profile_days": {
+    "0": {
+      "lag_days": 0,
+      "n": 2214,
+      "rho_vs_anomaly": -0.1188,
+      "p_anomaly": 0.0,
+      "rho_vs_shore": -0.1644,
+      "p_shore": 0.0,
+      "rho_shore_given_air": -0.1355,
+      "p_shore_given_air": 0.0,
+      "n_air_controlled": 2214,
+      "train_rho_vs_anomaly": -0.1026
+    },
+    "1": {
+      "lag_days": 1,
+      "n": 2196,
+      "rho_vs_anomaly": -0.1348,
+      "p_anomaly": 0.0,
+      "rho_vs_shore": -0.1656,
+      "p_shore": 0.0,
+      "rho_shore_given_air": -0.1285,
+      "p_shore_given_air": 0.0,
+      "n_air_controlled": 2196,
+      "train_rho_vs_anomaly": -0.1256
+    },
+    "2": {
+      "lag_days": 2,
+      "n": 2179,
+      "rho_vs_anomaly": -0.1438,
+      "p_anomaly": 0.0,
+      "rho_vs_shore": -0.1638,
+      "p_shore": 0.0,
+      "rho_shore_given_air": -0.1225,
+      "p_shore_given_air": 0.0,
+      "n_air_controlled": 2179,
+      "train_rho_vs_anomaly": -0.1451
+    },
+    "3": {
+      "lag_days": 3,
+      "n": 2163,
+      "rho_vs_anomaly": -0.131,
+      "p_anomaly": 0.0,
+      "rho_vs_shore": -0.1464,
+      "p_shore": 0.0,
+      "rho_shore_given_air": -0.1072,
+      "p_shore_given_air": 1e-06,
+      "n_air_controlled": 2163,
+      "train_rho_vs_anomaly": -0.1418
+    },
+    "4": {
+      "lag_days": 4,
+      "n": 2148,
+      "rho_vs_anomaly": -0.1076,
+      "p_anomaly": 1e-06,
+      "rho_vs_shore": -0.1275,
+      "p_shore": 0.0,
+      "rho_shore_given_air": -0.0889,
+      "p_shore_given_air": 3.8e-05,
+      "n_air_controlled": 2148,
+      "train_rho_vs_anomaly": -0.1225
+    }
+  },
+  "selected_lag_days": 2,
+  "lag_selected_on": "training years <= 2024 only",
+  "quiet_day_noise_sd_c": 0.993,
+  "event_bar_c": -1.9859,
+  "event_rate": 0.033,
+  "primary_threshold_free_test": {
+    "lag_days": 2,
+    "n": 2179,
+    "rho_vs_anomaly": -0.1438,
+    "p_anomaly": 0.0,
+    "rho_vs_shore": -0.1638,
+    "p_shore": 0.0,
+    "rho_shore_given_air": -0.1225,
+    "p_shore_given_air": 0.0,
+    "n_air_controlled": 2179,
+    "train_rho_vs_anomaly": -0.1451
+  },
+  "mechanism_detected": true,
+  "mechanism_survives_air_control": true,
+  "logistic_fits": {
+    "sustained_favorable_speed_kn": {
+      "n_train": 1895,
+      "n_holdout": 284,
+      "events_train": 58,
+      "events_holdout": 14,
+      "auc_train": 0.5026,
+      "auc_holdout": null,
+      "auc_holdout_withheld": "only 14 held-out events (need 25); an AUC on this many is noise",
+      "s50": -714.263,
+      "width": -209.083
+    },
+    "drive_kth": {
+      "n_train": 1895,
+      "n_holdout": 284,
+      "events_train": 58,
+      "events_holdout": 14,
+      "auc_train": 0.5657,
+      "auc_holdout": null,
+      "auc_holdout_withheld": "only 14 held-out events (need 25); an AUC on this many is noise",
+      "s50": 2358.122,
+      "width": 652.578
+    }
+  },
+  "split_year": 2024,
+  "recommend_recalibrate": false,
+  "verdict": "NO OPERATIONAL CURVE. The threshold-free test DOES detect the mechanism (rho -0.1438 at +2 d, p<1e-6; surviving an in-bay air-temperature control at rho -0.1225), but the association is far too weak to support a probability curve: training AUC 0.5026 against a 0.62 bar. The physics prior stands.",
+  "what_a_null_means": "The only continuous nearshore temperature at Thunder Bay is a daily satellite analysis measured at 5x smoother than real water (ADR-053), and there is no alternative: Welcome Island is a met station with no water temperature and the region has zero marine buoys (both checked this session). Smoothing damps amplitude and blurs timing, so it can only WEAKEN a real association, never create one. A positive result is therefore credible and conservative; a null does NOT show the shore lacks an upwelling response, only that this instrument cannot resolve it."
+}

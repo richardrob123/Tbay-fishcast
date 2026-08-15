@@ -101,6 +101,68 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-058 — The upwelling mechanism IS detectable at Thunder Bay. It still cannot carry a
+  probability curve, and the physics prior stands.**
+
+  `upwelling_favorability.json` has read `calibrated: false, fit_rejected(auc=0.485)` for months.
+  The layer runs on a literature prior because its only calibration could not discriminate at
+  all, and the calibrator's own note says why: offshore western-Superior buoys "do NOT show the
+  coastal-upwelling wind->cooling response ... coastal upwelling is a NEARSHORE phenomenon these
+  deep-water buoys miss." That is ADR-050 again — a real measurement taken where it cannot speak
+  for the claim — and it was never retried at the right place. (I first suspected a unit mismatch,
+  since `s50=425.4` is absurd for knots. Wrong: the calibrator does fit in knots, and 425 is
+  simply what `-a/b` does when the slope collapses. The existing plausibility guard caught it
+  correctly.)
+
+  Redone with in-bay wind (Welcome Island), the response as a shore-minus-offshore satellite
+  difference, and the association tested three ways over **14 seasons, 2,494 paired days**:
+
+      lag    rho(drive, d_anomaly)   rho(drive, d_shore)   controlling for in-bay AIR
+      +1 d        -0.135                  -0.166                -0.129   p ~ 0
+      +2 d        -0.144                  -0.164                -0.123   p ~ 0    <- peak
+      +3 d        -0.131                  -0.146                -0.107
+      +4 d        -0.108                  -0.128                -0.089
+
+  **The mechanism is there.** The sign is right (more favorable wind -> colder shore relative to
+  offshore), the significance is overwhelming on n=2,179, and the lag profile is smoothly peaked
+  at +2 days — which matches the domain's own physics (setup ~10 h, seiche ~40 h) and is not a
+  shape an instantaneous artefact produces. Most importantly it **survives controlling for air
+  temperature at the same in-bay mast**: this is not cold-front advection wearing upwelling's
+  clothes, which is the confound that makes a naive wind-vs-cooling test worthless, because the
+  west wind that upwells and the cold air both arrive together by construction. As far as I can
+  tell this is the first local, quantitative evidence that the mechanism the whole product is
+  built on actually operates at Thunder Bay.
+
+  **And it cannot support the curve.** Training AUC **0.503** for the sustained-speed predictor
+  the shipped logistic consumes, against the 0.62 bar the existing calibrator uses. Held-out AUC
+  is WITHHELD — only 14 events, below `MIN_EVENTS`. A rho of -0.14 is roughly 2% of variance:
+  real, reproducible, and nowhere near enough to put a probability on a given day. **No
+  recalibration. The physics prior stands, now for a measured reason rather than a failed test at
+  the wrong site.** Worth noting for a future proposal: `drive_kth` scores AUC 0.566 against
+  speed's 0.503, so the shipped curve's *parameterisation* (instantaneous speed) is likely the
+  weaker of the two — that is a separate change needing its own evidence and sign-off.
+
+  **Three of my own errors, caught in sequence, each of which would have published a falsehood.**
+
+  (1) The first run printed a held-out AUC of **0.3403 computed on SEVEN events** and I was about
+  to report it. That is precisely the error ADR-057 exists to prevent, repeated one step later in
+  a new file that did not inherit the guard. `MIN_EVENTS = 25` now withholds it.
+
+  (2) `(primary["p_anomaly"] or 1) < 0.001` — **a p-value of exactly 0.0 is falsy**, so `0.0 or 1`
+  returns 1 and the strongest possible significance was read as the weakest. This inverted the
+  headline: the script printed "NO SIGNAL" over rho = -0.13 at p ~ 0. Never use `or` to default a
+  numeric that can legitimately be zero; the regression test keeps the trap visible.
+
+  (3) The air-temperature control ran on **n=104 of 2,179 rows**. Adding `air_c` to the cached row
+  did not change the cache key, so 95% of the data was served from rows written before the column
+  existed and read back as None — and the resulting "does not survive the air control" was
+  computed on 5% of the sample. Root-caused rather than papered over: the cache key now carries a
+  `SCHEMA` version, so a row can never outlive the shape it was written for.
+
+  A fourth, smaller: this script lost the **entire 2026 season** to an unclamped satellite
+  request — ADR-054's own lesson, not inherited by a new file, which is exactly how a fixed bug
+  comes back. Clamped.
+
 - **ADR-057 — SUPERSEDES ADR-055's table. Three seasons instead of four months: the event
   verdict is issued, and one of my own conclusions flips.**
 
