@@ -123,8 +123,12 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
 
   **Three findings, and the third kills the obvious fix.**
 
-  (1) **"Within noise" was wrong.** Measured at Thunder Bay the airport under-reads the lake by
-  ~3 kn, not ~1. The scorecard's note is superseded.
+  (1) **"Within noise" was wrong, and the like-for-like comparison is worse than the headline.**
+  The scorecard's figure was a W-quadrant offset of ~1.16 kn. Measured in the same quadrant at
+  Thunder Bay it is **+3.77 kn** — a factor of three. More decisive than any speed offset: the
+  airport and the lake **disagree about SECTOR MEMBERSHIP on 19.7% of hours**. One hour in five
+  they do not agree on whether the wind is even in the upwelling-favorable quadrant, and that,
+  not the speed, is what a threshold cannot repair.
 
   (2) **My physical prior was wrong and the data said so.** A roughness change scales wind
   multiplicatively, so I expected `lake = b * land` to win. It came last. The affine fit —
@@ -150,12 +154,18 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   regime-dependent and directional (+21.6° at concentration 0.63 — a quarter of the 90° favorable
   sector), not a constant a scalar can absorb.
 
-  **PROPOSED, requiring sign-off per rule 11: feed the phase classifier Welcome Island, not
-  CYQT.** It is not archive-only — MSC **6049443** is in the live `swob-realtime` network with
-  hourly `avg_wnd_spd_10m_pst1hr` and QA flags, current to the hour. CYQT keeps its place as a
-  fallback when the island station drops out, and the fallback should say so loudly (rule 5)
-  rather than silently reverting to a reading that misses seven blows in ten. **Nothing is wired
-  into the heartbeat by this ADR.**
+  **SIGNED OFF AND IMPLEMENTED (rule 11).** Proposed to the operator with the numbers above and
+  approved; `ingest/swob.py` now reads MSC **6049443** from the live `swob-realtime` feed
+  (hourly `avg_wnd_spd_10m_pst1hr`, QA-flagged, verified current to 0.9 h) and `_build_phase`
+  takes it as the primary observed source. **The threshold did not change** — one 13 kn bar,
+  now applied at a station where one bar is simply correct.
+
+  CYQT remains the fallback, and it announces itself: the manifest carries `obs_in_bay`,
+  `obs_fallback`, `obs_age_h` and an `obs_note` naming the 71% miss rate. A silent revert would
+  be pixel-for-pixel identical to a map reading the lake while missing most of the blows, which
+  is the failure this ADR exists to end (rule 5). The fallback also triggers on a STALE in-bay
+  reading, not only an absent one — an hourly station that last reported yesterday is not a
+  nowcast however well-sited it is. Both paths are pinned by tests.
 
   **Caveat that bounds every number above:** Welcome Island is an ISLAND station. Its anemometer
   stands on land, so it under-reads a true over-water wind by an unknown amount. Every scale
@@ -217,9 +227,23 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
 
   (3) **Directional agreement decays from 0.76 to 0.63.** At +120 h the forecast calls
   upwelling-vs-downwelling correctly 64% of the time against a 50% coin. That is real information
-  and it is much weaker than an undecorated map implies. **Proposed, requiring sign-off per
-  rule 11:** drive the upwelling layer's confidence from this measured curve rather than
-  presenting all leads alike. No product change is made in this ADR.
+  and it is much weaker than an undecorated map implies.
+
+  **SIGNED OFF AND IMPLEMENTED (rule 11).** `features/lead_confidence.py` replaces the phase
+  timeline's old label — literally `confidence="med" if lead <= 48 else "low"`, two picked
+  numbers and a picked boundary chosen before anything had been measured — with a ladder read off
+  `wind_lead_skill.json`. Every rung is a comparison the gate already computes: *measured* (the
+  interval clears the ADR-006 bar), *informative* (beats observed persistence but not the oracle
+  composite), *weak* (beats neither, and is still shown, because hiding a weak lead is how a map
+  comes to imply confidence it never earned), *unmeasured* (which is not a synonym for fine).
+
+  One design trap, caught before it shipped. The ladder is **not monotonic**: +24 h lands on
+  *informative* while +48 and +72 land on *measured* — not because a one-day forecast is worse
+  (its raw error is the lowest of any lead) but because persistence is hardest to beat at short
+  lead, so +24 h faces the highest bar in the table. Rendered under a heading called
+  "confidence", that would have told the reader the exact opposite of the truth. The field is
+  therefore named `skill_vs_baseline`, ships with a `not_an_accuracy_ranking` note, and carries
+  `sign_agreement` — which IS monotonic (0.76 -> 0.64) — as the number a reader should act on.
 
   **The verdict I nearly published, and the guard that now stops it.** The first run reported the
   EVENT forecast at +24 h as PSS **0.87, CI [0.75, 0.98]** — tight, decisive, and worthless. The

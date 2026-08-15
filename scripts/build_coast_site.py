@@ -272,10 +272,19 @@ def _load_favor_calib():
 
 
 # Wedderburn upwelling bar (low end of the ~12-17 kt range) for the ensemble forecast tail. Named
-# so it isn't a bare literal that can drift from the value the manifest reports (validation #9). Now
-# EQUAL to the observed bar (up.OBSERVED_THRESHOLD_KN): the old lower airport bar assumed CYQT reads
-# ~3 kn low, which the buoy measurement refuted (see upwelling_phase.py). Both segments use 13 kn.
+# so it isn't a bare literal that can drift from the value the manifest reports (validation #9).
+# EQUAL to the observed bar (up.OBSERVED_THRESHOLD_KN); both segments use 13 kn.
+#
+# HISTORY, because this constant has now been argued about twice on bad evidence. A lower day-0
+# bar once existed on the assumption that CYQT reads ~3 kn low. That was dropped when the buoy
+# gate measured the airport as within ~1 kn of over-lake wind in the W quadrant — against buoys
+# 130-200 km away. ADR-056 measured it properly, 16 km away inside the bay: the W-quadrant offset
+# is **+3.77 kn**, and the two stations disagree about SECTOR MEMBERSHIP on 19.7% of hours.
+# The resolution is NOT a third threshold. It is that the airport was the wrong station: the
+# classifier now reads Welcome Island, in the bay, where one bar is simply correct.
 FORECAST_THRESHOLD_KN = 13.0
+SWOB_MIN_HOURS = 24          # below this the in-bay series cannot fill a 24 h wind-run window
+SWOB_MAX_AGE_H = 3.0         # hourly station; older than this and it is not a nowcast
 
 
 def _build_phase(lead_valid, ens):
@@ -288,14 +297,42 @@ def _build_phase(lead_valid, ens):
     the forecast is seen whole. Relaxation after a west-quadrant blow is the prime window
     (docs/FISH_BEHAVIOR_REVIEW.md). Pure classification over already-fetched series (ADR-001).
     """
-    from tbay_fishcast.features import upwelling_phase as up
-    from tbay_fishcast.ingest import metar
+    from tbay_fishcast.features import lead_confidence as lc, upwelling_phase as up
+    from tbay_fishcast.ingest import metar, swob
 
-    obs = None
+    # IN-BAY FIRST (ADR-056). Welcome Island is 4 km from the product's own node; CYQT is 16 km
+    # inland and, measured over 8,567 held-out hours, misses 71% of the hours the lake is
+    # actually blowing. The fallback is kept because an absent upwelling layer helps nobody, but
+    # it is recorded rather than hidden: rule 5, and a silent revert to the worse station would
+    # be indistinguishable from the bug ADR-056 exists to fix.
+    obs, obs_station, obs_fallback, obs_note = None, None, False, None
+    obs_age = None
     try:
-        obs = metar.fetch_recent_wind(hours=72)
+        cand = swob.fetch_recent_wind(hours=72)
+        age = swob.age_hours(cand)
+        if len(cand) >= SWOB_MIN_HOURS and age is not None and age <= SWOB_MAX_AGE_H:
+            obs, obs_station, obs_age = cand, "WELCOME ISLAND (AUT)", age
+        else:
+            obs_note = (f"in-bay station thin or stale ({len(cand)} h, age {age} h) — "
+                        f"fell back to the airport, which misses ~71% of blow hours (ADR-056)")
     except Exception as e:  # noqa: BLE001
-        print(f"observed wind (METAR) unavailable: {str(e)[:50]}")
+        obs_note = (f"in-bay station unavailable ({str(e)[:40]}) — fell back to the airport, "
+                    f"which misses ~71% of blow hours (ADR-056)")
+    if obs is None:
+        obs_fallback = True
+        print(f"WARN: {obs_note}")
+        try:
+            obs = metar.fetch_recent_wind(hours=72)
+            obs_station = metar.CYQT
+            obs_age = (round((datetime.now(timezone.utc) - obs[-1].time).total_seconds() / 3600, 2)
+                       if obs else None)
+        except Exception as e:  # noqa: BLE001
+            print(f"observed wind (METAR fallback) unavailable too: {str(e)[:50]}")
+    else:
+        print(f"observed wind: {obs_station}, {len(obs)} h, age {obs_age} h")
+
+    skill = lc.load(Path(__file__).resolve().parents[1] / "data" / "calib"
+                    / "wind_lead_skill.json")
 
     o_t = [o.time for o in obs] if obs else []
     o_d = [o.dir_deg for o in obs] if obs else []
@@ -314,9 +351,10 @@ def _build_phase(lead_valid, ens):
     if not st_t:
         return None
 
-    # Both segments use the same 13 kn Wedderburn bar: the buoy-vs-airport gate (wind_gate_log.csv)
-    # showed CYQT reads within ~1 kn of over-lake wind in the W quadrant, refuting the old "airport
-    # reads ~3 kn low" assumption that had justified a separate 10 kn day-0 bar (see upwelling_phase.py).
+    # Both segments use the same 13 kn Wedderburn bar — now for a sound reason rather than the
+    # buoy-derived one this comment used to give. The observed segment is measured IN the bay
+    # (ADR-056), so it needs no exposure correction; the forecast segment is model 10 m wind at
+    # the same point. One bar, one place.
     obs_runs = up.extract_runs(o_t, o_d, o_s, threshold_kn=up.OBSERVED_THRESHOLD_KN) if o_t else []
     all_runs = up.extract_runs(st_t, st_d, st_s, threshold_kn=FORECAST_THRESHOLD_KN)
 
@@ -342,18 +380,29 @@ def _build_phase(lead_valid, ens):
         w = _wind_at(valid)
         if w:
             daily_wind[str(lead)] = w
+        # CONFIDENCE IS READ OFF THE MEASUREMENT (ADR-055), not off `lead <= 48`. The wind-lead
+        # gate measured this forecast against a real in-bay anemometer over 20,195 paired hours;
+        # the label and the numbers behind it both come from that file, so a lead can never be
+        # presented as more certain than it has been shown to be.
+        conf = lc.for_lead(skill, lead, observed=(lead == 0 and bool(obs)))
         if lead == 0 and obs:
-            ph = up.classify_at(obs_runs, valid, source=f"observed:{metar.CYQT}",
+            ph = up.classify_at(obs_runs, valid, source=f"observed:{obs_station}",
                                 confidence="high" if len(o_t) >= 24 else "med")
         else:
-            src = "forecast:gfs025" if not (lead == 0 and obs) else f"observed:{metar.CYQT}"
-            ph = up.classify_at(all_runs, valid, source=src,
-                                confidence="med" if lead <= 48 else "low")
-        by_lead[str(lead)] = ph.as_dict()
+            src = "forecast:gfs025" if not (lead == 0 and obs) else f"observed:{obs_station}"
+            ph = up.classify_at(all_runs, valid, source=src, confidence=conf["skill_vs_baseline"])
+        by_lead[str(lead)] = {**ph.as_dict(), "confidence_detail": conf}
 
     return {"now": by_lead.get("0"), "by_lead": by_lead, "daily_wind": daily_wind,
-            "obs_station": metar.CYQT if obs else None,
+            "obs_station": obs_station if obs else None,
             "obs_available": bool(obs),
+            # Rule 5: the fallback announces itself. A map that quietly reverted to the airport
+            # would look identical to one reading the lake, while missing most of the blows.
+            "obs_in_bay": bool(obs) and not obs_fallback,
+            "obs_fallback": obs_fallback,
+            "obs_age_h": obs_age,
+            "obs_note": obs_note,
+            "lead_confidence_source": ("data/calib/wind_lead_skill.json" if skill else None),
             # BOTH bars are reported honestly: day-0 observed uses the airport bar, the forecast
             # tail uses the higher over-lake bar. Reporting only the 10 kn understated the tail.
             "threshold_obs_kn": up.OBSERVED_THRESHOLD_KN,

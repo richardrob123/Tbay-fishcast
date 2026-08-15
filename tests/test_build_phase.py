@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 bcs = importlib.import_module("build_coast_site")
-from tbay_fishcast.ingest import metar  # noqa: E402
+from tbay_fishcast.ingest import metar, swob  # noqa: E402
 
 
 def _lead_valid(issue):
@@ -87,6 +87,11 @@ def test_phase_block_observed_now_and_forecast_relaxation(monkeypatch):
         favorable = (blow_end - timedelta(hours=8)) <= t <= blow_end
         obs.append(metar.WindObs(time=t, dir_deg=(270.0 if favorable else 90.0),
                                  speed_kn=(15.0 if favorable else 5.0)))
+    # ADR-056: the in-bay station is the primary observed source now, so it is what this test
+    # supplies. `swob.WindRecord` and `metar.WindObs` are deliberately the same shape.
+    swob_obs = [swob.WindRecord(o.time, o.dir_deg, o.speed_kn) for o in obs]
+    monkeypatch.setattr(swob, "fetch_recent_wind", lambda *a, **k: swob_obs)
+    monkeypatch.setattr(swob, "age_hours", lambda *a, **k: 0.5)
     monkeypatch.setattr(metar, "fetch_recent_wind", lambda *a, **k: obs)
 
     # ensemble control with a fresh W blow landing on the day-4 (96 h) frame
@@ -100,10 +105,12 @@ def test_phase_block_observed_now_and_forecast_relaxation(monkeypatch):
 
     ph = bcs._build_phase(_lead_valid(issue), ens)
     assert ph is not None and ph["obs_available"] is True
-    assert ph["obs_station"] == "CYQT"
+    assert ph["obs_station"] == "WELCOME ISLAND (AUT)"
+    assert ph["obs_in_bay"] is True and ph["obs_fallback"] is False
     # day 0 is observed and in the relaxation window
     now = ph["now"]
-    assert now["source"] == "observed:CYQT" and now["phase"] == "relaxation" and now["prime"] is True
+    assert now["source"] == "observed:WELCOME ISLAND (AUT)"
+    assert now["phase"] == "relaxation" and now["prime"] is True
     # every lead present; forecast leads are labelled forecast
     assert set(ph["by_lead"]) == {"0", "24", "48", "72", "96", "120"}
     assert ph["by_lead"]["96"]["source"] == "forecast:gfs025"
@@ -120,9 +127,68 @@ def test_phase_forecast_only_when_metar_down(monkeypatch):
         raise SourceUnavailable("metar down")
 
     monkeypatch.setattr(metar, "fetch_recent_wind", _boom)
+    monkeypatch.setattr(swob, "fetch_recent_wind", _boom)
     ens_t = [(issue + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(120)]
     ens = {"time": ens_t, "members": [{"dir_deg": [90.0] * 120, "speed_kn": [5.0] * 120}]}
     ph = bcs._build_phase(_lead_valid(issue), ens)
     assert ph is not None and ph["obs_available"] is False
     # with no observed wind, even lead 0 falls back to forecast (flagged), never silently "observed"
     assert ph["by_lead"]["0"]["source"].startswith("forecast")
+
+
+def test_the_airport_fallback_announces_itself(monkeypatch):
+    """ADR-056/rule 5. The airport misses ~71% of the hours the lake is actually blowing, so a
+    SILENT revert to it would look identical to a map reading the lake. It must not be silent."""
+    issue = datetime(2026, 8, 7, tzinfo=timezone.utc)
+    now_valid = issue.replace(hour=18)
+
+    def _down(*a, **k):
+        from tbay_fishcast.ingest import SourceUnavailable
+        raise SourceUnavailable("swob down")
+
+    obs = [metar.WindObs(time=now_valid - timedelta(hours=71 - i), dir_deg=90.0, speed_kn=5.0)
+           for i in range(72)]
+    monkeypatch.setattr(swob, "fetch_recent_wind", _down)
+    monkeypatch.setattr(metar, "fetch_recent_wind", lambda *a, **k: obs)
+
+    ens_t = [(issue + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(120)]
+    ens = {"time": ens_t, "members": [{"dir_deg": [90.0] * 120, "speed_kn": [5.0] * 120}]}
+    ph = bcs._build_phase(_lead_valid(issue), ens)
+    assert ph["obs_available"] is True
+    assert ph["obs_station"] == metar.CYQT
+    assert ph["obs_fallback"] is True and ph["obs_in_bay"] is False
+    assert ph["obs_note"] and "71%" in ph["obs_note"]
+
+
+def test_a_stale_in_bay_reading_falls_back_rather_than_passing_as_a_nowcast(monkeypatch):
+    """An hourly station that last reported yesterday is not a nowcast, however in-bay it is."""
+    issue = datetime(2026, 8, 7, tzinfo=timezone.utc)
+    now_valid = issue.replace(hour=18)
+    stale = [swob.WindRecord(now_valid - timedelta(hours=71 - i), 90.0, 5.0) for i in range(72)]
+    obs = [metar.WindObs(time=now_valid - timedelta(hours=71 - i), dir_deg=90.0, speed_kn=5.0)
+           for i in range(72)]
+    monkeypatch.setattr(swob, "fetch_recent_wind", lambda *a, **k: stale)
+    monkeypatch.setattr(swob, "age_hours", lambda *a, **k: 30.0)
+    monkeypatch.setattr(metar, "fetch_recent_wind", lambda *a, **k: obs)
+
+    ens_t = [(issue + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(120)]
+    ens = {"time": ens_t, "members": [{"dir_deg": [90.0] * 120, "speed_kn": [5.0] * 120}]}
+    ph = bcs._build_phase(_lead_valid(issue), ens)
+    assert ph["obs_fallback"] is True
+    assert "stale" in (ph["obs_note"] or "")
+
+
+def test_lead_confidence_rides_along_with_every_forecast_lead(monkeypatch):
+    """ADR-055: the label must come from the measurement file, never from `lead <= 48`."""
+    issue = datetime(2026, 8, 7, tzinfo=timezone.utc)
+    now_valid = issue.replace(hour=18)
+    obs = [swob.WindRecord(now_valid - timedelta(hours=71 - i), 90.0, 5.0) for i in range(72)]
+    monkeypatch.setattr(swob, "fetch_recent_wind", lambda *a, **k: obs)
+    monkeypatch.setattr(swob, "age_hours", lambda *a, **k: 0.5)
+    ens_t = [(issue + timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(120)]
+    ens = {"time": ens_t, "members": [{"dir_deg": [90.0] * 120, "speed_kn": [5.0] * 120}]}
+    ph = bcs._build_phase(_lead_valid(issue), ens)
+    for k, v in ph["by_lead"].items():
+        assert "confidence_detail" in v, f"lead {k} carries no measured confidence"
+        assert v["confidence_detail"]["skill_vs_baseline"]
+    assert ph["by_lead"]["0"]["confidence_detail"]["skill_vs_baseline"] == "observed"
