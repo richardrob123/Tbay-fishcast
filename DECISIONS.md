@@ -101,6 +101,58 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-057 — SUPERSEDES ADR-055's table. Three seasons instead of four months: the event
+  verdict is issued, and one of my own conclusions flips.**
+
+  ADR-055 withheld the event verdict because 121 days held only three storms, and said the gate
+  would run forward "for the sole purpose of accumulating blows" — years of waiting. That was
+  unnecessary. The rolling `previous-runs` window is 120 days, but the SAME archive is addressable
+  by date at `historical-forecast-api`. Probed: 2023 returns the fields with every value null,
+  2024 is complete. Verified before pooling — over 240 overlapping hours at leads 1/3/5 the two
+  endpoints agree **to 0.0000 kn, bit for bit** — so the record goes from 121 days to **625 days,
+  20,195 paired hours to 104,706**, and from 3 observed blows to **15**.
+
+      lead    drive MAE   bias     vs persist   vs clim   ratio (CI)          sign   POD    CSI
+      + 24 h    28.6      + 3.5      0.50        0.50     0.83 [0.74, 0.92] < 0.796  0.913  0.418
+      + 48 h    29.0      -13.0      0.42        0.51     0.72 [0.64, 0.82] < 0.782  0.784  0.568
+      + 72 h    34.4      -15.0      0.48        0.61     0.83 [0.75, 0.93] < 0.760  0.631  0.426
+      + 96 h    40.0      -15.9      0.54        0.71     0.95 [0.86, 1.04]   0.727  0.419  0.252
+      +120 h    42.6      -14.9      0.57        0.75     1.00 [0.91, 1.08]   0.690  0.372  0.242
+      +168 h    50.8      -16.8      0.66        0.90     1.18 [1.08, 1.30]   0.624  0.306  0.218
+
+  **The event verdict, now issuable.** Every lead's Peirce interval clears zero, so the forecast
+  has demonstrated event skill even at +168 h. That is the wrong number to stop at, and CSI is
+  why: at **+120 h it catches 37% of blows with 59% false alarms (CSI 0.24)**, against 91% and
+  CSI 0.42 at +24 h. "Statistically skillful" and "worth acting on" separate completely across
+  the range the map publishes, and only reporting both makes that visible. This is exactly what
+  ADR-055 added CSI for, before there was a verdict to apply it to.
+
+  **A conclusion of mine flips, and it is worth being plain about which.** ADR-055 reported +24 h
+  as *informative* — beating persistence but not clearing the bar — and I built an argument on
+  it: that the ladder was non-monotonic, that this was a real property of short-lead persistence
+  being hard to beat, and that a UI must be protected from reading it as an accuracy ranking. On
+  five times the data **+24 h clears the bar** (0.83, CI [0.74, 0.92]) and the ladder is
+  monotonic: measured / measured / measured / informative / informative. The non-monotonicity was
+  an underpowered sample, not a property. The naming fix stays — `skill_vs_baseline` and its
+  `not_an_accuracy_ranking` note are still correct and still protective — but the reasoning I
+  gave for needing it was built on noise. Two other numbers moved with the sample: measured error
+  decorrelation 1 -> 2 days, and the ADR-032 ERA5 variability ratio 0.84 -> 0.725 (still clear of
+  the 0.5 bar, so that decision stands).
+
+  **Two infrastructure failures found, both the same shape as ADR-054's and neither the same
+  cause.** ADR-054 was about requests that outrun their source's RANGE. These outrun its SIZE:
+  ECCC and Open-Meteo each kill an oversized response mid-flight, and the client sees an **empty
+  body** — no HTTP error, no partial page, indistinguishable from "this station has no data".
+  Measured on ECCC: 2024-04-01..11-30 returns 6.0 MB in 1.5 s and the same request one month
+  longer is reset by the peer; `limit`/`offset` do not help because the server dies composing the
+  response before paging applies. Both ingests now chunk (120 and 90 days) and retry, and the
+  callers count what came back rather than trusting the range they asked for.
+
+  And a smaller one with a sharper lesson: a transient Open-Meteo **rate limit erased the
+  recorded ERA5 audit**, replacing a measured 0.84 with a null that reads as "never checked". A
+  measurement must survive an unrelated endpoint's bad day, so it is now carried forward and
+  labelled with the run it came from and why (rule 5). Pinned by tests, as is the chunking.
+
 - **ADR-056 — The airport is not the lake, the offset is not "within noise", and no correction
   fixes it. Read the in-bay station instead.** (Proposed product change — needs sign-off.)
 

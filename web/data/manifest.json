@@ -1,8 +1,9 @@
 {
- "issue": "2026-08-08",
- "issued_utc": "2026-08-08T12:00:00Z",
- "built_utc": "2026-08-08T17:43:53Z",
- "age_h": 5.7,
+ "issue": "2026-08-15",
+ "issued_utc": "2026-08-15T12:00:00Z",
+ "lsofs_cycle": "t12z",
+ "built_utc": "2026-08-15T15:11:51Z",
+ "age_h": 3.2,
  "stale": false,
  "target_c": 12.0,
  "cast_m": 75.0,
@@ -169,54 +170,172 @@
  "favor_calibrated": false,
  "n_leads": 6,
  "bias": {
-  "central": 2.9,
-  "lo": 0.6,
-  "hi": 4.6,
-  "n": 12,
+  "central": 1.9,
+  "lo": 1.1,
+  "hi": 3.2,
+  "n": 10,
   "source": "live"
  },
  "forecast_error": {
-  "source": "data/forecast_gate_log.csv",
-  "n": 30,
+  "pooled_mae_m": null,
+  "band_blocked_reason": "only 10 usable rows after the ADR-048 censoring quarantine (need 20) \u2014 no numeric band is published",
+  "n": 10,
+  "n_effective_chains": 0,
+  "lead_trend_detected": false,
+  "quarantined_chains": [
+   "llo1"
+  ]
+ },
+ "thermal_skill": {
+  "n": 9882,
+  "n_days": 199,
+  "window": [
+   "2025-05-15",
+   "2026-08-13"
+  ],
   "chains": [
-   "45216",
    "llo1"
   ],
-  "chains_with_moving_obs": [],
-  "n_effective_chains": 0,
-  "pooled_mae_m": 1.547,
-  "pooled_p90_m": 3.5,
   "per_lead": {
+   "0": {
+    "n": 1667,
+    "n_days": 187,
+    "fcst_mae_c": 2.5577,
+    "fcst_bias_c": 0.7348,
+    "fcst_rmse_c": 3.2155,
+    "persist_mae_c": 0.0,
+    "clim_mae_c": 2.5279,
+    "baseline_mae_c": 0.0,
+    "skill_ratio": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "n_blocks": 19,
+    "interval_quality": "none",
+    "days_forecast_better": 0,
+    "days_forecast_worse": 187,
+    "sign_test_p": 1.0195788231247695e-56,
+    "verdict": "insufficient independent blocks (19)",
+    "demote": false
+   },
    "24": {
-    "n": 6,
-    "mae_m": 1.565,
-    "p90_m": 2.9
+    "n": 1659,
+    "n_days": 184,
+    "fcst_mae_c": 2.5854,
+    "fcst_bias_c": 0.8788,
+    "fcst_rmse_c": 3.1978,
+    "persist_mae_c": 0.9328,
+    "clim_mae_c": 2.5256,
+    "baseline_mae_c": 0.7964,
+    "skill_ratio": 3.2652,
+    "ci95": [
+     2.6113,
+     4.2362
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 11,
+    "days_forecast_worse": 173,
+    "sign_test_p": 1.315730753366195e-38,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
    },
    "48": {
-    "n": 6,
-    "mae_m": 1.322,
-    "p90_m": 2.52
+    "n": 1651,
+    "n_days": 182,
+    "fcst_mae_c": 2.5845,
+    "fcst_bias_c": 1.0004,
+    "fcst_rmse_c": 3.1716,
+    "persist_mae_c": 1.325,
+    "clim_mae_c": 2.5181,
+    "baseline_mae_c": 1.0493,
+    "skill_ratio": 2.4864,
+    "ci95": [
+     2.0027,
+     3.2311
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 19,
+    "days_forecast_worse": 163,
+    "sign_test_p": 1.0006023521602821e-29,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
    },
    "72": {
-    "n": 6,
-    "mae_m": 1.9,
-    "p90_m": 3.45
+    "n": 1643,
+    "n_days": 181,
+    "fcst_mae_c": 2.5081,
+    "fcst_bias_c": 0.739,
+    "fcst_rmse_c": 3.1,
+    "persist_mae_c": 1.5804,
+    "clim_mae_c": 2.5283,
+    "baseline_mae_c": 1.2224,
+    "skill_ratio": 2.0741,
+    "ci95": [
+     1.6797,
+     2.6658
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 25,
+    "days_forecast_worse": 156,
+    "sign_test_p": 2.4313479520724504e-24,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
    },
    "96": {
-    "n": 6,
-    "mae_m": 1.485,
-    "p90_m": 2.74
+    "n": 1635,
+    "n_days": 180,
+    "fcst_mae_c": 2.5058,
+    "fcst_bias_c": 0.5981,
+    "fcst_rmse_c": 3.1467,
+    "persist_mae_c": 1.6812,
+    "clim_mae_c": 2.5447,
+    "baseline_mae_c": 1.2515,
+    "skill_ratio": 2.0259,
+    "ci95": [
+     1.6279,
+     2.6055
+    ],
+    "n_blocks": 18,
+    "interval_quality": "approximate",
+    "days_forecast_better": 32,
+    "days_forecast_worse": 148,
+    "sign_test_p": 4.950239308117757e-19,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
    },
    "120": {
-    "n": 6,
-    "mae_m": 1.462,
-    "p90_m": 1.91
+    "n": 1627,
+    "n_days": 179,
+    "fcst_mae_c": 2.5261,
+    "fcst_bias_c": 0.5198,
+    "fcst_rmse_c": 3.1893,
+    "persist_mae_c": 1.7589,
+    "clim_mae_c": 2.5449,
+    "baseline_mae_c": 1.2729,
+    "skill_ratio": 2.0065,
+    "ci95": [
+     1.5766,
+     2.5738
+    ],
+    "n_blocks": 18,
+    "interval_quality": "approximate",
+    "days_forecast_better": 34,
+    "days_forecast_worse": 145,
+    "sign_test_p": 1.5931292884888045e-17,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
    }
   },
-  "skill_vs_persistence": null,
-  "lead_slope_m_per_h": -0.00018,
-  "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 1.547 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0002 m/h; per-lead means span 0.58 m). CAVEAT: n=30, 0 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+  "verdict": "at llo1: every forecast lead fails the ADR-006 bar AT THIS NODE \u2014 but the site check refuses to generalise it (the model is further from satellite (+3.9 C) than the observation is (-1.1 C) \u2014 the model is locally wrong here, so results measure this node and must not be generalised to the product)",
+  "demote_leads": [],
+  "nowcast_mae_c": 2.5577,
+  "block_days_measured": 10,
+  "error_is_model_state_not_forecast_decay": true,
+  "caveat": "Scored at the Duluth LLO1 mooring (LSOFS station 45027, 0.11 km away), 271 km from Thunder Bay on the Minnesota upwelling coast. THE MODEL IS ANOMALOUS AT THIS NODE: on 2025-08-12 12Z it puts the deep offshore stations at 17.6-21.7 C over a 3.97-3.99 C hypolimnion and Thunder Bay at 19.5 C, while 45027 alone reads 8.60 C surface / 7.00 C bottom. Independent satellite SST (GLSEA/ACSPO, 0.43 km from the buoy) tracks the buoy rather than the model (21.28 vs 9.54 C on 2025-07-28), so the observation and the pipeline are sound and the model is locally wrong. The ADR-006 numbers above therefore describe LSOFS AT THIS MOORING and must not be read as a verdict on the Thunder Bay thermal layer, which this gate cannot reach."
  },
  "stretches": [
   {
@@ -246,45 +365,45 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.14,
    "low_confidence": true,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 79.2
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 72.9
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 79.6
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 65.0
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 79.6
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 62.6
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 79.6
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 79.6
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 79.6
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 72.3
     }
    ],
    "degraded": false,
@@ -319,45 +438,45 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.32,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 4.4
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 1.2
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 2.5
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 0.8
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 3.2
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 1.4
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
+     "reach_ha": 4.2
+    },
+    {
+     "label": "Wed Aug 19",
+     "lead": 96,
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 3.0
     },
     {
-     "label": "Wed Aug 12",
-     "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 1.6
-    },
-    {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 2.2
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 0.4
     }
    ],
    "degraded": false,
@@ -392,45 +511,45 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.19,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 17.5
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 15.3
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 17.3
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 0.0
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 17.3
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 11.1
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 17.3
+     "valid_utc": "2026-08-18T12:00:00Z",
+     "reach_ha": 22.5
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 17.1
+     "valid_utc": "2026-08-19T12:00:00Z",
+     "reach_ha": 19.9
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 17.2
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 16.5
     }
    ],
    "degraded": false,
@@ -465,44 +584,44 @@
    ],
    "res_m": 4.0,
    "exposure": "low",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.54,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 33.5
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 31.6
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 33.5
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 10.1
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 33.5
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 26.4
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 33.5
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 33.5
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
+     "valid_utc": "2026-08-20T12:00:00Z",
      "reach_ha": 33.5
     }
    ],
@@ -538,44 +657,44 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.58,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 15.4
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 6.2
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 14.9
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 0.0
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 15.4
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 0.9
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 15.4
+     "valid_utc": "2026-08-18T12:00:00Z",
+     "reach_ha": 14.8
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 15.4
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
+     "valid_utc": "2026-08-20T12:00:00Z",
      "reach_ha": 15.4
     }
    ],
@@ -611,45 +730,45 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.28,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 1.3
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 0.9
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 1.3
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 0.0
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 1.2
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 0.9
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 1.2
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
-     "reach_ha": 1.2
+     "valid_utc": "2026-08-19T12:00:00Z",
+     "reach_ha": 0.0
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 0.6
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 1.4
     }
    ],
    "degraded": false,
@@ -684,44 +803,44 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.18,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 0.7
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 0.8
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 1.1
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 0.2
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
+     "valid_utc": "2026-08-17T12:00:00Z",
      "reach_ha": 1.1
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 1.1
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 1.1
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
+     "valid_utc": "2026-08-20T12:00:00Z",
      "reach_ha": 1.1
     }
    ],
@@ -757,45 +876,45 @@
    ],
    "res_m": 4.0,
    "exposure": "med",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.19,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 2.3
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 3.1
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 5.8
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 1.1
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 2.2
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 4.8
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 5.2
-    },
-    {
-     "label": "Wed Aug 12",
-     "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 6.2
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Wed Aug 19",
+     "lead": 96,
+     "valid_utc": "2026-08-19T12:00:00Z",
+     "reach_ha": 7.5
+    },
+    {
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 6.3
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 5.0
     }
    ],
    "degraded": false,
@@ -830,44 +949,44 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.16,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 13.7
-    },
-    {
-     "label": "Sun Aug 9",
-     "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 14.8
-    },
-    {
-     "label": "Mon Aug 10",
-     "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 15.9
-    },
-    {
-     "label": "Tue Aug 11",
-     "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
-     "reach_ha": 16.4
-    },
-    {
-     "label": "Wed Aug 12",
-     "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-15T12:00:00Z",
      "reach_ha": 16.5
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Sun Aug 16",
+     "lead": 24,
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 16.5
+    },
+    {
+     "label": "Mon Aug 17",
+     "lead": 48,
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 16.5
+    },
+    {
+     "label": "Tue Aug 18",
+     "lead": 72,
+     "valid_utc": "2026-08-18T12:00:00Z",
+     "reach_ha": 16.5
+    },
+    {
+     "label": "Wed Aug 19",
+     "lead": 96,
+     "valid_utc": "2026-08-19T12:00:00Z",
+     "reach_ha": 16.3
+    },
+    {
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
+     "valid_utc": "2026-08-20T12:00:00Z",
      "reach_ha": 16.5
     }
    ],
@@ -903,45 +1022,45 @@
    ],
    "res_m": 4.0,
    "exposure": "high",
-   "anchor_day": "2026-08-07",
+   "anchor_day": "2026-08-14",
    "survey_cov": 0.71,
    "low_confidence": false,
    "days": [
     {
-     "label": "Sat Aug 8",
+     "label": "Sat Aug 15",
      "lead": 0,
-     "valid_utc": "2026-08-08T12:00:00Z",
-     "reach_ha": 28.0
+     "valid_utc": "2026-08-15T12:00:00Z",
+     "reach_ha": 25.7
     },
     {
-     "label": "Sun Aug 9",
+     "label": "Sun Aug 16",
      "lead": 24,
-     "valid_utc": "2026-08-09T12:00:00Z",
-     "reach_ha": 28.0
+     "valid_utc": "2026-08-16T12:00:00Z",
+     "reach_ha": 18.5
     },
     {
-     "label": "Mon Aug 10",
+     "label": "Mon Aug 17",
      "lead": 48,
-     "valid_utc": "2026-08-10T12:00:00Z",
-     "reach_ha": 28.0
+     "valid_utc": "2026-08-17T12:00:00Z",
+     "reach_ha": 23.6
     },
     {
-     "label": "Tue Aug 11",
+     "label": "Tue Aug 18",
      "lead": 72,
-     "valid_utc": "2026-08-11T12:00:00Z",
+     "valid_utc": "2026-08-18T12:00:00Z",
      "reach_ha": 28.0
     },
     {
-     "label": "Wed Aug 12",
+     "label": "Wed Aug 19",
      "lead": 96,
-     "valid_utc": "2026-08-12T12:00:00Z",
+     "valid_utc": "2026-08-19T12:00:00Z",
      "reach_ha": 28.0
     },
     {
-     "label": "Thu Aug 13",
+     "label": "Thu Aug 20",
      "lead": 120,
-     "valid_utc": "2026-08-13T12:00:00Z",
-     "reach_ha": 28.0
+     "valid_utc": "2026-08-20T12:00:00Z",
+     "reach_ha": 27.7
     }
    ],
    "degraded": false,
@@ -959,12 +1078,15 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 17.1,
+   "surf_sst": 18.0,
    "traj": [
     {
      "label": "Sat",
      "lead": 0,
-     "iso": 4.8,
+     "iso": 4.7,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.677,
      "reach": true,
      "certain": true,
      "possible": true
@@ -972,7 +1094,10 @@
     {
      "label": "Sun",
      "lead": 24,
-     "iso": 4.2,
+     "iso": 4.6,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.108,
      "reach": true,
      "certain": true,
      "possible": true
@@ -980,7 +1105,10 @@
     {
      "label": "Mon",
      "lead": 48,
-     "iso": 4.5,
+     "iso": 3.9,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.667,
      "reach": true,
      "certain": true,
      "possible": true
@@ -988,7 +1116,10 @@
     {
      "label": "Tue",
      "lead": 72,
-     "iso": 4.4,
+     "iso": 3.5,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.632,
      "reach": true,
      "certain": true,
      "possible": true
@@ -997,6 +1128,9 @@
      "label": "Wed",
      "lead": 96,
      "iso": 4.1,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.479,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1004,7 +1138,10 @@
     {
      "label": "Thu",
      "lead": 120,
-     "iso": 3.8,
+     "iso": 4.2,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.31,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1017,22 +1154,28 @@
    "lat": 48.52294,
    "lon": -88.94336,
    "now": true,
-   "now_certain": false,
-   "verdict": "open now and still open at +120 h (edge of band \u2014 uncertain)",
-   "surf_sst": 17.2,
+   "now_certain": true,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 18.0,
    "traj": [
     {
      "label": "Sat",
      "lead": 0,
-     "iso": 5.3,
+     "iso": 4.1,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.003,
      "reach": true,
-     "certain": false,
+     "certain": true,
      "possible": true
     },
     {
      "label": "Sun",
      "lead": 24,
-     "iso": 5.0,
+     "iso": 4.3,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.614,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1040,7 +1183,10 @@
     {
      "label": "Mon",
      "lead": 48,
-     "iso": 4.7,
+     "iso": 3.8,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.574,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1048,7 +1194,10 @@
     {
      "label": "Tue",
      "lead": 72,
-     "iso": 4.3,
+     "iso": 3.7,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.579,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1056,7 +1205,10 @@
     {
      "label": "Wed",
      "lead": 96,
-     "iso": 3.6,
+     "iso": 4.1,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.289,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1064,7 +1216,10 @@
     {
      "label": "Thu",
      "lead": 120,
-     "iso": 3.3,
+     "iso": 4.1,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.306,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1079,12 +1234,15 @@
    "now": true,
    "now_certain": true,
    "verdict": "open now and still open at +120 h",
-   "surf_sst": 17.0,
+   "surf_sst": 19.2,
    "traj": [
     {
      "label": "Sat",
      "lead": 0,
-     "iso": 2.4,
+     "iso": 4.2,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.106,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1092,15 +1250,21 @@
     {
      "label": "Sun",
      "lead": 24,
-     "iso": 4.0,
+     "iso": 7.2,
+     "iso_band_m": 9.2,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.473,
      "reach": true,
-     "certain": true,
+     "certain": false,
      "possible": true
     },
     {
      "label": "Mon",
      "lead": 48,
-     "iso": 3.0,
+     "iso": 5.9,
+     "iso_band_m": 5.1,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.838,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1108,7 +1272,10 @@
     {
      "label": "Tue",
      "lead": 72,
-     "iso": 3.0,
+     "iso": 4.3,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.055,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1116,7 +1283,10 @@
     {
      "label": "Wed",
      "lead": 96,
-     "iso": 3.7,
+     "iso": 2.8,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 4.184,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1124,7 +1294,10 @@
     {
      "label": "Thu",
      "lead": 120,
-     "iso": 2.5,
+     "iso": 2.7,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 4.724,
      "reach": true,
      "certain": true,
      "possible": true
@@ -1132,47 +1305,22 @@
    ]
   }
  ],
- "wind": [
-  {
-   "day": "Sat",
-   "favor": 0.11,
-   "p": 0.0,
-   "peak_kn": 8
-  },
-  {
-   "day": "Sun",
-   "favor": 0.03,
-   "p": 0.0,
-   "peak_kn": 4
-  },
-  {
-   "day": "Mon",
-   "favor": 0.04,
-   "p": 0.0,
-   "peak_kn": 6
-  },
-  {
-   "day": "Tue",
-   "favor": 0.02,
-   "p": 0.0,
-   "peak_kn": 0
-  },
-  {
-   "day": "Wed",
-   "favor": 0.05,
-   "p": 0.0,
-   "peak_kn": 6
-  }
- ],
+ "wind": [],
  "phase": {
   "now": {
    "phase": "neutral",
    "prime": false,
    "suppressed": false,
    "active": false,
-   "source": "observed:CYQT",
+   "source": "observed:WELCOME ISLAND (AUT)",
    "confidence": "high",
-   "detail": "no sustained west-quadrant blow in the observed window"
+   "detail": "no sustained west-quadrant blow in the observed window",
+   "confidence_detail": {
+    "skill_vs_baseline": "observed",
+    "basis": "in-situ observation, not a forecast",
+    "lead_h": 0,
+    "measured_at_lead_h": null
+   }
   },
   "by_lead": {
    "0": {
@@ -1180,9 +1328,15 @@
     "prime": false,
     "suppressed": false,
     "active": false,
-    "source": "observed:CYQT",
+    "source": "observed:WELCOME ISLAND (AUT)",
     "confidence": "high",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "observed",
+     "basis": "in-situ observation, not a forecast",
+     "lead_h": 0,
+     "measured_at_lead_h": null
+    }
    },
    "24": {
     "phase": "neutral",
@@ -1190,8 +1344,24 @@
     "suppressed": false,
     "active": false,
     "source": "forecast:gfs025",
-    "confidence": "med",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "confidence": "informative",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "informative",
+     "basis": "beats observed persistence but the interval does not clear the oracle composite baseline",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 24,
+     "measured_at_lead_h": 24,
+     "sign_agreement": 0.7598,
+     "drive_mae_kth": 31.128,
+     "drive_bias_kth": 4.607,
+     "skill_ratio": 0.9532,
+     "ci95": [
+      0.7639,
+      1.1901
+     ],
+     "ratio_vs_persistence": 0.5762
+    }
    },
    "48": {
     "phase": "neutral",
@@ -1199,8 +1369,24 @@
     "suppressed": false,
     "active": false,
     "source": "forecast:gfs025",
-    "confidence": "med",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "confidence": "measured",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "measured",
+     "basis": "interval clears the ADR-006 bar against the harder of persistence and climatology",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 48,
+     "measured_at_lead_h": 48,
+     "sign_agreement": 0.73,
+     "drive_mae_kth": 28.985,
+     "drive_bias_kth": -12.415,
+     "skill_ratio": 0.7272,
+     "ci95": [
+      0.5723,
+      0.9408
+     ],
+     "ratio_vs_persistence": 0.4092
+    }
    },
    "72": {
     "phase": "neutral",
@@ -1208,8 +1394,24 @@
     "suppressed": false,
     "active": false,
     "source": "forecast:gfs025",
-    "confidence": "low",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "confidence": "measured",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "measured",
+     "basis": "interval clears the ADR-006 bar against the harder of persistence and climatology",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 72,
+     "measured_at_lead_h": 72,
+     "sign_agreement": 0.7123,
+     "drive_mae_kth": 31.995,
+     "drive_bias_kth": -20.454,
+     "skill_ratio": 0.8024,
+     "ci95": [
+      0.6354,
+      0.9996
+     ],
+     "ratio_vs_persistence": 0.4474
+    }
    },
    "96": {
     "phase": "neutral",
@@ -1217,8 +1419,24 @@
     "suppressed": false,
     "active": false,
     "source": "forecast:gfs025",
-    "confidence": "low",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "confidence": "informative",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "informative",
+     "basis": "beats observed persistence but the interval does not clear the oracle composite baseline",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 96,
+     "measured_at_lead_h": 96,
+     "sign_agreement": 0.6804,
+     "drive_mae_kth": 37.93,
+     "drive_bias_kth": -24.085,
+     "skill_ratio": 0.904,
+     "ci95": [
+      0.7551,
+      1.0775
+     ],
+     "ratio_vs_persistence": 0.5038
+    }
    },
    "120": {
     "phase": "neutral",
@@ -1226,45 +1444,58 @@
     "suppressed": false,
     "active": false,
     "source": "forecast:gfs025",
-    "confidence": "low",
-    "detail": "no sustained west-quadrant blow in the observed window"
+    "confidence": "informative",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "informative",
+     "basis": "beats observed persistence but the interval does not clear the oracle composite baseline",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 120,
+     "measured_at_lead_h": 120,
+     "sign_agreement": 0.6437,
+     "drive_mae_kth": 40.102,
+     "drive_bias_kth": -29.88,
+     "skill_ratio": 0.9646,
+     "ci95": [
+      0.814,
+      1.1344
+     ],
+     "ratio_vs_persistence": 0.5263
+    }
    }
   },
   "daily_wind": {
    "0": {
-    "dir_deg": 255,
-    "mean_kn": 7,
-    "max_kn": 14
-   },
-   "24": {
-    "dir_deg": 303,
+    "dir_deg": 100,
     "mean_kn": 3,
-    "max_kn": 4
-   },
-   "48": {
-    "dir_deg": 306,
-    "mean_kn": 4,
-    "max_kn": 6
-   },
-   "72": {
-    "dir_deg": 60,
-    "mean_kn": 2,
-    "max_kn": 3
-   },
-   "96": {
-    "dir_deg": 305,
-    "mean_kn": 5,
     "max_kn": 6
    }
   },
-  "obs_station": "CYQT",
+  "obs_station": "WELCOME ISLAND (AUT)",
   "obs_available": true,
+  "obs_in_bay": true,
+  "obs_fallback": false,
+  "obs_age_h": 0.19,
+  "obs_note": null,
+  "lead_confidence_source": "data/calib/wind_lead_skill.json",
   "threshold_obs_kn": 13.0,
   "threshold_forecast_kn": 13.0,
   "sector_deg": [
    225.0,
    315.0
-  ]
+  ],
+  "water_level": {
+   "station": "thunder_bay",
+   "n": 1440,
+   "latest_m": 0.26,
+   "baseline_m": 0.272,
+   "anomaly_m": 0.01,
+   "trend": "steady",
+   "upwelling_favorable": false,
+   "span_h": 72.0,
+   "note": "shore-level anomaly vs the preceding window; responds to wind setup AND seiche AND barometric pressure \u2014 corroboration of the wind-derived phase, not attribution",
+   "agrees_with_wind_phase": true
+  }
  },
  "markers": [
   {
@@ -1283,15 +1514,15 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 21.0,
-    "trend_pct": 0.0,
+    "q_cms": 20.1,
+    "trend_pct": 1.0,
     "state": "steady",
     "freshet": false,
-    "note": "21 m\u00b3/s, steady (+0% / 3d).",
+    "note": "20 m\u00b3/s, steady (+1% / 3d).",
     "pct": 9,
     "pct_label": "<10th %ile",
     "clim_years": "1926-2025",
-    "clim_n": 2084
+    "clim_n": 2091
    }
   },
   {
@@ -1310,17 +1541,7 @@
     "runs": [],
     "species_active": []
    },
-   "flow": {
-    "q_cms": 0.087,
-    "trend_pct": -7.0,
-    "state": "steady",
-    "freshet": false,
-    "note": "0.09 m\u00b3/s, steady (-7% / 3d).",
-    "pct": 20,
-    "pct_label": "\u224820th %ile",
-    "clim_years": "1972-2016",
-    "clim_n": 951
-   }
+   "flow": null
   },
   {
    "id": "neebing",
@@ -1338,13 +1559,13 @@
     "species_active": []
    },
    "flow": {
-    "q_cms": 0.195,
-    "trend_pct": 12.0,
-    "state": "rising",
-    "freshet": true,
-    "note": "0.20 m\u00b3/s and rising (+12% / 3d) \u2014 freshet pulls staging fish in.",
-    "pct": 46,
-    "pct_label": "\u224846th %ile",
+    "q_cms": 0.121,
+    "trend_pct": -28.0,
+    "state": "falling",
+    "freshet": false,
+    "note": "0.12 m\u00b3/s and dropping (-28% / 3d) \u2014 plume easing.",
+    "pct": 34,
+    "pct_label": "\u224834th %ile",
     "clim_years": "1972-2025",
     "clim_n": 1533
    }
@@ -1357,17 +1578,17 @@
   "note": "The model's core regime: cold-reachability + the thermal/structure edge predict opportunity; reward the relaxation after a blow."
  },
  "light": {
-  "civil_dawn": "2026-08-08T10:05:15Z",
-  "sunrise": "2026-08-08T10:40:57Z",
-  "sunset": "2026-08-09T01:22:36Z",
-  "civil_dusk": "2026-08-09T01:58:07Z",
+  "civil_dawn": "2026-08-15T10:15:57Z",
+  "sunrise": "2026-08-15T10:50:33Z",
+  "sunset": "2026-08-16T01:10:35Z",
+  "civil_dusk": "2026-08-16T01:45:01Z",
   "morning_prime": [
-   "2026-08-08T10:05:15Z",
-   "2026-08-08T11:25:57Z"
+   "2026-08-15T10:15:57Z",
+   "2026-08-15T11:35:33Z"
   ],
   "evening_prime": [
-   "2026-08-09T00:37:36Z",
-   "2026-08-09T01:58:07Z"
+   "2026-08-16T00:25:35Z",
+   "2026-08-16T01:45:01Z"
   ],
   "basis": "civil twilight (\u22126\u00b0) \u2192 sunrise+45m AM / sunset\u221245m \u2192 civil dusk PM; NOAA solar geometry"
  },
@@ -1379,41 +1600,41 @@
      "id": "silver_islet",
      "name": "Silver Islet / Sleeping Giant tip",
      "score": 100,
-     "opt_ha": 16.8,
-     "glow_ha": 11.2,
-     "reason": "17 ha optimal temp over 11 ha of structure (breaks/points)"
+     "opt_ha": 7.6,
+     "glow_ha": 10.2,
+     "reason": "8 ha optimal temp over 10 ha of structure (breaks/points)"
     },
     {
      "id": "mckellar_harbour",
      "name": "McKellar / north harbour",
-     "score": 98,
-     "opt_ha": 31.0,
-     "glow_ha": 2.5,
-     "reason": "31 ha optimal temp over 2 ha of structure (breaks/points)"
-    },
-    {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
-     "score": 50,
-     "opt_ha": 16.5,
-     "glow_ha": 0.8,
-     "reason": "17 ha optimal temp over 1 ha of structure (breaks/points)"
-    },
-    {
-     "id": "marina_mcvicar",
-     "name": "Marina Park / McVicar",
-     "score": 41,
-     "opt_ha": 12.8,
-     "glow_ha": 0.7,
-     "reason": "13 ha optimal temp over 1 ha of structure (breaks/points)"
+     "score": 53,
+     "opt_ha": 3.6,
+     "glow_ha": 2.1,
+     "reason": "4 ha optimal temp over 2 ha of structure (breaks/points)"
     },
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 25,
-     "opt_ha": 5.0,
-     "glow_ha": 0.9,
-     "reason": "5 ha optimal temp over 1 ha of structure (breaks/points)"
+     "score": 47,
+     "opt_ha": 10.1,
+     "glow_ha": 1.1,
+     "reason": "10 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 20,
+     "opt_ha": 0.3,
+     "glow_ha": 0.5,
+     "reason": "1 ha of reachable structure in range"
+    },
+    {
+     "id": "marina_mcvicar",
+     "name": "Marina Park / McVicar",
+     "score": 9,
+     "opt_ha": 0.3,
+     "glow_ha": 0.3,
+     "reason": "0 ha of reachable structure in range"
     }
    ],
    "weak_cue": false,
@@ -1425,41 +1646,41 @@
      "id": "mckellar_harbour",
      "name": "McKellar / north harbour",
      "score": 100,
-     "opt_ha": 35.2,
-     "glow_ha": 5.7,
-     "reason": "35 ha optimal temp over 6 ha of structure (breaks/points)"
+     "opt_ha": 25.9,
+     "glow_ha": 3.1,
+     "reason": "26 ha optimal temp over 3 ha of structure (breaks/points)"
     },
     {
      "id": "silver_islet",
      "name": "Silver Islet / Sleeping Giant tip",
-     "score": 97,
-     "opt_ha": 23.7,
-     "glow_ha": 12.7,
-     "reason": "24 ha optimal temp over 13 ha of structure (breaks/points)"
-    },
-    {
-     "id": "marina_mcvicar",
-     "name": "Marina Park / McVicar",
-     "score": 46,
-     "opt_ha": 16.4,
-     "glow_ha": 1.1,
-     "reason": "16 ha optimal temp over 1 ha of structure (breaks/points)"
+     "score": 99,
+     "opt_ha": 11.9,
+     "glow_ha": 10.8,
+     "reason": "12 ha optimal temp over 11 ha of structure (breaks/points)"
     },
     {
      "id": "mackenzie_silver",
      "name": "MacKenzie Point / Silver Harbour",
-     "score": 37,
-     "opt_ha": 12.8,
-     "glow_ha": 1.5,
-     "reason": "13 ha optimal temp over 1 ha of structure (breaks/points)"
+     "score": 63,
+     "opt_ha": 16.6,
+     "glow_ha": 1.7,
+     "reason": "17 ha optimal temp over 2 ha of structure (breaks/points)"
     },
     {
-     "id": "chippewa",
-     "name": "Chippewa / Sturgeon River shore",
-     "score": 19,
-     "opt_ha": 5.7,
-     "glow_ha": 0.4,
-     "reason": "6 ha optimal temp over 0 ha of structure (breaks/points)"
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 51,
+     "opt_ha": 14.7,
+     "glow_ha": 0.8,
+     "reason": "15 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "marina_mcvicar",
+     "name": "Marina Park / McVicar",
+     "score": 50,
+     "opt_ha": 14.3,
+     "glow_ha": 0.8,
+     "reason": "14 ha optimal temp over 1 ha of structure (breaks/points)"
     }
    ],
    "weak_cue": false,
@@ -1468,44 +1689,44 @@
   "salmon": {
    "ranked": [
     {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
      "score": 100,
-     "opt_ha": 18.1,
-     "glow_ha": 0.5,
-     "reason": "18 ha in preferred temperature"
+     "opt_ha": 4.7,
+     "glow_ha": 7.8,
+     "reason": "17 ha in preferred temperature"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 86,
+     "opt_ha": 4.9,
+     "glow_ha": 3.1,
+     "reason": "33 ha in preferred temperature"
     },
     {
      "id": "shipyard_mackenzie",
      "name": "Shipyard / MacKenzie approach",
-     "score": 58,
-     "opt_ha": 9.2,
+     "score": 73,
+     "opt_ha": 13.0,
      "glow_ha": 0.9,
-     "reason": "11 ha in preferred temperature"
-    },
-    {
-     "id": "chippewa",
-     "name": "Chippewa / Sturgeon River shore",
-     "score": 57,
-     "opt_ha": 9.8,
-     "glow_ha": 0.4,
-     "reason": "11 ha in preferred temperature"
+     "reason": "16 ha in preferred temperature"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 56,
-     "opt_ha": 8.5,
-     "glow_ha": 0.7,
-     "reason": "12 ha in preferred temperature"
+     "score": 67,
+     "opt_ha": 11.1,
+     "glow_ha": 0.8,
+     "reason": "17 ha in preferred temperature"
     },
     {
-     "id": "mackenzie_silver",
-     "name": "MacKenzie Point / Silver Harbour",
-     "score": 47,
-     "opt_ha": 4.6,
-     "glow_ha": 1.1,
-     "reason": "13 ha in preferred temperature"
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 37,
+     "opt_ha": 2.0,
+     "glow_ha": 0.8,
+     "reason": "17 ha in preferred temperature"
     }
    ],
    "weak_cue": true,
@@ -1514,44 +1735,44 @@
   "steelhead": {
    "ranked": [
     {
-     "id": "current_barepoint",
-     "name": "Current River / Trowbridge shore",
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
      "score": 100,
-     "opt_ha": 19.4,
-     "glow_ha": 0.1,
-     "reason": "25 ha in preferred temperature"
+     "opt_ha": 18.3,
+     "glow_ha": 12.4,
+     "reason": "27 ha in preferred temperature"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 20,
+     "opt_ha": 3.5,
+     "glow_ha": 2.0,
+     "reason": "9 ha in preferred temperature"
     },
     {
      "id": "shipyard_mackenzie",
      "name": "Shipyard / MacKenzie approach",
-     "score": 76,
-     "opt_ha": 12.7,
-     "glow_ha": 0.5,
-     "reason": "22 ha in preferred temperature"
+     "score": 20,
+     "opt_ha": 5.5,
+     "glow_ha": 0.3,
+     "reason": "13 ha in preferred temperature"
     },
     {
      "id": "marina_mcvicar",
      "name": "Marina Park / McVicar",
-     "score": 69,
-     "opt_ha": 10.8,
-     "glow_ha": 0.7,
-     "reason": "21 ha in preferred temperature"
+     "score": 17,
+     "opt_ha": 5.5,
+     "glow_ha": 0.4,
+     "reason": "8 ha in preferred temperature"
     },
     {
-     "id": "kam_mission",
-     "name": "Kam mouth / Mission Island",
-     "score": 56,
-     "opt_ha": 5.0,
-     "glow_ha": 1.1,
-     "reason": "22 ha in preferred temperature"
-    },
-    {
-     "id": "chippewa",
-     "name": "Chippewa / Sturgeon River shore",
-     "score": 55,
-     "opt_ha": 7.9,
-     "glow_ha": 0.9,
-     "reason": "16 ha in preferred temperature"
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 14,
+     "opt_ha": 3.5,
+     "glow_ha": 0.8,
+     "reason": "7 ha in preferred temperature"
     }
    ],
    "weak_cue": true,
@@ -1565,7 +1786,7 @@
    "id": "chinook_staging",
    "species": "chinook",
    "opens": "2026-08-25",
-   "days_until": 17
+   "days_until": 10
   }
  }
 }

@@ -118,14 +118,37 @@ def _pss_ci(by_day, *, block_days: int, seed: int = 12345):
     blocks = [days[i:i + block_days] for i in range(0, len(days), block_days)]
     if len(blocks) < 3:
         return None, None, len(blocks)
+    # PRE-AGGREGATE each block to its four contingency counts. PSS depends on the rows only
+    # through (hits, misses, false alarms, correct negatives), so a resample is four integer
+    # sums rather than a rebuilt list of ~7000 dicts. Exactly equivalent, and it is the
+    # difference between the bootstrap running and the bootstrap being abandoned at this size.
+    agg = []
+    for blk in blocks:
+        h = m = fa = cn = 0
+        for d in blk:
+            for o, f in by_day[d]:
+                if o and f:
+                    h += 1
+                elif o:
+                    m += 1
+                elif f:
+                    fa += 1
+                else:
+                    cn += 1
+        agg.append((h, m, fa, cn))
     rnd = random.Random(seed)
+    nb = len(agg)
     vals = []
     for _ in range(BOOT_N):
-        pick = [blocks[rnd.randrange(len(blocks))] for _ in range(len(blocks))]
-        rows = [r for blk in pick for d in blk for r in by_day[d]]
-        v = _pss(rows)["pss"]
-        if v is not None:
-            vals.append(v)
+        H = M = FA = CN = 0
+        for _i in range(nb):
+            h, m, fa, cn = agg[rnd.randrange(nb)]
+            H += h
+            M += m
+            FA += fa
+            CN += cn
+        if (H + M) and (FA + CN):
+            vals.append(H / (H + M) - FA / (FA + CN))
     if len(vals) < BOOT_N // 2:
         return None, None, len(blocks)
     vals.sort()
@@ -287,7 +310,23 @@ def main(argv) -> int:
         print(f"\n  ADR-032 REFERENCE AUDIT (ERA5 vs the in-bay anemometer): "
               f"{era5_check['reason']}")
     except Exception as exc:  # noqa: BLE001
-        print(f"\n  ADR-032 reference audit unavailable ({str(exc)[:80]})")
+        # CARRY FORWARD, do not erase. This audit is a MEASUREMENT; a transient rate-limit on an
+        # unrelated endpoint should not silently delete it from the artifact and leave a null
+        # that reads as "never checked". Seen live: an Open-Meteo hourly limit wiped a recorded
+        # ratio of 0.84. Kept, and flagged as carried forward so its age is visible (rule 5).
+        prior = None
+        if OUT.exists():
+            try:
+                prior = (json.loads(OUT.read_text()) or {}).get("era5_reference_audit")
+            except ValueError:
+                prior = None
+        if prior and not prior.get("carried_forward_from"):
+            prior = {**prior, "carried_forward_from": (json.loads(OUT.read_text())
+                                                       .get("built_utc")),
+                     "carried_forward_reason": str(exc)[:120]}
+        era5_check = prior
+        print(f"\n  ADR-032 reference audit unavailable ({str(exc)[:60]}) — "
+              + ("carried forward from the previous run" if prior else "no prior value to keep"))
 
     result = {
         "source": str(LOG.relative_to(ROOT)),

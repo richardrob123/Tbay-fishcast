@@ -28,8 +28,9 @@ import hashlib
 import json
 import math
 import subprocess
+import time
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -37,6 +38,7 @@ _CACHE = _ROOT / "data" / "eccc_wind_cache"
 
 API = "https://api.weather.gc.ca/collections/climate-hourly/items"
 PAGE = 10000                    # server honours this; larger windows paginate below
+CHUNK_DAYS = 120                # ~2900 records / ~3 MB — well inside the measured wall
 KMH_TO_KN = 1.0 / 1.852
 
 
@@ -71,13 +73,18 @@ def _cache_path(key: str) -> Path:
     return _CACHE / f"{hashlib.sha256(key.encode()).hexdigest()[:20]}.json"
 
 
-def _get(url: str, timeout: float) -> dict:
-    raw = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
-                         capture_output=True).stdout.decode("utf-8", "replace")
-    try:
-        return json.loads(raw)
-    except ValueError as e:
-        raise RuntimeError(f"ECCC climate-hourly unavailable: {raw[:160]!r}") from e
+def _get(url: str, timeout: float, tries: int = 4) -> dict:
+    """One request, retried. An overloaded ECCC returns an EMPTY BODY rather than an error, which
+    a single-shot caller cannot distinguish from a station with no data."""
+    raw = ""
+    for attempt in range(tries):
+        raw = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
+                             capture_output=True).stdout.decode("utf-8", "replace")
+        try:
+            return json.loads(raw)
+        except ValueError:
+            time.sleep(2 ** attempt * 2)
+    raise RuntimeError(f"ECCC climate-hourly unavailable after {tries} tries: {raw[:160]!r}")
 
 
 def _parse(props: dict) -> WindObs | None:
@@ -120,21 +127,31 @@ def fetch_hourly(start: date, end: date, *, station: str = "welcome_island",
             return [WindObs(datetime.fromisoformat(t).replace(tzinfo=timezone.utc), s, d)
                     for t, s, d in rows]
 
+    # CHUNKED, and by DAYS rather than calendar years because the limit is on RESPONSE SIZE.
+    # Measured directly: 2024-04-01..11-30 returns 6.0 MB in 1.5 s, while the same request
+    # extended one month further is killed with "connection reset by peer" — no HTTP error, no
+    # partial page, an empty body indistinguishable from "this station has no wind". `limit` and
+    # `offset` do not help, because the server dies composing the response before paging applies.
     out: list[WindObs] = []
-    offset = 0
-    while True:
-        url = (f"{API}?STN_ID={st.stn_id}"
-               f"&datetime={start.isoformat()}T00:00:00Z/{end.isoformat()}T23:59:59Z"
-               f"&limit={PAGE}&offset={offset}&f=json")
-        d = _get(url, timeout)
-        feats = d.get("features") or []
-        for f in feats:
-            w = _parse(f.get("properties") or {})
-            if w is not None:
-                out.append(w)
-        if len(feats) < PAGE:
-            break
-        offset += PAGE
+    chunk_start = start
+    while chunk_start <= end:
+        chunk_end = min(chunk_start + timedelta(days=CHUNK_DAYS - 1), end)
+        offset = 0
+        while True:
+            url = (f"{API}?STN_ID={st.stn_id}"
+                   f"&datetime={chunk_start.isoformat()}T00:00:00Z/"
+                   f"{chunk_end.isoformat()}T23:59:59Z"
+                   f"&limit={PAGE}&offset={offset}&f=json")
+            d = _get(url, timeout)
+            feats = d.get("features") or []
+            for f in feats:
+                w = _parse(f.get("properties") or {})
+                if w is not None:
+                    out.append(w)
+            if len(feats) < PAGE:
+                break
+            offset += PAGE
+        chunk_start = chunk_end + timedelta(days=1)
     out.sort(key=lambda w: w.time)
     _CACHE.mkdir(parents=True, exist_ok=True)
     cp.write_text(json.dumps([[w.time.replace(tzinfo=None).isoformat(), w.speed_kn, w.dir_deg]

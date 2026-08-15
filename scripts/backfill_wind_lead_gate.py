@@ -41,6 +41,7 @@ FIELDS = ["valid_utc", "site", "lead_h", "obs_kn", "obs_dir", "obs_fav_kn", "obs
           "persist_drive_kth", "clim_drive_kth", "obs_event", "fcst_event",
           "obs_station", "obs_dist_km", "retrieved_utc"]
 CLIM_WINDOW_D = 7          # same +/- 7 day window the surface gate uses for its climatology
+SEASON_START, SEASON_END = (4, 1), (11, 30)     # the open-water season the product runs in
 
 
 def _existing(path: Path) -> set:
@@ -53,6 +54,10 @@ def _existing(path: Path) -> set:
 def main(argv) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--past-days", type=int, default=120)
+    ap.add_argument("--season-years", default="",
+                    help="comma-separated prior years to backfill whole open-water seasons for, "
+                         "e.g. 2024,2025. Uses the dated archive rather than the rolling window; "
+                         "the two were verified identical to 0.0000 kn where they overlap.")
     ap.add_argument("--clim-years", type=int, default=8,
                     help="years of in-bay obs used to build the day-of-year climatology")
     ap.add_argument("--timeout", type=float, default=300.0)
@@ -63,7 +68,14 @@ def main(argv) -> int:
 
     st = eccc_wind.STATIONS["welcome_island"]
     today = datetime.now(timezone.utc).date()
-    start = today - timedelta(days=a.past_days + 2)      # +2 so the first drive window is full
+    years = [int(y) for y in a.season_years.split(",") if y.strip()]
+    # WHOLE PRIOR SEASONS, when asked for. The rolling window held 3 storms in 121 days, which is
+    # why the event verdict is withheld; prior seasons are the only way to accumulate enough
+    # distinct blows to ever issue it without waiting years.
+    if years:
+        start = date(min(years), *SEASON_START)
+    else:
+        start = today - timedelta(days=a.past_days + 2)   # +2 so the first drive window is full
     print(f"truth: {st.name} (ECCC {st.stn_id}) at {st.lat:.4f},{st.lon:.4f}, hourly since "
           f"{st.hourly_from}")
 
@@ -103,8 +115,25 @@ def main(argv) -> int:
     clim = {k: sum(v) / len(v) for k, v in clim_acc.items() if v}
 
     print(f"forecasts: {pr.MODEL}, previous_day1..7 at the station point")
-    fc = pr.fetch_lead_wind(st.lat, st.lon, past_days=a.past_days, timeout=a.timeout)
-    print(f"  leads returned: {sorted(fc)}")
+    fc: dict = {}
+    for y in years:
+        s_, e_ = date(y, *SEASON_START), date(y, *SEASON_END)
+        got = pr.fetch_lead_wind_range(st.lat, st.lon, s_, min(e_, today), timeout=a.timeout)
+        n = sum(len(v) for v in got.values())
+        # COUNT WHAT CAME BACK, never trust the range requested: the archive returns the FIELDS
+        # for years it has no runs for, populated entirely with nulls.
+        print(f"  {y} season: {n} lead-hours across leads {sorted(got)}"
+              + ("" if n else "  <-- EMPTY, before the archive begins"))
+        for k, v in got.items():
+            fc.setdefault(k, []).extend(v)
+    rolling = pr.fetch_lead_wind(st.lat, st.lon, past_days=a.past_days, timeout=a.timeout)
+    print(f"  rolling {a.past_days} d: leads {sorted(rolling)}")
+    for k, v in rolling.items():
+        fc.setdefault(k, []).extend(v)
+    # De-duplicate the seam: the dated archive and the rolling window overlap by design, and they
+    # are the same bytes there (verified to 0.0000 kn), so last-write-wins is safe.
+    for k in fc:
+        fc[k] = sorted({t: (t, spd, drc) for t, spd, drc in fc[k]}.values())
 
     done = _existing(LOG)
     rows = []

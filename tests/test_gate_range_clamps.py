@@ -120,3 +120,60 @@ def test_the_surface_gate_never_scores_a_row_against_its_own_year():
     for yr in (2025, 2026, 2031):
         years = list(range(m.CLIM_FIRST_YEAR, date(yr, 6, 1).year))
         assert years and max(years) < yr
+
+
+# --- OVERSIZED requests must chunk, not just out-of-range ones (ADR-057) ----------------------
+#
+# A second, distinct failure mode with the same symptom. ECCC and Open-Meteo both kill a response
+# that is too large MID-FLIGHT: no HTTP error, no partial page, an empty body indistinguishable
+# from "this station has no data". Measured directly on ECCC: 2024-04-01..11-30 returns 6.0 MB in
+# 1.5 s, and the same request one month longer is reset by the peer. `limit`/`offset` do not help
+# because the server dies composing the response before paging applies.
+
+def test_the_ingests_bound_their_request_size():
+    from tbay_fishcast.ingest import eccc_wind, openmeteo_prev_runs as pr
+    # Bounds must be well under the measured wall (~8 months of hourly ECCC records).
+    assert 0 < eccc_wind.CHUNK_DAYS <= 180
+    assert 0 < pr.ARCHIVE_CHUNK_DAYS <= 180
+
+
+def test_a_multi_year_request_is_split_into_bounded_chunks(monkeypatch, tmp_path):
+    """The caller asks for years; the wire sees bounded windows and every day is covered once."""
+    from tbay_fishcast.ingest import eccc_wind
+    seen = []
+
+    def fake_get(url, timeout, tries=4):
+        import re
+        a, b = re.findall(r"datetime=([0-9-]+)T[^/]+/([0-9-]+)T", url)[0]
+        seen.append((a, b))
+        return {"features": []}
+
+    monkeypatch.setattr(eccc_wind, "_get", fake_get)
+    # tmp_path, not a fixed fake dir: fetch_hourly WRITES its cache on the way out, so a
+    # constant path made the test pass once and then read its own leftovers forever after.
+    monkeypatch.setattr(eccc_wind, "_CACHE", tmp_path / "eccc")
+    eccc_wind.fetch_hourly(date(2024, 1, 1), date(2026, 6, 30))
+    assert len(seen) >= 6, "a 2.5-year request must not go out as one call"
+    for a, b in seen:
+        span = (date.fromisoformat(b) - date.fromisoformat(a)).days + 1
+        assert span <= eccc_wind.CHUNK_DAYS
+    # contiguous and complete: each chunk starts the day after the previous one ends
+    for (_a1, b1), (a2, _b2) in zip(seen, seen[1:]):
+        assert date.fromisoformat(a2) == date.fromisoformat(b1) + timedelta(days=1)
+    assert date.fromisoformat(seen[0][0]) == date(2024, 1, 1)
+    assert date.fromisoformat(seen[-1][1]) == date(2026, 6, 30)
+
+
+def test_a_recorded_audit_survives_a_transient_outage():
+    """A measurement must not be deleted by an unrelated endpoint's rate limit. Seen live: an
+    Open-Meteo hourly limit turned a recorded variability ratio of 0.84 into a null that reads
+    as 'never checked'."""
+    p = ROOT / "data" / "calib" / "wind_lead_skill.json"
+    if not p.exists():
+        pytest.skip("wind-lead gate has not been analyzed in this checkout")
+    d = json.loads(p.read_text())
+    audit = d.get("era5_reference_audit")
+    assert audit, "the ADR-032 reference audit must be present, fresh or carried forward"
+    assert audit.get("variability_ratio") is not None
+    if audit.get("carried_forward_from"):
+        assert audit.get("carried_forward_reason"), "a carried value must say why (rule 5)"
