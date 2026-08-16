@@ -39,9 +39,35 @@ LOG = ROOT / "data" / "wind_lead_gate_log.csv"
 FIELDS = ["valid_utc", "site", "lead_h", "obs_kn", "obs_dir", "obs_fav_kn", "obs_drive_kth",
           "fcst_kn", "fcst_dir", "fcst_fav_kn", "fcst_drive_kth",
           "persist_drive_kth", "clim_drive_kth", "obs_event", "fcst_event",
-          "obs_station", "obs_dist_km", "retrieved_utc"]
+          "obs_station", "obs_dist_km", "clim_years", "retrieved_utc"]
+# The climatology baseline is rebuilt from whatever years resolve on the day of the run, and a
+# rate-limited year is merely printed and skipped. Without recording WHICH years produced a row's
+# clim_drive_kth, a log accumulated across runs silently mixes vintages that the analyzer then
+# pools into one clim_mae_kth — the number the ADR-006 demotion decision for the +120 h upwelling
+# layer rests on. The vintage is now part of every row.
+LEGACY_CLIM_YEARS = "2018-2025"     # what every row written before this column was built from
 CLIM_WINDOW_D = 7          # same +/- 7 day window the surface gate uses for its climatology
 SEASON_START, SEASON_END = (4, 1), (11, 30)     # the open-water season the product runs in
+
+
+def _migrate_log(path: Path) -> None:
+    """Add `clim_years` to a log written before the column existed, stamped with the vintage
+    those rows were actually built from. Rewriting in place beats leaving a blank, which would be
+    indistinguishable from a run that failed to resolve any climatology year."""
+    if not path.exists():
+        return
+    with path.open() as f:
+        rdr = csv.DictReader(f)
+        if rdr.fieldnames and "clim_years" in rdr.fieldnames:
+            return
+        rows = list(rdr)
+    for r in rows:
+        r["clim_years"] = LEGACY_CLIM_YEARS
+    with path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        w.writeheader()
+        w.writerows({c: r.get(c, "") for c in FIELDS} for r in rows)
+    print(f"migrated {len(rows)} rows -> clim_years={LEGACY_CLIM_YEARS}")
 
 
 def _existing(path: Path) -> set:
@@ -135,6 +161,7 @@ def main(argv) -> int:
     for k in fc:
         fc[k] = sorted({t: (t, spd, drc) for t, spd, drc in fc[k]}.values())
 
+    _migrate_log(LOG)
     done = _existing(LOG)
     rows = []
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -173,7 +200,9 @@ def main(argv) -> int:
                                    if vt.timetuple().tm_yday in clim else ""),
                 "obs_event": str(int(ud.is_event(od))),
                 "fcst_event": str(int(ud.is_event(fd))),
-                "obs_station": st.name, "obs_dist_km": "0.0", "retrieved_utc": now})
+                "obs_station": st.name, "obs_dist_km": "0.0",
+                "clim_years": "-".join([str(min(used)), str(max(used))]) if used else "",
+                "retrieved_utc": now})
         print(f"  lead {lead_h:4d} h: {kept} new paired hours")
 
     if not rows:

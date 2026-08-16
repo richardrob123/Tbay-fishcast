@@ -28,15 +28,29 @@ MATCH_H = 1.5     # buoy within +/- this of model 12Z (tight, no smearing)
 FROZEN_PRIOR = (3.31, 1.51, 5.55)
 
 
+# A mean +/- 1 sigma band needs enough matchups that sigma means something. At n = 1 it is
+# identically zero; at n = 2 it is one difference. Three is the least that can express
+# spread at all, matching thermal_skill.MIN_BLOCKS for the same reason.
+MIN_SAMPLES = 3
+
+
 def pooled_or_prior(cfg, day):
     """Live pooled bias, falling back to FROZEN_PRIOR when no buoy matchups resolve.
 
     Returns (central, lo, hi, rows, n, source) with source in {"live", "frozen-prior"}.
-    Callers MUST surface `source` (manifest field / brief line) — degraded is loud."""
+    Callers MUST surface `source` (manifest field / brief line) — degraded is loud.
+
+    THE FALLBACK BAR IS A SAMPLE COUNT, NOT JUST ZERO. The band is `mean +/- 1 sigma` over the
+    pooled matchups, and numpy's std of a SINGLE value is 0.0 — so at n == 1 the band collapsed to
+    lo == hi == central and the product reported a perfectly certain subsurface bias from one
+    observation. That band is what decides `reachable_certain`, i.e. whether the map says GO or
+    go?, so a collapsed band does not merely look overconfident, it changes the advice. Same
+    degenerate-interval failure as the one-block bootstrap ADR-054 fixed, in the live path.
+    Below MIN_SAMPLES the frozen prior is used, which is the existing loud degraded route."""
     central, lo, hi, rows, n = pooled_subsurface_bias(cfg, day)
-    if n == 0:
+    if n < MIN_SAMPLES:
         c, l, h = FROZEN_PRIOR
-        return c, l, h, rows, 0, "frozen-prior"
+        return c, l, h, rows, n, "frozen-prior"
     return central, lo, hi, rows, n, "live"
 
 

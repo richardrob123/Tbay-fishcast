@@ -17,6 +17,8 @@ province's own "Lake Superior - Silver Harbour Access" point.
 """
 from __future__ import annotations
 
+import hashlib
+
 from .watermask import _overpass
 
 # Deliberately a tag query, not a name regex: `nwr["name"~"Conservation Area"]` over this bbox
@@ -36,7 +38,16 @@ def fetch_reserves(bbox=(47.95, -89.95, 48.90, -87.95)):
     and a demotion the map cannot explain is indistinguishable from a bug.
     """
     s, w, n, e = bbox
-    key = f"protected_{s}_{w}_{n}_{e}"
+    # THE QUERY IS PART OF THE KEY, not just the bbox. watermask._overpass returns a cached
+    # result with no TTL and no query fingerprint, so editing _QUERY — say to add
+    # leisure=park / boundary=national_park, which this module's own docstring notes is needed
+    # because Silver Harbour Conservation Area is not tagged leisure=nature_reserve — would
+    # return the PRE-CHANGE element set with no HTTP request and no visible difference between
+    # "the new query found nothing new" and "the new query never ran". This is the
+    # access-legality layer, which CLAUDE.md rule 4 requires be tested like a security
+    # invariant: the system must be incapable of recommending closed water.
+    qh = hashlib.sha256(_QUERY.encode()).hexdigest()[:10]
+    key = f"protected_{s}_{w}_{n}_{e}_{qh}"
     data = _overpass(_QUERY.format(s=s, w=w, n=n, e=e), timeout=180, cache_key=key)
     out = []
     for el in data.get("elements", []):

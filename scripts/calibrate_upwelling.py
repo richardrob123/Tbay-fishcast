@@ -198,9 +198,17 @@ def main(argv=None):
         }, indent=1))
         print(f"↳ recorded null-calibration provenance to {OUT}")
 
-    if len(samples) < 40 or sum(s[1] for s in samples) < 8:
-        print("⚠ too few observed events to fit — keeping the physics prior (suitability.py)")
-        _write_prior("insufficient_events")
+    # THE EVENT COUNT IS THE SAMPLE SIZE, and this floor was 8 — low enough that an AUC of 0.62
+    # is comfortably inside noise, in the one script whose output the PRODUCT reads. The repo
+    # already owns the right number (favorability_fit.MIN_EVENTS, set at 25 after a held-out AUC
+    # computed on seven events was nearly published); it was simply never applied here. Imported
+    # rather than copied so the two cannot drift apart.
+    from tbay_fishcast.features.favorability_fit import MIN_EVENTS
+    n_events = sum(s[1] for s in samples)
+    if len(samples) < 40 or n_events < MIN_EVENTS:
+        print(f"⚠ too few observed events to fit ({n_events} events / {len(samples)} windows; "
+              f"need {MIN_EVENTS} events) — keeping the physics prior (suitability.py)")
+        _write_prior(f"insufficient_events({n_events}<{MIN_EVENTS})")
         return 1
 
     fit = fit_logistic(samples)

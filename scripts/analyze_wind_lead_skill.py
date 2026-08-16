@@ -178,7 +178,15 @@ def main(argv) -> int:
                      "err": fd - od, "persist_err": None if p is None else p - od,
                      "clim_err": None if c is None else c - od,
                      "base_err": base, "base_which": which,
-                     "obs_event": r["obs_event"] == "1", "fcst_event": r["fcst_event"] == "1",
+                     # ALL THREE EVENT FLAGS FROM THE SAME BAR. obs_event/fcst_event used to be
+                     # read as frozen strings from the CSV while persist_event was recomputed
+                     # live from ud.EVENT_DRIVE_KTH — so retuning OBSERVED_THRESHOLD_KN (CLAUDE.md
+                     # gives the Wedderburn range as 12-17 kt, and the bar is derived from it)
+                     # would score observations at the old bar against a persistence baseline at
+                     # the new one, inside the same 2x2 table, and publish the difference as
+                     # forecast skill. The log stores the DRIVES, so the events are derived here
+                     # and the stored flags are ignored: one bar, applied to everything.
+                     "obs_event": bool(ud.is_event(od)), "fcst_event": bool(ud.is_event(fd)),
                      "persist_event": (None if p is None else ud.is_event(p)),
                      "obs_fav": _f(r["obs_fav_kn"]), "fcst_fav": _f(r["fcst_fav_kn"])})
     if not recs:

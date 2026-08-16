@@ -5,6 +5,7 @@ that a NEW caller inherits all of them without knowing they exist.
 """
 from __future__ import annotations
 
+from pathlib import Path
 from datetime import date, timedelta
 
 import pytest
@@ -174,3 +175,36 @@ def test_a_window_wholly_in_the_future_never_reaches_the_network():
     from tbay_fishcast.ingest import asos_archive as asos
     today = _date.today()
     assert asos.fetch(today + timedelta(days=5), today + timedelta(days=20)) == []
+
+
+# --- what the repo-wide sweep confirmed, as invariants (ADR-060) ------------------------------
+
+def test_a_cache_key_that_determines_the_result_includes_the_query():
+    """Rule 4 territory. The Overpass cache had no TTL and no query fingerprint, so editing the
+    query to catch a reserve it currently misses would have served the pre-change element set —
+    with no request made and no way to tell "found nothing new" from "never ran". This is the
+    access-legality layer; the system must be incapable of recommending closed water."""
+    import hashlib
+    import inspect
+    from tbay_fishcast.ingest import osm_protected as op
+    src = inspect.getsource(op.fetch_reserves if hasattr(op, "fetch_reserves") else op)
+    digest = hashlib.sha256(op._QUERY.encode()).hexdigest()[:10]
+    assert "qh" in src or digest in src, "the query text must fingerprint into the cache key"
+
+
+def test_the_live_bias_band_cannot_collapse_to_a_point():
+    """np.std of one value is 0.0, so at n == 1 the pooled band was lo == hi == central and the
+    product reported a perfectly certain subsurface bias from a single observation. That band
+    decides reachable_certain — GO versus go? — so a collapsed band changes the advice."""
+    from tbay_fishcast.features import bias_live
+    assert bias_live.MIN_SAMPLES >= 3
+
+
+def test_the_shipped_favorability_curve_uses_the_repo_wide_event_floor():
+    """The operational calibrator required 8 cooling events, low enough that its own AUC >= 0.62
+    acceptance bar sits inside noise — in the one script whose output the PRODUCT reads."""
+    from tbay_fishcast.features.favorability_fit import MIN_EVENTS
+    src = (Path(__file__).resolve().parents[1] / "scripts" / "calibrate_upwelling.py").read_text()
+    assert "MIN_EVENTS" in src, "the shipped calibrator must use the shared event floor"
+    assert "< 8" not in src, "the old 8-event floor must be gone"
+    assert MIN_EVENTS >= 20
