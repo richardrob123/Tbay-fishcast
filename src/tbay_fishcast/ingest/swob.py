@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -76,12 +77,21 @@ def fetch_recent_wind(hours: int = 72, *, clim_id: str = WELCOME_ISLAND_CLIM_ID,
     url = (f"{API}?clim_id-value={clim_id}"
            f"&datetime={start.strftime('%Y-%m-%dT%H:%M:%SZ')}/"
            f"{end.strftime('%Y-%m-%dT%H:%M:%SZ')}&limit=1000&f=json")
-    raw = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url],
-                         capture_output=True).stdout.decode("utf-8", "replace")
+    # RETRY. This is the LIVE path — the observed wind the phase classifier reads every run —
+    # and it was the one remote client left without one. It returned an empty body on the first
+    # ask while answering a plain question about current conditions, which is precisely the
+    # silence-as-failure mode the rest of this package was hardened against.
+    raw = ""
+    for attempt in range(4):
+        proc = subprocess.run(["curl", "-sS", "-m", str(int(timeout)), url], capture_output=True)
+        raw = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode == 0 and raw.strip():
+            break
+        time.sleep(2 ** attempt * 2)
     try:
         feats = json.loads(raw).get("features") or []
     except ValueError as e:
-        raise RuntimeError(f"SWOB unavailable: {raw[:160]!r}") from e
+        raise RuntimeError(f"SWOB unavailable after 4 tries: {raw[:160]!r}") from e
 
     out = [w for w in (parse_feature(f) for f in feats) if w is not None]
     out.sort(key=lambda w: w.time)
