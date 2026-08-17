@@ -860,10 +860,14 @@
    [
     1785091860,
     1786734366
+   ],
+   [
+    1785091860,
+    1786982922
    ]
   ],
-  "kept": 469,
-  "scanned": 529917
+  "kept": 475,
+  "scanned": 538101
  },
  "ThunderBay:posts": {
   "done_windows": [
@@ -1806,10 +1810,14 @@
    [
     1786211719,
     1786734365
+   ],
+   [
+    1786211719,
+    1786982911
    ]
   ],
   "kept": 59,
-  "scanned": 29761
+  "scanned": 29914
  },
  "northernontario:comments": {
   "done_windows": [
