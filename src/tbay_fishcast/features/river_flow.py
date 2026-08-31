@@ -4,11 +4,18 @@ The river-mouth markers are THE signal for the weak-temperature-cue species (sal
 static dot can't say whether the plume is pushing. This classifies the ECCC realtime discharge into:
   • the current flow (m³/s), and
   • a short-window TREND — rising / steady / falling over ~3 days.
-A RISING river (a freshet, especially the first cool rain of the run) is the classic staging/run
-trigger the calendar encodes as `rain_trigger`; a falling/steady low river is slack. That is the
-honest, decidable signal from flow ALONE. What this deliberately does NOT do: call the flow "high"
-or "low" — that needs a multi-year per-gauge climatology this system doesn't hold yet, so a bare
-absolute value is reported with its trend, not a fabricated percentile (rule 3, provenance).
+A RISING river is what the literature calls the staging/run trigger, and the calendar encodes that
+claim as `rain_trigger`. ADR-061 went and MEASURED it here, and could not find it: across 20 dated
+pink report days, discharge on the report day sat at 0.84x (Current) and 0.93x (Neebing) of the
+trailing week's median — at or slightly BELOW normal water, not on a freshet. That null is
+confounded (the ledger is mostly iNaturalist sightings, and nobody photographs fish in the rain),
+so it does not prove the opposite. It is enough to stop ASSERTING the trigger: `freshet` below
+describes the HYDROGRAPH — this river is rising — and no longer tells anyone what the fish will do.
+Re-check `data/calib/run_trigger_skill.json` before that wording changes back.
+
+What this deliberately does NOT do: call the flow "high" or "low" — that needs a multi-year
+per-gauge climatology this system doesn't hold yet, so a bare absolute value is reported with its
+trend, not a fabricated percentile (rule 3, provenance).
 
 Pure classification over an already-fetched (datetime, Q) series; no I/O, no LLM (ADR-001)."""
 from __future__ import annotations
@@ -27,7 +34,8 @@ class RiverFlow:
     q_cms: float | None          # latest discharge, m³/s
     trend_pct: float | None      # signed % change over the trailing ~3 days (+rising)
     state: str                   # rising | falling | steady | unknown
-    freshet: bool                # rising beyond the steady band — the staging/run trigger
+    freshet: bool                # rising beyond the steady band. A HYDROGRAPH state, not a fish
+                                 # prediction — the run-trigger claim is unmeasured (ADR-061).
     note: str
 
     def as_dict(self) -> dict:
@@ -62,7 +70,8 @@ def classify(samples) -> RiverFlow:
     pct = round(100.0 * frac, 0)
     if frac >= _STEADY_FRAC:
         state, freshet = "rising", True
-        note = f"{_fmt(cur_q)} m³/s and rising ({pct:+.0f}% / {span_days:.0f}d) — freshet pulls staging fish in."
+        note = (f"{_fmt(cur_q)} m³/s and rising ({pct:+.0f}% / {span_days:.0f}d) — plume building. "
+                "Rise as a run trigger is unmeasured here (ADR-061).")
     elif frac <= -_STEADY_FRAC:
         state, freshet = "falling", False
         note = f"{_fmt(cur_q)} m³/s and dropping ({pct:+.0f}% / {span_days:.0f}d) — plume easing."

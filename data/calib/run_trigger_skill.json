@@ -1,0 +1,406 @@
+{
+ "built_utc": "2026-08-31T15:10:13+00:00",
+ "question": "Do the run triggers asserted in events_calendar.yaml and shipped as river_flow.freshet appear in this bay's own record?",
+ "n_report_days": 20,
+ "n_years": 13,
+ "flow_control": {
+  "current": {
+   "station": "02AB021",
+   "years_with_archive": [
+    2012,
+    2015,
+    2016,
+    2017,
+    2018,
+    2021,
+    2023,
+    2024,
+    2025
+   ],
+   "n_report_days": 16,
+   "median_ratio_trailing_7d": 0.835,
+   "median_ratio_season": 0.868,
+   "frac_above_1p2x_trailing": 0.125,
+   "rows": [
+    {
+     "date": "2012-09-29",
+     "q_cms": 0.344,
+     "trail_med": 0.387,
+     "ratio_trailing": 0.89,
+     "ratio_season": 0.79
+    },
+    {
+     "date": "2015-09-10",
+     "q_cms": 0.89,
+     "trail_med": 0.761,
+     "ratio_trailing": 1.17,
+     "ratio_season": 0.79
+    },
+    {
+     "date": "2016-09-16",
+     "q_cms": 0.647,
+     "trail_med": 0.493,
+     "ratio_trailing": 1.31,
+     "ratio_season": 0.95
+    },
+    {
+     "date": "2017-09-12",
+     "q_cms": 0.598,
+     "trail_med": 0.89,
+     "ratio_trailing": 0.67,
+     "ratio_season": 0.57
+    },
+    {
+     "date": "2017-09-20",
+     "q_cms": 6.54,
+     "trail_med": 1.57,
+     "ratio_trailing": 4.17,
+     "ratio_season": 6.26
+    },
+    {
+     "date": "2018-09-13",
+     "q_cms": 0.39,
+     "trail_med": 0.548,
+     "ratio_trailing": 0.71,
+     "ratio_season": 0.51
+    },
+    {
+     "date": "2021-10-06",
+     "q_cms": 0.315,
+     "trail_med": 0.354,
+     "ratio_trailing": 0.89,
+     "ratio_season": 1.19
+    },
+    {
+     "date": "2023-09-12",
+     "q_cms": 0.479,
+     "trail_med": 0.551,
+     "ratio_trailing": 0.87,
+     "ratio_season": 1.17
+    },
+    {
+     "date": "2023-09-14",
+     "q_cms": 0.396,
+     "trail_med": 0.542,
+     "ratio_trailing": 0.73,
+     "ratio_season": 0.97
+    },
+    {
+     "date": "2023-09-15",
+     "q_cms": 0.421,
+     "trail_med": 0.505,
+     "ratio_trailing": 0.83,
+     "ratio_season": 1.03
+    },
+    {
+     "date": "2023-09-28",
+     "q_cms": 0.322,
+     "trail_med": 0.385,
+     "ratio_trailing": 0.84,
+     "ratio_season": 0.79
+    },
+    {
+     "date": "2023-10-01",
+     "q_cms": 0.278,
+     "trail_med": 0.346,
+     "ratio_trailing": 0.8,
+     "ratio_season": 0.68
+    },
+    {
+     "date": "2024-09-14",
+     "q_cms": 0.158,
+     "trail_med": 0.196,
+     "ratio_trailing": 0.81,
+     "ratio_season": 0.92
+    },
+    {
+     "date": "2024-09-15",
+     "q_cms": 0.15,
+     "trail_med": 0.183,
+     "ratio_trailing": 0.82,
+     "ratio_season": 0.87
+    },
+    {
+     "date": "2024-09-27",
+     "q_cms": 0.136,
+     "trail_med": 0.167,
+     "ratio_trailing": 0.81,
+     "ratio_season": 0.79
+    },
+    {
+     "date": "2025-09-26",
+     "q_cms": 0.493,
+     "trail_med": 0.524,
+     "ratio_trailing": 0.94,
+     "ratio_season": 0.87
+    }
+   ]
+  },
+  "neebing": {
+   "station": "02AB008",
+   "years_with_archive": [
+    1961,
+    1963,
+    1967,
+    1969,
+    2012,
+    2015,
+    2016,
+    2017,
+    2018,
+    2021,
+    2023,
+    2024,
+    2025
+   ],
+   "n_report_days": 20,
+   "median_ratio_trailing_7d": 0.926,
+   "median_ratio_season": 0.898,
+   "frac_above_1p2x_trailing": 0.15,
+   "rows": [
+    {
+     "date": "1961-09-03",
+     "q_cms": 0.32,
+     "trail_med": 0.091,
+     "ratio_trailing": 3.52,
+     "ratio_season": 0.3
+    },
+    {
+     "date": "1963-09-23",
+     "q_cms": 0.719,
+     "trail_med": 0.719,
+     "ratio_trailing": 1.0,
+     "ratio_season": 1.1
+    },
+    {
+     "date": "1967-08-25",
+     "q_cms": 0.215,
+     "trail_med": 0.297,
+     "ratio_trailing": 0.72,
+     "ratio_season": 1.26
+    },
+    {
+     "date": "1969-09-01",
+     "q_cms": 0.108,
+     "trail_med": 0.119,
+     "ratio_trailing": 0.91,
+     "ratio_season": 0.83
+    },
+    {
+     "date": "2012-09-29",
+     "q_cms": 0.133,
+     "trail_med": 0.133,
+     "ratio_trailing": 1.0,
+     "ratio_season": 0.85
+    },
+    {
+     "date": "2015-09-10",
+     "q_cms": 0.22,
+     "trail_med": 0.323,
+     "ratio_trailing": 0.68,
+     "ratio_season": 0.64
+    },
+    {
+     "date": "2016-09-16",
+     "q_cms": 0.43,
+     "trail_med": 0.306,
+     "ratio_trailing": 1.41,
+     "ratio_season": 1.33
+    },
+    {
+     "date": "2017-09-12",
+     "q_cms": 0.267,
+     "trail_med": 0.498,
+     "ratio_trailing": 0.54,
+     "ratio_season": 0.36
+    },
+    {
+     "date": "2017-09-20",
+     "q_cms": 1.04,
+     "trail_med": 0.704,
+     "ratio_trailing": 1.48,
+     "ratio_season": 1.4
+    },
+    {
+     "date": "2018-09-13",
+     "q_cms": 0.08,
+     "trail_med": 0.09,
+     "ratio_trailing": 0.89,
+     "ratio_season": 0.37
+    },
+    {
+     "date": "2021-10-06",
+     "q_cms": 0.121,
+     "trail_med": 0.122,
+     "ratio_trailing": 0.99,
+     "ratio_season": 1.0
+    },
+    {
+     "date": "2023-09-12",
+     "q_cms": 0.198,
+     "trail_med": 0.223,
+     "ratio_trailing": 0.89,
+     "ratio_season": 1.21
+    },
+    {
+     "date": "2023-09-14",
+     "q_cms": 0.171,
+     "trail_med": 0.216,
+     "ratio_trailing": 0.79,
+     "ratio_season": 1.04
+    },
+    {
+     "date": "2023-09-15",
+     "q_cms": 0.187,
+     "trail_med": 0.205,
+     "ratio_trailing": 0.91,
+     "ratio_season": 1.14
+    },
+    {
+     "date": "2023-09-28",
+     "q_cms": 0.124,
+     "trail_med": 0.142,
+     "ratio_trailing": 0.87,
+     "ratio_season": 0.76
+    },
+    {
+     "date": "2023-10-01",
+     "q_cms": 0.137,
+     "trail_med": 0.133,
+     "ratio_trailing": 1.03,
+     "ratio_season": 0.84
+    },
+    {
+     "date": "2024-09-14",
+     "q_cms": 0.062,
+     "trail_med": 0.066,
+     "ratio_trailing": 0.94,
+     "ratio_season": 0.93
+    },
+    {
+     "date": "2024-09-15",
+     "q_cms": 0.069,
+     "trail_med": 0.065,
+     "ratio_trailing": 1.06,
+     "ratio_season": 1.03
+    },
+    {
+     "date": "2024-09-27",
+     "q_cms": 0.056,
+     "trail_med": 0.056,
+     "ratio_trailing": 1.0,
+     "ratio_season": 0.84
+    },
+    {
+     "date": "2025-09-26",
+     "q_cms": 0.256,
+     "trail_med": 0.31,
+     "ratio_trailing": 0.83,
+     "ratio_season": 0.87
+    }
+   ]
+  }
+ },
+ "thermal_control": {
+  "station": "welcome_island (ECCC hourly)",
+  "trailing_days": 7,
+  "onsets": [
+   {
+    "year": 1961,
+    "first_report": "1961-09-03",
+    "night_min_7d_c": null
+   },
+   {
+    "year": 1963,
+    "first_report": "1963-09-23",
+    "night_min_7d_c": null
+   },
+   {
+    "year": 1967,
+    "first_report": "1967-08-25",
+    "night_min_7d_c": null
+   },
+   {
+    "year": 1969,
+    "first_report": "1969-09-01",
+    "night_min_7d_c": null
+   },
+   {
+    "year": 2012,
+    "first_report": "2012-09-29",
+    "night_min_7d_c": 6.8
+   },
+   {
+    "year": 2015,
+    "first_report": "2015-09-10",
+    "night_min_7d_c": 14.5
+   },
+   {
+    "year": 2016,
+    "first_report": "2016-09-16",
+    "night_min_7d_c": 13.1
+   },
+   {
+    "year": 2017,
+    "first_report": "2017-09-12",
+    "night_min_7d_c": 11.2
+   },
+   {
+    "year": 2018,
+    "first_report": "2018-09-13",
+    "night_min_7d_c": 13.5
+   },
+   {
+    "year": 2021,
+    "first_report": "2021-10-06",
+    "night_min_7d_c": 12.2
+   },
+   {
+    "year": 2023,
+    "first_report": "2023-09-12",
+    "night_min_7d_c": 10.5
+   },
+   {
+    "year": 2024,
+    "first_report": "2024-09-14",
+    "night_min_7d_c": 14.3
+   },
+   {
+    "year": 2025,
+    "first_report": "2025-09-26",
+    "night_min_7d_c": 12.5
+   }
+  ],
+  "n_years": 9,
+  "onset_night_min_median_c": 12.53,
+  "onset_night_min_range_c": [
+   6.79,
+   14.47
+  ],
+  "observed_sd_c": 2.247,
+  "null_draws": 3539,
+  "null_sd_median_c": 2.134,
+  "null_sd_p05_p95_c": [
+   0.989,
+   3.027
+  ],
+  "p_null_tighter_or_equal": 0.553,
+  "detected": false,
+  "onset_doy_range": [
+   253,
+   279
+  ],
+  "verdict": "NO thermal anchoring beyond the calendar: the onset temperature is what mid-September is in this bay, whatever date the fish arrive on"
+ },
+ "rain_trigger_supported": false,
+ "thermal_trigger_supported": false,
+ "verdict": "NEITHER asserted trigger is visible in the local record. Pink report days sit at or slightly BELOW the trailing week's flow, and onset temperature is no tighter than a shuffled year<->date pairing. The calendar, not the weather, is what this record supports.",
+ "confound": "EFFORT BIAS, and it is one-sided. The ledger is mostly iNaturalist sightings, and observer effort drops on rainy, high-water days, so the FLOW null cannot separate 'fish do not run on freshets' from 'nobody photographs fish in the rain'. It is enough to retire the assertion, not enough to assert the opposite. The THERMAL control is not affected: it compares pairings of the same dates, so effort cancels.",
+ "consequence": "river_flow.freshet stays as a described OBSERVATION of the hydrograph (the river is rising) and must not be labelled a run trigger until something measures it. Changing the shipped field's semantics beyond that label needs an ADR (rule 11).",
+ "method": "flow: daily-mean discharge on each deduped report day vs trailing-7d median and season median at the same gauge. thermal: permutation test on the year<->onset-date pairing of trailing-7d in-bay night minima, 4000 draws, seed 1.",
+ "sources": {
+  "flow": "ECCC hydrometric-daily-mean archive",
+  "temperature": "ECCC climate-hourly, Welcome Island (in-bay)",
+  "reports": "knowledge/observations/observations.jsonl"
+ }
+}

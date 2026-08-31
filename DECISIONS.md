@@ -101,6 +101,35 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-061 — The run "triggers" the calendar asserts are not visible in this bay's record; the
+  product stops narrating them.** `events_calendar.yaml` carries two T2 literature claims for the
+  fall runs — `pink_run.modifiers.rain_trigger` ("first cool rain after Aug 20 = starting gun",
+  effect 1.8) and `chinook_staging`'s "nights-cooling trigger" — and `features/river_flow.py`
+  shipped a user-facing string, *"freshet pulls staging fish in"*, on every rising river mouth.
+  None had ever been checked here. `scripts/analyze_run_triggers.py` checks both.
+  **FLOW:** across 20 dated pink report days (deduped to the DAY — 2023-09-14 alone carries six
+  iNaturalist records that are one observer's afternoon), discharge on the report day ran **0.84×**
+  the trailing-week median on the Current (02AB021, n=16) and **0.93×** on the Neebing (02AB008,
+  n=20); only 12–15 % of report days exceeded 1.2× trailing. Reports land on **normal-to-slightly-
+  low water, not freshets.** **THERMAL:** onset temperature alone proves nothing, because any
+  mid-September date "crosses" ~12 °C here whether or not fish care — so the test is whether warm
+  years run LATE, i.e. whether the observed year↔onset-date pairing gives a tighter spread of
+  onset temperature than a shuffled pairing. Observed SD **2.25 °C** vs null median **2.13 °C**,
+  **p = 0.553** over 3539 draws (9 years, trailing-7 d in-bay night minima at Welcome Island).
+  **No thermal anchoring beyond the calendar.**
+  **What this does and does not license.** The flow null is CONFOUNDED and one-sided: the ledger is
+  mostly iNaturalist sightings and observer effort collapses on rainy, high-water days, so it
+  cannot separate "fish don't run on freshets" from "nobody photographs fish in the rain". It is
+  enough to retire the ASSERTION, not to assert the opposite. The thermal control has no such
+  confound — it compares pairings of the same dates, so effort cancels. Consequence: `freshet`
+  survives as a HYDROGRAPH state (this river is rising) and the shipped note now reads "plume
+  building. Rise as a run trigger is unmeasured here"; the 1.8× and 0.5× calendar modifiers were
+  verified to be consumed by NO code, so nothing shipped was being inflated. Measurement in
+  `data/calib/run_trigger_skill.json`; invariants in `tests/test_run_triggers.py`. Changing the
+  field's semantics further needs a new ADR (rule 11). Practical effect: **for the fall runs this
+  system supports the CALENDAR, not the weather** — the fitted local pink window (Sep 5–28, n=32
+  over 13 years) is the load-bearing prediction, and rain in the forecast is not evidence of fish.
+
 - **ADR-058 — The upwelling mechanism IS detectable at Thunder Bay. It still cannot carry a
   probability curve, and the physics prior stands.**
 
