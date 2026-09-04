@@ -1,50 +1,90 @@
 {
   "source": "data/forecast_gate_log.csv",
-  "n": 20,
+  "n": 45,
   "chains": [
     "45216",
     "llo1"
   ],
   "chains_with_moving_obs": [
-    "45216"
+    "45216",
+    "llo1"
   ],
-  "n_effective_chains": 1,
-  "pooled_mae_m": 2.929,
+  "n_effective_chains": 2,
+  "pooled_mae_m": 7.418,
   "band_blocked_reason": null,
-  "pooled_p90_m": 4.14,
+  "pooled_p90_m": 21.97,
   "per_lead": {
     "24": {
-      "n": 4,
-      "mae_m": 3.785,
-      "p90_m": 4.61
+      "n": 9,
+      "mae_m": 7.686,
+      "p90_m": 12.8
     },
     "48": {
-      "n": 4,
-      "mae_m": 3.527,
-      "p90_m": 4.31
+      "n": 9,
+      "mae_m": 7.331,
+      "p90_m": 12.41
     },
     "72": {
-      "n": 4,
-      "mae_m": 3.085,
-      "p90_m": 3.7
+      "n": 9,
+      "mae_m": 7.311,
+      "p90_m": 14.43
     },
     "96": {
-      "n": 4,
-      "mae_m": 2.213,
-      "p90_m": 3.35
+      "n": 9,
+      "mae_m": 7.111,
+      "p90_m": 12.01
     },
     "120": {
-      "n": 4,
-      "mae_m": 2.035,
-      "p90_m": 3.84
+      "n": 9,
+      "mae_m": 7.651,
+      "p90_m": 14.47
     }
   },
-  "skill_vs_persistence": null,
+  "skill_vs_persistence": {
+    "n_pairs": 33,
+    "per_lead": {
+      "24": {
+        "n": 8,
+        "fcst_mae_m": 8.07,
+        "persist_mae_m": 7.362,
+        "skill_ratio": 1.096,
+        "beats_persistence": false
+      },
+      "48": {
+        "n": 7,
+        "fcst_mae_m": 8.027,
+        "persist_mae_m": 7.694,
+        "skill_ratio": 1.043,
+        "beats_persistence": false
+      },
+      "72": {
+        "n": 7,
+        "fcst_mae_m": 8.83,
+        "persist_mae_m": 8.56,
+        "skill_ratio": 1.032,
+        "beats_persistence": false
+      },
+      "96": {
+        "n": 6,
+        "fcst_mae_m": 9.738,
+        "persist_mae_m": 11.368,
+        "skill_ratio": 0.857,
+        "beats_persistence": true
+      },
+      "120": {
+        "n": 5,
+        "fcst_mae_m": 11.86,
+        "persist_mae_m": 13.006,
+        "skill_ratio": 0.912,
+        "beats_persistence": true
+      }
+    }
+  },
   "skill_blocked_reason": null,
   "quarantined_chains": [
     "llo1"
   ],
-  "lead_slope_m_per_h": -0.02006,
+  "lead_slope_m_per_h": -0.0012,
   "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 2.929 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0201 m/h; per-lead means span 1.75 m). CAVEAT: n=20 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 1 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 7.418 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0012 m/h; per-lead means span 0.57 m). CAVEAT: n=45 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 2 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
 }
