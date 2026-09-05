@@ -1,0 +1,2045 @@
+{
+ "issue": "2026-09-05",
+ "issued_utc": "2026-09-05T12:00:00Z",
+ "lsofs_cycle": "t12z",
+ "built_utc": "2026-09-05T17:48:44Z",
+ "age_h": 5.8,
+ "stale": false,
+ "target_c": 12.0,
+ "cast_m": 75.0,
+ "max_reach_depth_m": 22.0,
+ "targets_c": [
+  18.0,
+  16.0,
+  14.0,
+  12.0,
+  10.0,
+  8.0,
+  6.0,
+  4.0
+ ],
+ "species": [
+  {
+   "id": "lake_trout",
+   "name": "Lake trout",
+   "range_c": [
+    4.0,
+    12.0
+   ],
+   "optimal_c": [
+    6.0,
+    10.0
+   ],
+   "front_c": 12.0,
+   "temp_cue": "strong",
+   "default": true,
+   "note": "Lean (nearshore) form. Core 6-10 C; prime along the ~12 C front; avoids ~15 C. Adult occupancy from a subarctic-lake study \u2014 transfer caveat.",
+   "min_depth_m": 4.0,
+   "max_depth_m": null
+  },
+  {
+   "id": "brook_trout",
+   "name": "Brook trout (coaster)",
+   "range_c": [
+    8.0,
+    14.0
+   ],
+   "optimal_c": [
+    8.0,
+    12.0
+   ],
+   "front_c": 14.0,
+   "temp_cue": "strong",
+   "default": false,
+   "note": "Coasters hold shallow (<7 m) in cold nearshore water \u2014 upwelling logic fits best here. Band is the realized cold niche, not the (warmer) growth optimum.",
+   "min_depth_m": 0.5,
+   "max_depth_m": 12.0
+  },
+  {
+   "id": "salmon",
+   "name": "Salmon (chinook/coho)",
+   "range_c": [
+    10.0,
+    14.0
+   ],
+   "optimal_c": [
+    12.0,
+    14.0
+   ],
+   "front_c": 14.0,
+   "temp_cue": "weak",
+   "default": false,
+   "note": "Mostly river-mouth/season driven (Kaministiquia, Current R.). Temperature is a minor cue.",
+   "min_depth_m": 2.0,
+   "max_depth_m": null
+  },
+  {
+   "id": "steelhead",
+   "name": "Steelhead / rainbow",
+   "range_c": [
+    12.0,
+    16.0
+   ],
+   "optimal_c": [
+    14.0,
+    16.0
+   ],
+   "front_c": 16.0,
+   "temp_cue": "weak",
+   "default": false,
+   "note": "Feeds at temperature breaks/plumes; largely decoupled from the cold-hypolimnion signal.",
+   "min_depth_m": 0.5,
+   "max_depth_m": null
+  }
+ ],
+ "nearshore_delta_by_class": {
+  "exposed": {
+   "delta_c": -0.31,
+   "n": 17
+  },
+  "sheltered": {
+   "delta_c": 2.31,
+   "n": 10
+  }
+ },
+ "suit_levels": [
+  {
+   "tag": "s1",
+   "label": "in range"
+  },
+  {
+   "tag": "s2",
+   "label": "optimal temp"
+  }
+ ],
+ "struct_levels": [
+  {
+   "tag": "g75",
+   "label": "structure \u2265 regional p75"
+  },
+  {
+   "tag": "g77",
+   "label": "structure \u2265 regional p77"
+  },
+  {
+   "tag": "g79",
+   "label": "structure \u2265 regional p79"
+  },
+  {
+   "tag": "g81",
+   "label": "structure \u2265 regional p81"
+  },
+  {
+   "tag": "g83",
+   "label": "structure \u2265 regional p83"
+  },
+  {
+   "tag": "g85",
+   "label": "structure \u2265 regional p85"
+  },
+  {
+   "tag": "g87",
+   "label": "structure \u2265 regional p87"
+  },
+  {
+   "tag": "g89",
+   "label": "structure \u2265 regional p89"
+  },
+  {
+   "tag": "g90",
+   "label": "structure \u2265 regional p90"
+  },
+  {
+   "tag": "g92",
+   "label": "structure \u2265 regional p92"
+  },
+  {
+   "tag": "g95",
+   "label": "structure \u2265 regional p95"
+  },
+  {
+   "tag": "g97",
+   "label": "structure \u2265 regional p97"
+  },
+  {
+   "tag": "g99",
+   "label": "structure \u2265 regional p99"
+  }
+ ],
+ "combine": "BIVARIATE display (ADR-038/039): cited temperature bands as a moving wash (s1 range / s2 optimal) + STATIC measured-structure ramp (g75..g99 = regional strength p75..p99, lead-independent) in separate visual channels \u2014 no fusion math; ranking uses boolean intersections at the p90/p95/p99 break bars only",
+ "favor_calibrated": false,
+ "n_leads": 6,
+ "bias": {
+  "central": 0.9,
+  "lo": -2.5,
+  "hi": 4.1,
+  "n": 12,
+  "source": "live"
+ },
+ "forecast_error": {
+  "source": "data/forecast_gate_log.csv",
+  "n": 45,
+  "chains": [
+   "45216",
+   "llo1"
+  ],
+  "chains_with_moving_obs": [
+   "45216",
+   "llo1"
+  ],
+  "n_effective_chains": 2,
+  "pooled_mae_m": 7.418,
+  "band_blocked_reason": null,
+  "pooled_p90_m": 21.97,
+  "per_lead": {
+   "24": {
+    "n": 9,
+    "mae_m": 7.686,
+    "p90_m": 12.8
+   },
+   "48": {
+    "n": 9,
+    "mae_m": 7.331,
+    "p90_m": 12.41
+   },
+   "72": {
+    "n": 9,
+    "mae_m": 7.311,
+    "p90_m": 14.43
+   },
+   "96": {
+    "n": 9,
+    "mae_m": 7.111,
+    "p90_m": 12.01
+   },
+   "120": {
+    "n": 9,
+    "mae_m": 7.651,
+    "p90_m": 14.47
+   }
+  },
+  "skill_vs_persistence": {
+   "n_pairs": 33,
+   "per_lead": {
+    "24": {
+     "n": 8,
+     "fcst_mae_m": 8.07,
+     "persist_mae_m": 7.362,
+     "skill_ratio": 1.096,
+     "beats_persistence": false
+    },
+    "48": {
+     "n": 7,
+     "fcst_mae_m": 8.027,
+     "persist_mae_m": 7.694,
+     "skill_ratio": 1.043,
+     "beats_persistence": false
+    },
+    "72": {
+     "n": 7,
+     "fcst_mae_m": 8.83,
+     "persist_mae_m": 8.56,
+     "skill_ratio": 1.032,
+     "beats_persistence": false
+    },
+    "96": {
+     "n": 6,
+     "fcst_mae_m": 9.738,
+     "persist_mae_m": 11.368,
+     "skill_ratio": 0.857,
+     "beats_persistence": true
+    },
+    "120": {
+     "n": 5,
+     "fcst_mae_m": 11.86,
+     "persist_mae_m": 13.006,
+     "skill_ratio": 0.912,
+     "beats_persistence": true
+    }
+   }
+  },
+  "skill_blocked_reason": null,
+  "quarantined_chains": [
+   "llo1"
+  ],
+  "lead_slope_m_per_h": -0.0012,
+  "lead_trend_detected": false,
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 7.418 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0012 m/h; per-lead means span 0.57 m). CAVEAT: n=45 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 2 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+ },
+ "thermal_skill": {
+  "n": 10395,
+  "n_days": 211,
+  "window": [
+   "2025-05-15",
+   "2026-09-03"
+  ],
+  "chains": [
+   "llo1"
+  ],
+  "per_lead": {
+   "0": {
+    "n": 1775,
+    "n_days": 199,
+    "fcst_mae_c": 2.591,
+    "fcst_bias_c": 0.6179,
+    "fcst_rmse_c": 3.2517,
+    "persist_mae_c": 0.0,
+    "clim_mae_c": 2.5799,
+    "baseline_mae_c": 0.0,
+    "skill_ratio": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "n_blocks": 20,
+    "interval_quality": "none",
+    "days_forecast_better": 0,
+    "days_forecast_worse": 199,
+    "sign_test_p": 2.4892061111444567e-60,
+    "verdict": "insufficient independent blocks (20)",
+    "demote": false
+   },
+   "24": {
+    "n": 1758,
+    "n_days": 195,
+    "fcst_mae_c": 2.6127,
+    "fcst_bias_c": 0.7822,
+    "fcst_rmse_c": 3.2221,
+    "persist_mae_c": 1.0029,
+    "clim_mae_c": 2.5781,
+    "baseline_mae_c": 0.8305,
+    "skill_ratio": 3.1635,
+    "ci95": [
+     2.5576,
+     4.04
+    ],
+    "n_blocks": 20,
+    "interval_quality": "approximate",
+    "days_forecast_better": 13,
+    "days_forecast_worse": 182,
+    "sign_test_p": 2.695220084835325e-39,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
+   },
+   "48": {
+    "n": 1741,
+    "n_days": 192,
+    "fcst_mae_c": 2.6033,
+    "fcst_bias_c": 0.9082,
+    "fcst_rmse_c": 3.1894,
+    "persist_mae_c": 1.4491,
+    "clim_mae_c": 2.5713,
+    "baseline_mae_c": 1.1243,
+    "skill_ratio": 2.3372,
+    "ci95": [
+     1.8785,
+     3.0022
+    ],
+    "n_blocks": 20,
+    "interval_quality": "approximate",
+    "days_forecast_better": 23,
+    "days_forecast_worse": 169,
+    "sign_test_p": 1.1838256997576382e-28,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
+   },
+   "72": {
+    "n": 1724,
+    "n_days": 190,
+    "fcst_mae_c": 2.54,
+    "fcst_bias_c": 0.6464,
+    "fcst_rmse_c": 3.1399,
+    "persist_mae_c": 1.6621,
+    "clim_mae_c": 2.5814,
+    "baseline_mae_c": 1.2842,
+    "skill_ratio": 1.9994,
+    "ci95": [
+     1.6404,
+     2.5282
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 28,
+    "days_forecast_worse": 162,
+    "sign_test_p": 3.966226225708073e-24,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
+   },
+   "96": {
+    "n": 1707,
+    "n_days": 188,
+    "fcst_mae_c": 2.5516,
+    "fcst_bias_c": 0.4958,
+    "fcst_rmse_c": 3.203,
+    "persist_mae_c": 1.7689,
+    "clim_mae_c": 2.5971,
+    "baseline_mae_c": 1.3081,
+    "skill_ratio": 1.9729,
+    "ci95": [
+     1.6129,
+     2.4768
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 34,
+    "days_forecast_worse": 154,
+    "sign_test_p": 1.9245731431105424e-19,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
+   },
+   "120": {
+    "n": 1690,
+    "n_days": 186,
+    "fcst_mae_c": 2.5817,
+    "fcst_bias_c": 0.4017,
+    "fcst_rmse_c": 3.2628,
+    "persist_mae_c": 1.8602,
+    "clim_mae_c": 2.6104,
+    "baseline_mae_c": 1.3444,
+    "skill_ratio": 1.9411,
+    "ci95": [
+     1.5567,
+     2.4861
+    ],
+    "n_blocks": 19,
+    "interval_quality": "approximate",
+    "days_forecast_better": 36,
+    "days_forecast_worse": 150,
+    "sign_test_p": 9.628713725647094e-18,
+    "verdict": "NO BETTER than the baseline",
+    "demote": true
+   }
+  },
+  "verdict": "at llo1: every forecast lead fails the ADR-006 bar AT THIS NODE \u2014 but the site check refuses to generalise it (the model is further from satellite (+3.9 C) than the observation is (-1.1 C) \u2014 the model is locally wrong here, so results measure this node and must not be generalised to the product)",
+  "demote_leads": [],
+  "nowcast_mae_c": 2.591,
+  "block_days_measured": 10,
+  "error_is_model_state_not_forecast_decay": true,
+  "caveat": "Scored at the Duluth LLO1 mooring (LSOFS station 45027, 0.11 km away), 271 km from Thunder Bay on the Minnesota upwelling coast. THE MODEL IS ANOMALOUS AT THIS NODE: on 2025-08-12 12Z it puts the deep offshore stations at 17.6-21.7 C over a 3.97-3.99 C hypolimnion and Thunder Bay at 19.5 C, while 45027 alone reads 8.60 C surface / 7.00 C bottom. Independent satellite SST (GLSEA/ACSPO, 0.43 km from the buoy) tracks the buoy rather than the model (21.28 vs 9.54 C on 2025-07-28), so the observation and the pipeline are sound and the model is locally wrong. The ADR-006 numbers above therefore describe LSOFS AT THIS MOORING and must not be read as a verdict on the Thunder Bay thermal layer, which this gate cannot reach."
+ },
+ "stretches": [
+  {
+   "id": "little_trout_bay",
+   "name": "Little Trout Bay / Cloud Bay",
+   "corners": [
+    [
+     -89.48878743840267,
+     48.09823471288131
+    ],
+    [
+     -89.4132983582312,
+     48.09823471288131
+    ],
+    [
+     -89.4132983582312,
+     48.04785209369534
+    ],
+    [
+     -89.48878743840267,
+     48.04785209369534
+    ]
+   ],
+   "center": [
+    48.073,
+    -89.451
+   ],
+   "res_m": 4.0,
+   "exposure": "low",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.14,
+   "low_confidence": true,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 34.9
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 38.6
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 37.7
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 10.9
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 63.6
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 65.1
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/little_trout_bay.geojson",
+   "contours": "data/contours/little_trout_bay.geojson"
+  },
+  {
+   "id": "chippewa",
+   "name": "Chippewa / Sturgeon River shore",
+   "corners": [
+    [
+     -89.24979587322346,
+     48.359109862656915
+    ],
+    [
+     -89.174306793052,
+     48.359109862656915
+    ],
+    [
+     -89.174306793052,
+     48.308983317807126
+    ],
+    [
+     -89.24979587322346,
+     48.308983317807126
+    ]
+   ],
+   "center": [
+    48.334,
+    -89.212
+   ],
+   "res_m": 4.0,
+   "exposure": "med",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.32,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.2
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.1
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 5.2
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 0.0
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/chippewa.geojson",
+   "contours": "data/contours/chippewa.geojson"
+  },
+  {
+   "id": "kam_mission",
+   "name": "Kam mouth / Mission Island",
+   "corners": [
+    [
+     -89.27776114610515,
+     48.42001741507257
+    ],
+    [
+     -89.2022720659337,
+     48.42001741507257
+    ],
+    [
+     -89.2022720659337,
+     48.36995080695932
+    ],
+    [
+     -89.27776114610515,
+     48.36995080695932
+    ]
+   ],
+   "center": [
+    48.395,
+    -89.24
+   ],
+   "res_m": 4.0,
+   "exposure": "low",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.19,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 10.1
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 5.1
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 13.7
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/kam_mission.geojson",
+   "contours": "data/contours/kam_mission.geojson"
+  },
+  {
+   "id": "mckellar_harbour",
+   "name": "McKellar / north harbour",
+   "corners": [
+    [
+     -89.24979587322346,
+     48.445089212382996
+    ],
+    [
+     -89.174306793052,
+     48.445089212382996
+    ],
+    [
+     -89.174306793052,
+     48.3950472929097
+    ],
+    [
+     -89.24979587322346,
+     48.3950472929097
+    ]
+   ],
+   "center": [
+    48.42,
+    -89.212
+   ],
+   "res_m": 4.0,
+   "exposure": "low",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.54,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 14.1
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 3.6
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 2.3
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 3.6
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 5.9
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/mckellar_harbour.geojson",
+   "contours": "data/contours/mckellar_harbour.geojson"
+  },
+  {
+   "id": "marina_mcvicar",
+   "name": "Marina Park / McVicar",
+   "corners": [
+    [
+     -89.22766384744594,
+     48.46707382998472
+    ],
+    [
+     -89.15234633336576,
+     48.46707382998472
+    ],
+    [
+     -89.15234633336576,
+     48.41705356704788
+    ],
+    [
+     -89.22766384744594,
+     48.41705356704788
+    ]
+   ],
+   "center": [
+    48.442,
+    -89.19
+   ],
+   "res_m": 4.0,
+   "exposure": "med",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.58,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 14.0
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/marina_mcvicar.geojson",
+   "contours": "data/contours/marina_mcvicar.geojson"
+  },
+  {
+   "id": "boulevard_current",
+   "name": "Boulevard / Current mouth",
+   "corners": [
+    [
+     -89.185801721169,
+     48.493033029826066
+    ],
+    [
+     -89.11031264099753,
+     48.493033029826066
+    ],
+    [
+     -89.11031264099753,
+     48.443038348190065
+    ],
+    [
+     -89.185801721169,
+     48.443038348190065
+    ]
+   ],
+   "center": [
+    48.468,
+    -89.148
+   ],
+   "res_m": 4.0,
+   "exposure": "med",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.28,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 1.0
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/boulevard_current.geojson",
+   "contours": "data/contours/boulevard_current.geojson"
+  },
+  {
+   "id": "current_barepoint",
+   "name": "Current River / Trowbridge shore",
+   "corners": [
+    [
+     -89.1327877989577,
+     48.51203857682847
+    ],
+    [
+     -89.05729871878621,
+     48.51203857682847
+    ],
+    [
+     -89.05729871878621,
+     48.46206263058496
+    ],
+    [
+     -89.1327877989577,
+     48.46206263058496
+    ]
+   ],
+   "center": [
+    48.487,
+    -89.095
+   ],
+   "res_m": 4.0,
+   "exposure": "high",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.18,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.6
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 0.3
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 1.1
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/current_barepoint.geojson",
+   "contours": "data/contours/current_barepoint.geojson"
+  },
+  {
+   "id": "shipyard_mackenzie",
+   "name": "Shipyard / MacKenzie approach",
+   "corners": [
+    [
+     -89.06278883370777,
+     48.530013312417246
+    ],
+    [
+     -88.9872997535363,
+     48.530013312417246
+    ],
+    [
+     -88.9872997535363,
+     48.48005509047439
+    ],
+    [
+     -89.06278883370777,
+     48.48005509047439
+    ]
+   ],
+   "center": [
+    48.505,
+    -89.025
+   ],
+   "res_m": 4.0,
+   "exposure": "med",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.19,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.0
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 2.3
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 1.9
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/shipyard_mackenzie.geojson",
+   "contours": "data/contours/shipyard_mackenzie.geojson"
+  },
+  {
+   "id": "mackenzie_silver",
+   "name": "MacKenzie Point / Silver Harbour",
+   "corners": [
+    [
+     -88.99965251210985,
+     48.54093155571086
+    ],
+    [
+     -88.92433499802966,
+     48.54093155571086
+    ],
+    [
+     -88.92433499802966,
+     48.490984102295755
+    ],
+    [
+     -88.99965251210985,
+     48.490984102295755
+    ]
+   ],
+   "center": [
+    48.516,
+    -88.962
+   ],
+   "res_m": 4.0,
+   "exposure": "high",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.16,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 14.1
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 15.3
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 15.4
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.5
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 8.3
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 0.0
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/mackenzie_silver.geojson",
+   "contours": "data/contours/mackenzie_silver.geojson"
+  },
+  {
+   "id": "silver_islet",
+   "name": "Silver Islet / Sleeping Giant tip",
+   "corners": [
+    [
+     -88.84970374831468,
+     48.34712508167619
+    ],
+    [
+     -88.77421466814323,
+     48.34712508167619
+    ],
+    [
+     -88.77421466814323,
+     48.29698674975027
+    ],
+    [
+     -88.84970374831468,
+     48.29698674975027
+    ]
+   ],
+   "center": [
+    48.322,
+    -88.812
+   ],
+   "res_m": 4.0,
+   "exposure": "high",
+   "anchor_day": "2026-09-04",
+   "survey_cov": 0.71,
+   "low_confidence": false,
+   "days": [
+    {
+     "label": "Sat Sep 5",
+     "lead": 0,
+     "valid_utc": "2026-09-05T12:00:00Z",
+     "reach_ha": 11.3
+    },
+    {
+     "label": "Sun Sep 6",
+     "lead": 24,
+     "valid_utc": "2026-09-06T12:00:00Z",
+     "reach_ha": 9.5
+    },
+    {
+     "label": "Mon Sep 7",
+     "lead": 48,
+     "valid_utc": "2026-09-07T12:00:00Z",
+     "reach_ha": 10.9
+    },
+    {
+     "label": "Tue Sep 8",
+     "lead": 72,
+     "valid_utc": "2026-09-08T12:00:00Z",
+     "reach_ha": 0.9
+    },
+    {
+     "label": "Wed Sep 9",
+     "lead": 96,
+     "valid_utc": "2026-09-09T12:00:00Z",
+     "reach_ha": 25.6
+    },
+    {
+     "label": "Thu Sep 10",
+     "lead": 120,
+     "valid_utc": "2026-09-10T12:00:00Z",
+     "reach_ha": 24.4
+    }
+   ],
+   "degraded": false,
+   "anchor_stale": false,
+   "area": "data/areas/silver_islet.geojson",
+   "contours": "data/contours/silver_islet.geojson"
+  }
+ ],
+ "stations": [
+  {
+   "id": "silver_harbour_outer",
+   "name": "Silver Harbour Conservation Area \u2014 point",
+   "lat": 48.5085,
+   "lon": -88.9746,
+   "now": true,
+   "now_certain": true,
+   "verdict": "open now and still open at +120 h",
+   "surf_sst": 17.4,
+   "traj": [
+    {
+     "label": "Sat",
+     "lead": 0,
+     "iso": 5.3,
+     "iso_band_m": 6.8,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.643,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 24,
+     "iso": 5.4,
+     "iso_band_m": 5.3,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.811,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 48,
+     "iso": 4.9,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.16,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 72,
+     "iso": 12.0,
+     "iso_band_m": 11.3,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.323,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Wed",
+     "lead": 96,
+     "iso": 4.5,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.514,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Thu",
+     "lead": 120,
+     "iso": 6.9,
+     "iso_band_m": 23.4,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.177,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    }
+   ]
+  },
+  {
+   "id": "mackenzie_point",
+   "name": "MacKenzie Point Conservation Area \u2014 point",
+   "lat": 48.52294,
+   "lon": -88.94336,
+   "now": true,
+   "now_certain": true,
+   "verdict": "open now, closes ~Mon Sep 7; opens Wed Sep 9, closes ~Wed Sep 9",
+   "surf_sst": 17.5,
+   "traj": [
+    {
+     "label": "Sat",
+     "lead": 0,
+     "iso": 5.4,
+     "iso_band_m": 5.8,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.753,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 24,
+     "iso": 5.5,
+     "iso_band_m": 5.4,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.793,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 48,
+     "iso": 5.4,
+     "iso_band_m": 5.3,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.79,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 72,
+     "iso": 10.8,
+     "iso_band_m": 9.6,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.379,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Wed",
+     "lead": 96,
+     "iso": 5.3,
+     "iso_band_m": 4.0,
+     "iso_band_why": null,
+     "grad_c_per_m": 1.03,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Thu",
+     "lead": 120,
+     "iso": 12.1,
+     "iso_band_m": null,
+     "iso_band_why": "weak stratification (0.05 C/m) \u2014 the depth of the cold water is not constrained to better than 25 m today",
+     "grad_c_per_m": 0.046,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    }
+   ]
+  },
+  {
+   "id": "marina_east_mcvicar",
+   "name": "Marina Park \u2014 Prince Arthur's Landing point",
+   "lat": 48.43514,
+   "lon": -89.21356,
+   "now": false,
+   "now_certain": true,
+   "verdict": "opens Thu Sep 10 and still open at +120 h",
+   "surf_sst": 20.3,
+   "traj": [
+    {
+     "label": "Sat",
+     "lead": 0,
+     "iso": 10.3,
+     "iso_band_m": 9.6,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.398,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Sun",
+     "lead": 24,
+     "iso": 11.4,
+     "iso_band_m": 11.7,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.317,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Mon",
+     "lead": 48,
+     "iso": 10.4,
+     "iso_band_m": 15.1,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.243,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Tue",
+     "lead": 72,
+     "iso": 13.5,
+     "iso_band_m": 5.8,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.635,
+     "reach": false,
+     "certain": false,
+     "possible": false
+    },
+    {
+     "label": "Wed",
+     "lead": 96,
+     "iso": 9.6,
+     "iso_band_m": 21.8,
+     "iso_band_why": null,
+     "grad_c_per_m": 0.187,
+     "reach": false,
+     "certain": true,
+     "possible": true
+    },
+    {
+     "label": "Thu",
+     "lead": 120,
+     "iso": 4.8,
+     "iso_band_m": null,
+     "iso_band_why": "no measured temperature error for this lead/depth",
+     "grad_c_per_m": 1.577,
+     "reach": true,
+     "certain": true,
+     "possible": true
+    }
+   ]
+  }
+ ],
+ "wind": [
+  {
+   "day": "Sat",
+   "favor": 0.0,
+   "p": 0.0,
+   "peak_kn": 0
+  },
+  {
+   "day": "Sun",
+   "favor": 0.01,
+   "p": 0.0,
+   "peak_kn": 2
+  },
+  {
+   "day": "Mon",
+   "favor": 0.0,
+   "p": 0.0,
+   "peak_kn": 0
+  },
+  {
+   "day": "Tue",
+   "favor": 0.01,
+   "p": 0.0,
+   "peak_kn": 0
+  },
+  {
+   "day": "Wed",
+   "favor": 0.27,
+   "p": 0.74,
+   "peak_kn": 15
+  }
+ ],
+ "phase": {
+  "now": {
+   "phase": "neutral",
+   "prime": false,
+   "suppressed": false,
+   "active": false,
+   "source": "observed:WELCOME ISLAND (AUT)",
+   "confidence": "high",
+   "detail": "no sustained west-quadrant blow in the observed window",
+   "confidence_detail": {
+    "skill_vs_baseline": "observed",
+    "basis": "in-situ observation, not a forecast",
+    "lead_h": 0,
+    "measured_at_lead_h": null
+   }
+  },
+  "by_lead": {
+   "0": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "observed:WELCOME ISLAND (AUT)",
+    "confidence": "high",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "observed",
+     "basis": "in-situ observation, not a forecast",
+     "lead_h": 0,
+     "measured_at_lead_h": null
+    }
+   },
+   "24": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "measured",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "measured",
+     "basis": "interval clears the ADR-006 bar against the harder of persistence and climatology",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 24,
+     "measured_at_lead_h": 24,
+     "sign_agreement": 0.7961,
+     "drive_mae_kth": 28.571,
+     "drive_bias_kth": 3.462,
+     "skill_ratio": 0.829,
+     "ci95": [
+      0.7427,
+      0.9232
+     ],
+     "ratio_vs_persistence": 0.5011
+    }
+   },
+   "48": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "measured",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "measured",
+     "basis": "interval clears the ADR-006 bar against the harder of persistence and climatology",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 48,
+     "measured_at_lead_h": 48,
+     "sign_agreement": 0.7819,
+     "drive_mae_kth": 28.995,
+     "drive_bias_kth": -13.0,
+     "skill_ratio": 0.7233,
+     "ci95": [
+      0.6431,
+      0.8162
+     ],
+     "ratio_vs_persistence": 0.4186
+    }
+   },
+   "72": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "measured",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "measured",
+     "basis": "interval clears the ADR-006 bar against the harder of persistence and climatology",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 72,
+     "measured_at_lead_h": 72,
+     "sign_agreement": 0.7604,
+     "drive_mae_kth": 34.386,
+     "drive_bias_kth": -14.979,
+     "skill_ratio": 0.8349,
+     "ci95": [
+      0.7487,
+      0.9283
+     ],
+     "ratio_vs_persistence": 0.4754
+    }
+   },
+   "96": {
+    "phase": "neutral",
+    "prime": false,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "informative",
+    "detail": "no sustained west-quadrant blow in the observed window",
+    "confidence_detail": {
+     "skill_vs_baseline": "informative",
+     "basis": "beats observed persistence but the interval does not clear the oracle composite baseline",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 96,
+     "measured_at_lead_h": 96,
+     "sign_agreement": 0.7274,
+     "drive_mae_kth": 40.043,
+     "drive_bias_kth": -15.855,
+     "skill_ratio": 0.9459,
+     "ci95": [
+      0.8553,
+      1.0429
+     ],
+     "ratio_vs_persistence": 0.5367
+    }
+   },
+   "120": {
+    "phase": "relaxation",
+    "prime": true,
+    "suppressed": false,
+    "active": false,
+    "source": "forecast:gfs025",
+    "confidence": "informative",
+    "detail": "W 15 kn for 9 h, ended ~13 h ago",
+    "since_end_h": 13.0,
+    "run": {
+     "start_utc": "2026-09-09T14:00:00Z",
+     "end_utc": "2026-09-09T23:00:00Z",
+     "duration_h": 9.0,
+     "peak_kn": 15.4,
+     "dir_deg": 276
+    },
+    "confidence_detail": {
+     "skill_vs_baseline": "informative",
+     "basis": "beats observed persistence but the interval does not clear the oracle composite baseline",
+     "not_an_accuracy_ranking": "says whether the lead is shown to beat the cheap baseline, NOT how accurate it is. Persistence is hardest to beat at short lead, so +24 h can rank below +48 h. Use sign_agreement for accuracy.",
+     "lead_h": 120,
+     "measured_at_lead_h": 120,
+     "sign_agreement": 0.6903,
+     "drive_mae_kth": 42.634,
+     "drive_bias_kth": -14.848,
+     "skill_ratio": 0.9952,
+     "ci95": [
+      0.9092,
+      1.0844
+     ],
+     "ratio_vs_persistence": 0.5657
+    }
+   }
+  },
+  "daily_wind": {
+   "0": {
+    "dir_deg": 346,
+    "mean_kn": 3,
+    "max_kn": 6
+   },
+   "24": {
+    "dir_deg": 205,
+    "mean_kn": 3,
+    "max_kn": 7
+   },
+   "48": {
+    "dir_deg": 97,
+    "mean_kn": 5,
+    "max_kn": 8
+   },
+   "72": {
+    "dir_deg": 168,
+    "mean_kn": 11,
+    "max_kn": 14
+   },
+   "96": {
+    "dir_deg": 252,
+    "mean_kn": 9,
+    "max_kn": 15
+   }
+  },
+  "obs_station": "WELCOME ISLAND (AUT)",
+  "obs_available": true,
+  "obs_in_bay": true,
+  "obs_fallback": false,
+  "obs_age_h": 0.81,
+  "obs_note": null,
+  "lead_confidence_source": "data/calib/wind_lead_skill.json",
+  "threshold_obs_kn": 13.0,
+  "threshold_forecast_kn": 13.0,
+  "sector_deg": [
+   225.0,
+   315.0
+  ],
+  "water_level": {
+   "station": "thunder_bay",
+   "n": 1440,
+   "latest_m": 0.248,
+   "baseline_m": 0.285,
+   "anomaly_m": -0.001,
+   "trend": "steady",
+   "upwelling_favorable": false,
+   "span_h": 72.0,
+   "note": "shore-level anomaly vs the preceding window; responds to wind setup AND seiche AND barometric pressure \u2014 corroboration of the wind-derived phase, not attribution",
+   "agrees_with_wind_phase": true
+  }
+ },
+ "markers": [
+  {
+   "id": "kam",
+   "name": "Kaministiquia R. mouth",
+   "lat": 48.3661,
+   "lon": -89.2525,
+   "note": "Delta channels + warm plume \u2014 prime chinook/coho staging (late summer\u2013fall). Temperature is a minor cue here; fish the plume edge and current seams.",
+   "species": [
+    "salmon",
+    "steelhead"
+   ],
+   "run": {
+    "active": true,
+    "runs": [
+     {
+      "species": "chinook",
+      "id": "chinook_staging",
+      "note": "Dawn cruisers off river mouths before commitment; nights-cooling trigger.",
+      "tier": "T2",
+      "fitted": null
+     },
+     {
+      "species": "pink",
+      "id": "pink_run",
+      "note": "",
+      "tier": "DATA(local reports)",
+      "fitted": {
+       "n": 32,
+       "n_years": 13,
+       "authored": [
+        "09-01",
+        "09-30"
+       ],
+       "shift_days": 4
+      }
+     },
+     {
+      "species": "coho",
+      "id": "mcintyre_coho",
+      "note": "Strong coho runs; hotspot near Confederation College. Verify station access + regs stretch.",
+      "tier": "T3",
+      "fitted": null
+     }
+    ],
+    "species_active": [
+     "salmon"
+    ]
+   },
+   "flow": {
+    "q_cms": 19.2,
+    "trend_pct": -1.0,
+    "state": "steady",
+    "freshet": false,
+    "note": "19 m\u00b3/s, steady (-1% / 3d).",
+    "pct": 9,
+    "pct_label": "<10th %ile",
+    "clim_years": "1926-2025",
+    "clim_n": 2100
+   }
+  },
+  {
+   "id": "current",
+   "name": "Current R. mouth",
+   "lat": 48.451,
+   "lon": -89.1842,
+   "note": "North-shore plume below Boulevard Lake \u2014 steelhead/salmon staging; lake trout hold where the plume meets the cold shelf.",
+   "species": [
+    "steelhead",
+    "salmon",
+    "lake_trout"
+   ],
+   "run": {
+    "active": true,
+    "runs": [
+     {
+      "species": "chinook",
+      "id": "chinook_staging",
+      "note": "Dawn cruisers off river mouths before commitment; nights-cooling trigger.",
+      "tier": "T2",
+      "fitted": null
+     },
+     {
+      "species": "pink",
+      "id": "pink_run",
+      "note": "",
+      "tier": "DATA(local reports)",
+      "fitted": {
+       "n": 32,
+       "n_years": 13,
+       "authored": [
+        "09-01",
+        "09-30"
+       ],
+       "shift_days": 4
+      }
+     },
+     {
+      "species": "coho",
+      "id": "mcintyre_coho",
+      "note": "Strong coho runs; hotspot near Confederation College. Verify station access + regs stretch.",
+      "tier": "T3",
+      "fitted": null
+     }
+    ],
+    "species_active": [
+     "salmon"
+    ]
+   },
+   "flow": {
+    "q_cms": 0.18,
+    "trend_pct": -10.0,
+    "state": "steady",
+    "freshet": false,
+    "note": "0.18 m\u00b3/s, steady (-10% / 3d).",
+    "pct": 47,
+    "pct_label": "\u224847th %ile",
+    "clim_years": "1972-2016",
+    "clim_n": 966
+   }
+  },
+  {
+   "id": "neebing",
+   "name": "Neebing\u2013McIntyre Floodway mouth",
+   "lat": 48.3995,
+   "lon": -89.2191,
+   "note": "Floodway outlet into the harbour \u2014 plume + forage; secondary structure to the Kam delta.",
+   "species": [
+    "salmon",
+    "steelhead"
+   ],
+   "run": {
+    "active": true,
+    "runs": [
+     {
+      "species": "chinook",
+      "id": "chinook_staging",
+      "note": "Dawn cruisers off river mouths before commitment; nights-cooling trigger.",
+      "tier": "T2",
+      "fitted": null
+     },
+     {
+      "species": "pink",
+      "id": "pink_run",
+      "note": "",
+      "tier": "DATA(local reports)",
+      "fitted": {
+       "n": 32,
+       "n_years": 13,
+       "authored": [
+        "09-01",
+        "09-30"
+       ],
+       "shift_days": 4
+      }
+     },
+     {
+      "species": "coho",
+      "id": "mcintyre_coho",
+      "note": "Strong coho runs; hotspot near Confederation College. Verify station access + regs stretch.",
+      "tier": "T3",
+      "fitted": null
+     }
+    ],
+    "species_active": [
+     "salmon"
+    ]
+   },
+   "flow": {
+    "q_cms": 0.202,
+    "trend_pct": -10.0,
+    "state": "steady",
+    "freshet": false,
+    "note": "0.20 m\u00b3/s, steady (-10% / 3d).",
+    "pct": 49,
+    "pct_label": "\u224849th %ile",
+    "clim_years": "1972-2025",
+    "clim_n": 1533
+   }
+  }
+ ],
+ "season": {
+  "season": "summer",
+  "label": "Summer (stratified)",
+  "upwelling": "primary",
+  "note": "The model's core regime: cold-reachability + the thermal/structure edge predict opportunity; reward the relaxation after a blow."
+ },
+ "light": {
+  "civil_dawn": "2026-09-05T10:47:32Z",
+  "sunrise": "2026-09-05T11:19:42Z",
+  "sunset": "2026-09-06T00:29:46Z",
+  "civil_dusk": "2026-09-06T01:01:48Z",
+  "morning_prime": [
+   "2026-09-05T10:47:32Z",
+   "2026-09-05T12:04:42Z"
+  ],
+  "evening_prime": [
+   "2026-09-05T23:44:46Z",
+   "2026-09-06T01:01:48Z"
+  ],
+  "basis": "civil twilight (\u22126\u00b0) \u2192 sunrise+45m AM / sunset\u221245m \u2192 civil dusk PM; NOAA solar geometry"
+ },
+ "barometric": null,
+ "top_spots": {
+  "lake_trout": {
+   "ranked": [
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 100,
+     "opt_ha": 3.2,
+     "glow_ha": 5.5,
+     "reason": "3 ha optimal temp over 5 ha of structure (breaks/points)"
+    },
+    {
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 50,
+     "opt_ha": 2.3,
+     "glow_ha": 0.9,
+     "reason": "2 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 47,
+     "opt_ha": 3.6,
+     "glow_ha": 0.1,
+     "reason": "4 ha of optimal-temperature water"
+    },
+    {
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 23,
+     "opt_ha": 0.0,
+     "glow_ha": 0.2,
+     "reason": "10 ha in range, little strong structure"
+    }
+   ],
+   "weak_cue": false,
+   "caveat": null
+  },
+  "brook_trout": {
+   "ranked": [
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 100,
+     "opt_ha": 7.9,
+     "glow_ha": 8.2,
+     "reason": "8 ha optimal temp over 8 ha of structure (breaks/points)"
+    },
+    {
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 74,
+     "opt_ha": 13.2,
+     "glow_ha": 1.7,
+     "reason": "13 ha optimal temp over 2 ha of structure (breaks/points)"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 71,
+     "opt_ha": 10.4,
+     "glow_ha": 1.5,
+     "reason": "10 ha optimal temp over 1 ha of structure (breaks/points)"
+    },
+    {
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 55,
+     "opt_ha": 9.9,
+     "glow_ha": 0.4,
+     "reason": "10 ha optimal temp over 0 ha of structure (breaks/points)"
+    },
+    {
+     "id": "marina_mcvicar",
+     "name": "Marina Park / McVicar",
+     "score": 18,
+     "opt_ha": 0.0,
+     "glow_ha": 0.4,
+     "reason": "0 ha of reachable structure in range"
+    }
+   ],
+   "weak_cue": false,
+   "caveat": null
+  },
+  "salmon": {
+   "ranked": [
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 100,
+     "opt_ha": 10.8,
+     "glow_ha": 9.0,
+     "reason": "17 ha in preferred temperature"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 68,
+     "opt_ha": 13.2,
+     "glow_ha": 1.5,
+     "reason": "24 ha in preferred temperature"
+    },
+    {
+     "id": "marina_mcvicar",
+     "name": "Marina Park / McVicar",
+     "score": 47,
+     "opt_ha": 12.4,
+     "glow_ha": 0.4,
+     "reason": "12 ha in preferred temperature"
+    },
+    {
+     "id": "kam_mission",
+     "name": "Kam mouth / Mission Island",
+     "score": 43,
+     "opt_ha": 8.0,
+     "glow_ha": 0.4,
+     "reason": "18 ha in preferred temperature"
+    },
+    {
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 43,
+     "opt_ha": 5.6,
+     "glow_ha": 1.7,
+     "reason": "18 ha in preferred temperature"
+    }
+   ],
+   "weak_cue": true,
+   "caveat": "Temperature is a minor cue for this species \u2014 the real driver is run timing and tributary plumes. Treat the map ranking as secondary to the river-mouth markers and the run windows."
+  },
+  "steelhead": {
+   "ranked": [
+    {
+     "id": "silver_islet",
+     "name": "Silver Islet / Sleeping Giant tip",
+     "score": 100,
+     "opt_ha": 8.7,
+     "glow_ha": 9.1,
+     "reason": "17 ha in preferred temperature"
+    },
+    {
+     "id": "shipyard_mackenzie",
+     "name": "Shipyard / MacKenzie approach",
+     "score": 58,
+     "opt_ha": 12.6,
+     "glow_ha": 0.5,
+     "reason": "18 ha in preferred temperature"
+    },
+    {
+     "id": "mckellar_harbour",
+     "name": "McKellar / north harbour",
+     "score": 42,
+     "opt_ha": 3.3,
+     "glow_ha": 2.1,
+     "reason": "18 ha in preferred temperature"
+    },
+    {
+     "id": "marina_mcvicar",
+     "name": "Marina Park / McVicar",
+     "score": 38,
+     "opt_ha": 4.9,
+     "glow_ha": 0.9,
+     "reason": "18 ha in preferred temperature"
+    },
+    {
+     "id": "mackenzie_silver",
+     "name": "MacKenzie Point / Silver Harbour",
+     "score": 33,
+     "opt_ha": 4.8,
+     "glow_ha": 1.2,
+     "reason": "11 ha in preferred temperature"
+    }
+   ],
+   "weak_cue": true,
+   "caveat": "Temperature is a minor cue for this species \u2014 the real driver is run timing and tributary plumes. Treat the map ranking as secondary to the river-mouth markers and the run windows."
+  },
+  "_active_runs": [
+   {
+    "id": "chinook_staging",
+    "species": "chinook",
+    "note": "Dawn cruisers off river mouths before commitment; nights-cooling trigger."
+   },
+   {
+    "id": "pink_run",
+    "species": "pink",
+    "note": ""
+   },
+   {
+    "id": "mcintyre_coho",
+    "species": "coho",
+    "note": "Strong coho runs; hotspot near Confederation College. Verify station access + regs stretch."
+   }
+  ],
+  "_unranked_unverified": [
+   "Little Trout Bay / Cloud Bay"
+  ],
+  "_next_run": {
+   "id": "fall_steelhead",
+   "species": "steelhead",
+   "opens": "2026-09-25",
+   "days_until": 20
+  }
+ }
+}

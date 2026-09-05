@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Thunder Bay cold-water forecast — shore map</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🎣</text></svg>" />
+<link href="vendor/maplibre-gl.css" rel="stylesheet" />
+<script src="vendor/maplibre-gl.js"></script>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#111823cc; --ink:#e6edf3; --muted:#9aa4ae; --line:#26303b;
+    --go:#39d353; --cold:#39d353; --iso:#ff1e3c; --accent:#4aa3ff; --warn:#ffb020;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;overflow:hidden}
+  #map{position:absolute;inset:0}
+  .card{position:absolute;background:var(--panel);backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 6px 24px #0008}
+  /* top header */
+  #top{top:10px;left:10px;right:10px;padding:9px 13px;display:flex;align-items:center;
+    gap:9px;flex-wrap:wrap}
+  #top h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.1px}
+  #top h1 .fish{filter:saturate(1.2)}
+  .age{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .age.stale{color:var(--warn);font-weight:650}
+  .spacer{flex:1}
+  .species{display:flex;gap:6px;flex-wrap:wrap;width:100%;margin:1px 0 5px}
+  .spchip{font:inherit;font-size:12px;padding:3px 10px;border-radius:999px;cursor:pointer;
+    background:var(--chip,#2a2f37);color:var(--ink);border:1px solid #ffffff22;line-height:1.15}
+  .spchip.on{background:#22b39a;color:#04120d;border-color:#22b39a;font-weight:650}
+  #legend{display:flex;gap:10px 14px;font-size:11.5px;color:var(--muted);align-items:center;flex-wrap:wrap;width:100%}
+  #legend .key{display:inline-flex;align-items:center;color:var(--ink);font-size:11.5px}
+  #legend .key i.sw{width:11px;height:11px;border-radius:2px;display:inline-block;margin:0 3px 0 8px}
+  #legend .key i.sw:first-child{margin-left:0}
+  #legend .sw.s1{background:#7fe0cb}
+  #legend .sw.s2{background:#28b58c}
+  #legend .sw.g75{background:#c8963a;opacity:.55}
+  #legend .sw.g90{background:#edb93a}
+  #legend .sw.g99{background:#ffd75e}
+  #legend .lmut{color:var(--muted)}
+  #legend .lwarn{color:#e0a53a;font-weight:600}
+  #legend .opt{font-size:9px;background:#22b39a33;color:var(--ink);border-radius:3px;padding:0 3px;margin-left:3px}
+  #legnote{width:100%;font-size:11px;color:var(--muted);margin-top:5px;opacity:.9}
+  #legnote summary{cursor:pointer;list-style:none;line-height:1.3}
+  #legnote summary::-webkit-details-marker{display:none}
+  #legnote .more{margin-top:5px;line-height:1.4;opacity:.92}
+  .sw{display:inline-block;width:15px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
+  /* bottom forecast scrubber */
+  #ctl{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));padding:12px 14px 13px}
+  .daylab{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+  .daylab .d{font-size:16px;font-weight:650}
+  .daylab .ha{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .daylab .wind{margin-left:auto;font-size:12px;color:var(--muted)}
+  .daylab .wind b{color:var(--accent);font-variant-numeric:tabular-nums}
+  /* upwelling-phase banner (the prime-window signal) */
+  #phase{display:none;align-items:center;gap:10px;margin-bottom:11px;padding:8px 11px;
+    border-radius:10px;background:#0d141dcc;border:1px solid var(--line);border-left:4px solid var(--muted)}
+  #phase .ic{font-size:18px;line-height:1;flex:none}
+  #phase .txt{flex:1;min-width:0}
+  #phase .lab{font-size:13px;font-weight:650;line-height:1.2}
+  #phase .det{font-size:11px;color:var(--muted);margin-top:1.5px;line-height:1.3}
+  #phase .src{font-size:10px;color:var(--muted);opacity:.85;white-space:nowrap;text-align:right;flex:none}
+  /* timing strip: dawn/dusk light windows + barometric prior (the WHEN, beside the phase WHEN-over-days) */
+  #timing{display:none;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:-4px 0 11px;
+    padding:7px 11px;border-radius:10px;background:#0d141dcc;border:1px solid var(--line);font-size:11.5px}
+  #timing .grp{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  #timing .lb{color:var(--muted)}
+  #timing .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  #timing .sep{width:1px;height:13px;background:var(--line)}
+  #timing .baro.up{color:var(--go)} #timing .baro.dn{color:var(--warn)} #timing .baro.fl{color:var(--muted)}
+  /* best-spots answer block: label, a horizontally-scrollable chip row (one line on phones so it
+     doesn't squeeze the map — T4b), then an optional caveat for the weak-cue species */
+  #topspots{width:100%;display:none;flex-direction:column;gap:5px;font-size:12px;
+    margin-top:3px;padding-top:7px;border-top:1px solid var(--line)}
+  #topspots .lb{color:var(--muted);font-size:11.5px}
+  #topspots .row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:1px}
+  #topspots .row::-webkit-scrollbar{height:0}
+  #topspots .spot{flex:none;font:inherit;font-size:11.5px;padding:3px 10px;border-radius:999px;cursor:pointer;
+    background:#17324a;color:#dcebfa;border:1px solid #ffffff1f;line-height:1.15;display:inline-flex;
+    align-items:center;gap:6px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+  #topspots .spot:active{background:#1f4364}
+  #topspots .spot .sc{font-weight:700;font-variant-numeric:tabular-nums;color:#8fd0ff}
+  #topspots .spot.g5 .sc{color:#ffcf3f}
+  #topspots .cav{color:var(--muted);font-size:11px;line-height:1.35}
+  #topspots .cav b{color:#dcebfa}
+  #topspots .none{color:var(--muted);font-size:11.5px}
+  /* what the map pins mean (answers "what are the blue flags?") — lives INSIDE the collapsible
+     "how to read this", so the main screen stays clean (mobile-declutter, 2026-08) */
+  #mapkey{width:100%;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted);
+    margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+  #mapkey .k{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  #mapkey .dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;flex:none}
+  #mapkey .tear{width:11px;height:11px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    border:1.5px solid #eaf3ff;flex:none}
+  .rvpop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0b0f14}
+  .rvpop b{font-size:13.5px}
+  .rvpop .sp{margin-top:5px;font-size:11px;color:#2f6b46;font-weight:650}
+  .rvpop .nt{margin-top:3px;font-size:12px;color:#333}
+  input[type=range]{width:100%;accent-color:var(--accent);height:26px}
+  .ticks{display:flex;justify-content:space-between;margin-top:2px;font-size:10.5px;color:var(--muted)}
+  .ticks span{flex:1;text-align:center}
+  .ticks span.on{color:var(--ink);font-weight:650}
+  /* opacity + play row */
+  .row2{display:flex;align-items:center;gap:12px;margin-top:9px}
+  #gear{font-size:14px;padding:4px 9px}
+  /* settings sheet: operator controls live here, not on the main screen (ADR-041) */
+  #settings{position:absolute;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:30;
+    min-width:250px;max-width:320px;display:flex;flex-direction:column;gap:10px}
+  #settings .strow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    font-size:12.5px;color:var(--ink)}
+  #settings .strow small{color:var(--muted)}
+  #settings .strow input[type=range]{width:110px}
+  #settings #setclose{padding:2px 8px}
+  button{background:#1b2430;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button:active{background:#243040}
+  .row2 label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;flex:1}
+  .row2 input[type=range]{flex:1;height:20px}
+  /* station popup */
+  .pop{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .pop b{font-size:13.5px}
+  .pop .v{color:#0b0f14}
+  .pop .traj{margin-top:6px;display:flex;gap:4px}
+  .pop .traj .c{flex:1;text-align:center;font-size:10px;padding:3px 0;border-radius:4px;
+    background:#eee;color:#333;font-variant-numeric:tabular-nums}
+  .pop .traj .c.go{background:#d6f5df}
+  .pop .traj .c.go.soft{background:#edf7e6;color:#667}
+  .pop .traj .c .z{display:block;font-weight:700;font-size:11px}
+  .maplibregl-popup-content{border-radius:10px;padding:11px 12px}
+  #err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;
+    color:var(--muted);font-size:14px}
+  .loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);
+    font-size:13px}
+  @media (max-width:560px){
+    /* MOBILE: the map is the product — compact both cards hard so it isn't squeezed to a sliver.
+       Secondary detail (full legend, timing caption, snapshot parentheticals) folds away; the
+       essentials stay: species, best spots, phase, dawn/dusk, the slider. */
+    #top{top:8px;left:8px;right:8px;padding:8px 11px;gap:6px}
+    #top h1{font-size:13px;width:100%;line-height:1.2}
+    #legend{display:none}                       /* colours are explained in "how to read" */
+    #topspots{margin-top:2px;padding-top:6px;gap:4px}
+    #topspots .lb{font-size:11px}
+    #legnote{margin-top:3px}
+    #ctl{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));padding:9px 11px 10px}
+    #phase{margin-bottom:8px;padding:7px 9px;gap:8px}
+    #phase .lab{font-size:12px}
+    #phase .det{font-size:10.5px}
+    #timing{margin:-2px 0 8px;padding:6px 9px;font-size:11px;gap:4px 10px}
+    #timing .cap{display:none}                  /* drop the wordy "timing priors" caption on phones */
+    .daylab{gap:6px;margin-bottom:7px;flex-wrap:wrap}
+    .daylab .d{font-size:12.5px}
+    .daylab .ha,.daylab .wind{font-size:10.5px}
+    .daylab .wind{margin-left:0}
+    /* mobile-declutter round 2 (ADR-041): operator controls live in the ⚙ settings sheet; the
+       main screen keeps only fishing information. Title dropped — the user knows what app they
+       opened; the age/season line carries the state. */
+    #top h1{display:none}
+    .row2{margin-top:7px}
+    #settings{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom))}
+    button{padding:5px 9px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="loading" id="load">loading forecast…</div>
+<div id="err"></div>
+
+<div class="card" id="top">
+  <h1><span class="fish">🎣</span> Thunder Bay shore-fishing forecast</h1>
+  <span class="age" id="age"></span>
+  <span class="age" id="season" style="cursor:help"></span>
+  <span class="age" id="health" style="cursor:help;color:var(--warn);display:none"></span>
+  <span class="spacer"></span>
+  <div id="species" class="species"></div>
+  <div id="legend"></div>
+  <div id="topspots"></div>
+  <details id="legnote">
+    <summary>how to read this · ⓘ</summary>
+    <div class="more"><b>Two measured signals, kept visibly separate.</b> The <b>teal wash</b> is
+      <b>temperature</b> — the species' published preferred bands (faint = in range, brighter =
+      optimal). It moves with the forecast, because the water does. The <b>gold shading</b> is
+      <b>structure</b> — real drop-offs, shoal tops and point tips measured in the CHS survey
+      soundings. Its brightness is a true gradient: how strongly that bottom ranks against the whole
+      surveyed shore (75th→99th percentile), so <b>flat water gets no gold and the brightest gold is
+      genuinely rare</b>. Each species only shows gold in water it can use (adult lakers hold
+      ≥4&nbsp;m in summer, brookies shallower — so the gold differs by species on purpose). The
+      marks <b>never move</b> — the bottom doesn't. Nothing is blended: <b>fish where bright gold
+      sits inside bright teal</b> —
+      right structure in right-temperature water, read directly off two honest layers. All within a
+      ~75&nbsp;m cast (≤22&nbsp;m deep). It's a ranking, not a catch percentage — that would need
+      logged trips. The
+      banner up top is the <b>upwelling phase</b> — the timing layer:
+      a west-quadrant blow first drives cold water to shore (<b>setup/peak</b> — a cold shock that
+      slows the bite), then as it <b>relaxes</b> the front sharpens and the bite turns on — that
+      relaxation is the prime window. Day&nbsp;0 uses <b>observed</b> wind (Thunder Bay airport);
+      later days use the forecast. Edges are uncertain ~100–300&nbsp;m — treat them as fuzzy. Blue
+      teardrops are <b>river mouths</b> (plume + forage) — they rival temperature for shore catch,
+      and for salmon/steelhead the plume/season drives more than temperature.
+      <b>The "Best today" numbers are a relative score, 0–100</b> — 100 is the strongest stretch
+      <i>today for that species</i> (the most reachable water at the right temperature and structure);
+      the rest are scored against it. It is NOT a catch percentage. Forecasts
+      <b>water, not fish</b> — check Ontario regs before fishing.
+      <div id="unvnote" style="margin-top:5px"></div></div>
+    <div id="mapkey"></div>
+  </details>
+</div>
+
+<div class="card" id="ctl" style="display:none">
+  <div id="phase"></div>
+  <div id="timing"></div>
+  <div class="daylab">
+    <span class="d" id="dlab">—</span>
+    <span class="ha" id="halab"></span>
+    <span class="wind" id="wlab"></span>
+  </div>
+  <input type="range" id="t" min="0" max="5" value="0" step="1" />
+  <div class="ticks" id="ticks"></div>
+  <div class="row2">
+    <button id="play">▶ Play</button>
+    <span class="spacer" style="flex:1"></span>
+    <button id="gear" title="settings">⚙</button>
+  </div>
+</div>
+
+<div class="card" id="settings" style="display:none">
+  <div class="strow"><b>Settings</b><button id="setclose" title="close">✕</button></div>
+  <label class="strow"><span>Depth-contour chart<br><small>water becomes a depth chart (CHS survey); land stays satellite</small></span>
+    <input type="checkbox" id="chartview" /></label>
+  <label class="strow"><span>River seams<br>
+    <small style="opacity:.62;font-weight:400">zoom into a river to see them · not shown for lake trout</small></span>
+    <input type="checkbox" id="seamview" /></label>
+  <label class="strow"><span>Shoreline access<br>
+    <small style="opacity:.62;font-weight:400">green = public land · red = private title · yellow = unclear. Ownership only — not a legal check, and not a promise you can reach the water</small></span>
+    <input type="checkbox" id="shoreview" /></label>
+  <label class="strow"><span>Overlay strength</span>
+    <input type="range" id="op" min="20" max="100" value="82" step="1" /></label>
+</div>
+
+<script>
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const ESRI_ATTR = "Imagery © Esri, Maxar, Earthstar Geographics · Bathymetry CHS NONNA-10 · Model NOAA LSOFS · Obs GLOS/NDBC · Wind CYQT METAR/GEFS";
+
+let MAP, MAN, cur = 0, playing = null, SPECIES = [], curSp = null;
+const MOB = window.matchMedia('(max-width:560px)').matches;   // phone layout: smaller pins, terse labels
+// Escape EVERY manifest-derived string before it reaches innerHTML/setHTML. The manifest is
+// build-controlled today, but the knowledge pipeline is designed to mine external text (reviews,
+// community pins) into name/note fields — unescaped, that becomes stored XSS (stress-test 2026-08).
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// graded suitability zones: features carry temp='sp:<id>:s1|s2|s3'. The build emits them
+// DISJOINT (outer fair ring / good ring / prime core, no overlap), so these translucent fills
+// read as a light graded wash you can see the water through — not a compounded opaque slab.
+// A light→dark ramp keeps prime distinct. Not fused with phase — phase is the separate banner.
+// BIVARIATE channels (ADR-038): TEMPERATURE is a teal wash that moves with the forecast;
+// STRUCTURE is a separate set of amber/gold MARKS that are static by construction (the build
+// emits them once, with no lead property — same place, same brightness, every day). The
+// conjunction is read by eye: a gold mark inside bright teal. No fusion math anywhere.
+const SUIT = [
+  {suf:'s1', op:0.16, col:'#7fe0cb'},   // temperature wash: in range
+  {suf:'s2', op:0.34, col:'#28b58c'},   // temperature wash: optimal core
+];
+// ADR-039: a TRUE gradient, not on/off steps. THIRTEEN nested cumulative bands (g<q> = everything
+// at or above the MEASURED regional strength percentile p<q>, ~2-percentile ladder p75→p99)
+// stacked as translucent fills — standard filled-contour rendering, so opacity accumulates and
+// brightness IS the break's regional rank. 13 fine bands keep each step (~.05 opacity, tiny hue
+// shift) below the visible-banding threshold, so the ramp reads smooth, not "stacked". Per-layer
+// op is solved so the STACKED opacity climbs ~linearly from .14 (p75) to .80 (p99): the brightest
+// gold stays genuinely rare by construction. Nested solid regions, not disjoint rings (rings
+// shred into sliver fragments — "detached blobs").
+const STRUCT = (() => {
+  const qs = [75, 77, 79, 81, 83, 85, 87, 89, 90, 92, 95, 97, 99];   // must match the build's _RAMP_QS
+  const c0 = [0xc8, 0x96, 0x3a], c1 = [0xff, 0xd7, 0x5e];            // faint amber -> bright gold
+  const T0 = 0.14, T1 = 0.80;                                        // stacked-opacity endpoints
+  let prev = 0;
+  return qs.map((q, i) => {
+    const t = i / (qs.length - 1);
+    const T = T0 + (T1 - T0) * t;
+    const op = (T - prev) / (1 - prev);
+    prev = T;
+    const col = '#' + c0.map((c, k) => Math.round(c + (c1[k] - c) * t).toString(16).padStart(2, '0')).join('');
+    return {suf: 'g' + q, op: +op.toFixed(3), col};
+  });
+})();
+const SF = (l,id,suf) => ['all', ['==',['get','lead'], l], ['==', ['get','temp'], 'sp:'+id+':'+suf]];
+const GF = (id,suf) => ['==', ['get','temp'], 'sp:'+id+':'+suf];   // structure: species only, no lead
+function buildSpeciesChips(){
+  const el = document.getElementById('species'); if(!el) return;
+  el.innerHTML = SPECIES.map(s =>
+    `<button class="spchip${s.id===curSp.id?' on':''}" data-id="${esc(s.id)}" title="${esc(s.name)}${s.note?' — '+esc(s.note):''}">${esc(s.name.split(/[(\/]/)[0].trim())}</button>`).join('');
+  el.querySelectorAll('.spchip').forEach(b => b.addEventListener('click', () => {
+    curSp = SPECIES.find(x=>x.id===b.dataset.id);
+    el.querySelectorAll('.spchip').forEach(x=>x.classList.toggle('on', x===b));
+    applyLayers();
+  }));
+}
+function applyLayers(){
+  if(!MAN || !curSp) return;
+  MAN.stretches.forEach((s,k) => {
+    if(!s.area) return;
+    const day = s.days[Math.min(cur, s.days.length-1)];
+    SUIT.forEach(z => {
+      const id = 'arfill'+k+'_'+z.suf;
+      map.getLayer(id) && map.setFilter(id, SF(day.lead, curSp.id, z.suf));
+    });
+    // structure marks: species-only filter, NO lead — they are static across the forecast
+    STRUCT.forEach(z => {
+      const id = 'arstr'+k+'_'+z.suf;
+      map.getLayer(id) && map.setFilter(id, GF(curSp.id, z.suf));
+    });
+    map.getLayer('arln'+k) && map.setFilter('arln'+k, GF(curSp.id, 'g99'));
+  });
+  paintFills();
+  if(window.applySeams && document.getElementById('seamview')){
+    window.applySeams(document.getElementById('seamview').checked);
+    if(window.seamHint) window.seamHint();
+  }
+  renderLegend();
+  updateMarkers();
+  updateStations();
+  renderTopSpots();
+  renderMapKey();
+}
+// Fill opacity, honesty-aware. For a WEAK-cue species (salmon/steelhead) the model itself says
+// temperature barely predicts location, so we do NOT draw a confident "prime" for them — the
+// thermal tiers fade to faint context and the river-mouth plume markers carry the signal.
+// NOTE: we deliberately do NOT fade the thermal tiers by forecast lead. The MEASURED
+// isotherm-depth error (manifest.forecast_error, from data/forecast_gate_log.csv) shows NO
+// lead trend over 24–120 h — the LSOFS thermal-field position is about as accurate at day 5 as
+// day 1 — so a growing-with-lead opacity decay would be a fabricated heuristic the data
+// contradicts (rule 6). Timing uncertainty (will the blow arrive as forecast?) is real and
+// lead-dependent, and it lives in the phase banner, which decays on its own.
+function paintFills(){
+  if(!MAN || !curSp) return;
+  const o = (+document.getElementById('op').value)/100;
+  const weak = curSp.temp_cue === 'weak';
+  // PHASE-SUPPRESSION dimming (audit T1c): during peak upwelling the bite is cold-shocked off, yet
+  // the thermal map would glow brightest (cold water = laker-optimal). Don't let the map shout
+  // "prime" when the banner says the bite is suppressed — dim the whole spatial layer. This is a
+  // DISPLAY coupling, not a fitted weight (the phase stays a separate honest signal, rules 6-8).
+  const lead = MAN.stretches[0] ? MAN.stretches[0].days[Math.min(cur, MAN.stretches[0].days.length-1)].lead : 0;
+  const ph = (MAN.phase && MAN.phase.by_lead) ? MAN.phase.by_lead[String(lead)] : null;
+  const suppress = ph && (ph.suppressed || ph.phase === 'peak') ? 0.35 : 1.0;
+  MAN.stretches.forEach((s,k) => {
+    SUIT.forEach(z => {
+      const id = 'arfill'+k+'_'+z.suf;
+      if(!map.getLayer(id)) return;
+      // weak-cue species (salmon/steelhead) follow plumes — fade the temperature wash to context
+      let op = o * z.op * suppress * (weak ? 0.5 : 1.0);
+      map.setPaintProperty(id, 'fill-opacity', op);
+    });
+    // STRUCTURE marks are measured bottom — they do not dim with phase or forecast (the bottom
+    // doesn't move). Weak-cue species still see them slightly faded (structure is a minor cue
+    // for plume-followers, but the breaks near a mouth are real and useful).
+    STRUCT.forEach(z => {
+      const id = 'arstr'+k+'_'+z.suf;
+      if(!map.getLayer(id)) return;
+      map.setPaintProperty(id, 'fill-opacity', o * z.op * (weak ? 0.45 : 1.0));
+    });
+    const ln = 'arln'+k;
+    if(map.getLayer(ln)) map.setPaintProperty(ln, 'line-opacity', o * 0.7 * (weak ? 0.45 : 1.0));
+  });
+}
+function renderLegend(){
+  const el = document.getElementById('legend'); if(!el || !curSp) return;
+  const weak = curSp.temp_cue === 'weak';
+  const opt = curSp.optimal_c || curSp.range_c;
+  const fe = MAN && MAN.forecast_error;
+  // Lean legend: swatches + core °C, nothing more. Weak-cue drops the "prime" swatch (the model
+  // hides prime for plume-driven species) and flags the weak cue in two words — the marker popups
+  // carry the plume detail, so the legend doesn't repeat it.
+  if(weak){
+    // no structure glow for plume-driven species — just the temperature base
+    el.innerHTML =
+      `<span class="key"><i class="sw s2"></i>optimal<i class="sw s1"></i>in&nbsp;range`+
+      `<i class="sw g90"></i>breaks</span>`+
+      `<span class="lmut">${opt[0]}–${opt[1]}°C · weak temp cue — mouths &gt; map</span>`;
+  } else {
+    // two channels, named as channels: the moving temp wash vs the fixed structure ramp
+    el.innerHTML =
+      `<span class="key"><i class="sw s1"></i><i class="sw s2"></i>right temp (moves)`+
+      `<i class="sw g75"></i><i class="sw g90"></i><i class="sw g99"></i>breaks (brighter = stronger)</span>`+
+      `<span class="lmut">${opt[0]}–${opt[1]}°C core · bright gold in bright teal = the spot</span>`;
+  }
+  // Measured thermal-field uncertainty stays DISCOVERABLE on hover, not crowding the bar.
+  // Honest about what it is: an absolute isotherm-depth error vs a STABLE reference (0 moving-obs
+  // chains), so it's a provisional magnitude, not validated forecast skill — and the "no lead
+  // trend" is what we can measure at n=25, not a proven day-5=day-1 claim.
+  if(fe && fe.pooled_mae_m){
+    const moving = (fe.n_effective_chains|0) > 0;
+    const trend = fe.lead_trend_detected ? 'error grows with lead'
+                : (moving ? 'no lead trend over 24–120 h' : 'no lead trend yet measurable (n=' + fe.n + ')');
+    el.title = `Thermal-field position error ≈ ±${fe.pooled_mae_m} m isotherm depth — ${trend}. `
+             + `Provisional: absolute error vs a stable reference (${fe.n_effective_chains|0} moving-obs `
+             + `chains), not validated forecast skill.`;
+  } else if(fe && fe.band_blocked_reason){
+    // A WITHHELD band must SAY it is withheld. When the ADR-048 censoring quarantine dropped the
+    // chain whose observed isotherm was really the top-sensor bound, the measured band went from
+    // "±1.4 m" to nothing — and nothing, rendered as an empty tooltip, looks identical to a
+    // feature that was never built.
+    el.title = 'No measured thermal-field error band right now — ' + fe.band_blocked_reason
+             + '. The map still shows WHERE the model puts the water; it is not claiming a '
+             + 'validated ± on that depth.';
+  } else { el.title = ''; }
+}
+
+// upwelling-phase presentation — the fish-review headline: reward the RELAXATION, not the
+// cold trough. Keyed to the phase string from features/upwelling_phase.py.
+const PHASE_META = {
+  relaxation: {ic:'🎯', lab:'Relaxation — prime bite window', col:'#39d353'},
+  peak:       {ic:'❄️', lab:'Peak upwelling — cold shock, bite often off', col:'#4aa3ff'},
+  setup:      {ic:'🌬️', lab:'Upwelling building — bite may slow', col:'#ffb020'},
+  neutral:    {ic:'•',  lab:'Neutral — no active upwelling; work the gold breaks in the teal', col:'#9aa4ae'},
+  unknown:    {ic:'•',  lab:'Wind unavailable', col:'#9aa4ae'},
+};
+function renderPhase(lead){
+  const box = document.getElementById('phase');
+  const ph = MAN && MAN.phase && MAN.phase.by_lead ? MAN.phase.by_lead[String(lead)] : null;
+  if(!ph){ box.style.display='none'; return; }
+  const m = PHASE_META[ph.phase] || PHASE_META.unknown;
+  box.style.display = 'flex';
+  // OBSERVED corroboration (ADR-043): the phase is inferred from WIND; the CHS shore gauge
+  // measures the response (offshore blow -> shore level draws down as the thermocline tilts up).
+  // Shown as agreement/disagreement, never as proof - the anomaly also carries seiche + pressure.
+  const wlv = (MAN.phase && MAN.phase.water_level) || null;
+  let wlLine = '';
+  if(wlv && wlv.trend && wlv.trend !== 'unknown'){
+    const ok = wlv.agrees_with_wind_phase;
+    const cm = Math.round((wlv.anomaly_m||0)*100);
+    wlLine = `<div class="det" style="color:${ok===false?'#e0a53a':'#9aa4ae'}" title="`+
+      `Shore water level vs the preceding 30 h. An offshore blow draws the level down as the `+
+      `thermocline tilts up. Also responds to seiche and barometric pressure - corroboration, `+
+      `not proof.">gauge: ${esc(wlv.trend)} ${cm>0?'+':''}${cm} cm`+
+      (ok===false?' &middot; \u26a0 disagrees with the wind read':' &middot; consistent')+`</div>`;
+  }
+  box.style.borderLeftColor = m.col;
+  const obs = (ph.source||'').startsWith('observed');
+  const srcName = obs ? (esc(MAN.phase.obs_station||'obs')+' obs') : 'forecast';
+  const conf = ph.confidence ? ph.confidence[0].toUpperCase()+ph.confidence.slice(1) : '';
+  box.innerHTML =
+    `<span class="ic">${m.ic}</span>`+
+    `<span class="txt"><div class="lab" style="color:${m.col}">${m.lab}</div>`+
+    `<div class="det">${esc(ph.detail||'')}</div>${wlLine}</span>`+
+    `<span class="src">${obs?'🛰 ':''}${srcName}${conf?'<br>'+conf+' conf.':''}</span>`;
+}
+
+// local clock time (Thunder Bay) for a UTC iso — the WHEN dimension is shown in local time (rule 9)
+function clockLocal(iso){
+  if(!iso) return '—';
+  const t = new Date(iso); if(isNaN(+t)) return '—';
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay',
+    hour:'numeric',minute:'2-digit'}).format(t);
+}
+function win(pair){ return pair ? `${clockLocal(pair[0])}–${clockLocal(pair[1])}` : '—'; }
+
+// timing strip: deterministic dawn/dusk low-light windows — the WHEN dimension. This is the one
+// intraday cue that is genuinely well-supported (crepuscular feeding) and free (pure astronomy).
+// The barometric "prior" was DEMOTED (2026-08): the direct pressure→feeding effect is debated in
+// the literature and mostly an indirect proxy for the frontal weather we already read from wind, so
+// it failed the "proven, measurable effect" bar and was cut rather than dressed up as a signal.
+function renderTiming(){
+  const box = document.getElementById('timing'); if(!box) return;
+  const L = MAN && MAN.light;
+  if(!L || !(L.morning_prime || L.evening_prime)){ box.style.display='none'; return; }
+  box.style.display = 'flex';
+  box.innerHTML =
+    `<span class="grp"><span class="lb">🌅 dawn</span><span class="v">${win(L.morning_prime)}</span></span>`+
+    `<span class="grp"><span class="lb">🌇 dusk</span><span class="v">${win(L.evening_prime)}</span></span>`+
+    `<span class="grp lb cap" style="flex-basis:100%;opacity:.8;font-size:10.5px">best low-light windows (dawn/dusk) — the strongest intraday cue, esp. for salmon/steelhead</span>`;
+}
+
+// 'Best spots today' — the model's own lead-0 ranking for the selected species (manifest.top_spots).
+// Strong-cue species: ranked by weighted habitat area. Weak-cue: the ranking carries the run-timing
+// caveat and active run windows are surfaced. Clicking a spot flies the map there.
+function renderTopSpots(){
+  const box = document.getElementById('topspots'); if(!box || !curSp || !MAN) return;
+  const ts = MAN.top_spots && MAN.top_spots[curSp.id];
+  if(!ts){ box.style.display='none'; return; }
+  box.style.display = 'flex';
+  const ranked = ts.ranked || [];
+  // mobile drops the "100 = strongest" hint (explained in how-to-read; title attr keeps it)
+  const hint = MOB ? '' : ' <span style="opacity:.7">· 100 = strongest</span>';
+  let html = `<span class="lb" title="relative habitat index — 100 = today's strongest stretch for this species">Best for ${curSp.name.split(/[(\/]/)[0].trim().toLowerCase()} today${hint}:</span>`;
+  if(ranked.length){
+    html += `<div class="row">` + ranked.map(r => {
+      const g5 = r.glow_ha >= 1 ? ' g5' : '';
+      return `<button class="spot${g5}" data-id="${esc(r.id)}" title="${esc(r.reason)}">`+
+             `${esc(r.name.split('—')[0].trim())} <span class="sc">${r.score}</span></button>`;
+    }).join('') + `</div>`;
+  } else {
+    html += `<span class="none">no stretch has meaningful reachable habitat for this species today</span>`;
+  }
+  // the unverified-survey caveat lives in "how to read this" (declutter round 2) — still stated,
+  // just not permanently on the main screen
+  const unv = MAN.top_spots._unranked_unverified || [];
+  const unvEl = document.getElementById('unvnote');
+  if(unvEl) unvEl.innerHTML = unv.length
+    ? `Not ranked (unverified survey): <b>${esc(unv.map(n=>n.split('/')[0].trim()).join(', '))}</b> — sparse soundings; shown on the map as indicative only, never recommended.`
+    : '';
+  // active run windows (surfaced prominently for the weak-cue migratory species)
+  const runs = (MAN.top_spots._active_runs)||[];
+  if(ts.weak_cue){
+    if(runs.length){
+      const names = esc(runs.map(r=>r.id.replace(/_/g,' ')).join(', '));
+      html += `<span class="cav">🐟 Run window active: <b>${names}</b>. ${esc(ts.caveat||'')}</span>`;
+    } else {
+      const nx = MAN.top_spots._next_run;
+      const nxTxt = nx ? `Next: <b>${esc(nx.id.replace(/_/g,' '))}</b> opens ~${esc(nx.opens.slice(5))} (in ${nx.days_until} d). ` : '';
+      html += `<span class="cav">No run window open yet. ${nxTxt}${esc(ts.caveat||'')}</span>`;
+    }
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.spot').forEach(b => b.onclick = () => {
+    const s = (MAN.stretches||[]).find(x => x.id === b.dataset.id);
+    if(s && s.center) map.flyTo({ center:[s.center[1], s.center[0]], zoom:12.6, duration:700 });
+  });
+}
+
+// map-pin key — answers "what are the blue flags?" The station dot tracks the current species'
+// colour (cold-reachability is a lake-trout signal, muted for the warm-cued species).
+function renderMapKey(){
+  const el = document.getElementById('mapkey'); if(!el || !curSp) return;
+  const cold = curSp.temp_cue !== 'weak';
+  const stDot = cold ? '#39d353' : '#6b7682';
+  const stTxt = cold ? 'station — cold water reachable' : 'station — cold-reach (minor here)';
+  // the key sits inside the collapsed "how to read this" now — swatches shown on all viewports
+  el.innerHTML =
+    `<span class="k"><i class="sw" style="background:#28b58c;width:11px;height:11px;margin:0"></i>temp (moves)</span>`+
+    `<span class="k"><i class="sw" style="background:linear-gradient(90deg,#c8963a,#ffd75e);width:22px;height:11px;margin:0"></i>breaks (brighter = stronger, fixed)</span>`+
+    `<span class="k"><span class="tear" style="background:#2f80ed"></span>river mouth — tap for run + flow</span>`+
+    `<span class="k"><span class="dot" style="background:${stDot}"></span>${stTxt}</span>`+
+    // shoreline swatches only appear when the layer is on — a key for an invisible layer is
+    // noise, and this key already lives inside a collapsed panel
+    (window.SHORE_ON ?
+      `<span class="k"><i class="sw" style="background:#2fbf5f;width:22px;height:4px;margin:0"></i>shore: public land</span>`+
+      `<span class="k"><i class="sw" style="background:repeating-linear-gradient(90deg,#f0b429 0 5px,transparent 5px 8px);width:22px;height:4px;margin:0"></i>shore: unclear</span>`+
+      `<span class="k"><i class="sw" style="background:repeating-linear-gradient(90deg,#e14b4b 0 2px,transparent 2px 6px);width:22px;height:4px;margin:0"></i>shore: private title</span>`
+      : '');
+}
+
+let STATIONS = [];
+// station pins = cold-water reachability = a LAKE-TROUT signal. Recolor/dim per species: full
+// green/gray for the cold-cued species (laker, coaster), muted for the warm-preferring weak-cue
+// species where "cold reachable" is not the point (T4c). Popup carries the same caveat.
+function updateStations(){
+  if(!curSp) return;
+  const coldCued = curSp.temp_cue !== 'weak';
+  STATIONS.forEach(o => {
+    const st = o.st;
+    const bg = coldCued ? (st.now ? (st.now_certain===false ? '#a7d98c' : '#39d353') : '#8894a0')
+                        : '#6b7682';           // one muted tone for warm-cued species
+    o.el.style.background = bg;
+    o.el.style.opacity = coldCued ? '1' : '0.5';
+    o.pop.setHTML(stationHTML(st, coldCued));
+  });
+}
+let MARKERS = [];
+function updateMarkers(){
+  if(!curSp) return;
+  MARKERS.forEach(o => {
+    const rel = (o.m.species||[]).includes(curSp.id);
+    // a run window is "on for this species" if the mouth is active AND the selected species is in
+    // its active set — gold-highlight those (the migratory species' real signal), dim off-window.
+    const run = o.m.run || {};
+    const runOn = rel && run.active && (run.species_active||[]).includes(curSp.id);
+    o.el.style.opacity = rel ? '1' : '0.42';
+    o.el.style.zIndex = runOn ? '3' : (rel ? '2' : '1');
+    o.el.style.background = runOn ? '#ffcf3f' : '#2f80ed';
+    o.el.style.borderColor = runOn ? '#3a2c00' : '#eaf3ff';
+    o.el.style.boxShadow = runOn ? '0 0 0 1.5px #0009, 0 0 9px 2px #ffcf3f88' : '0 0 0 1.5px #0009';
+  });
+}
+
+function fail(msg){
+  document.getElementById('load').style.display='none';
+  const e=document.getElementById('err'); e.style.display='grid';
+  e.textContent = msg;
+}
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    // glyphs: needed only by the chart-view depth labels; if the font server is unreachable the
+    // labels are skipped but contour lines still draw (MapLibre degrades per-tile).
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: { sat: { type:'raster', tiles:[ESRI], tileSize:256, attribution: ESRI_ATTR, maxzoom:19 } },
+    layers: [
+      // chart-view ground: hidden under the satellite until the user flips the basemap toggle
+      { id:'chartbg', type:'background', paint:{ 'background-color':'#0d1b2e' }, layout:{ visibility:'none' } },
+      { id:'sat', type:'raster', source:'sat' }
+    ]
+  },
+  center: [-89.11, 48.46], zoom: 10.4, maxZoom: 16, minZoom: 8, attributionControl: false
+});
+map.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-left');
+map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-right');
+map.addControl(new maplibregl.GeolocateControl({ positionOptions:{enableHighAccuracy:true}, trackUserLocation:true }), 'bottom-right');
+MAP = map;
+
+map.on('load', async () => {
+  let man;
+  try {
+    const r = await fetch('data/manifest.json', { cache: 'no-store' });
+    if(!r.ok) throw new Error('manifest '+r.status);
+    man = await r.json();
+  } catch(e){ return fail('Could not load the forecast data ('+e.message+'). If this is a fresh deploy, the daily build may not have run yet.'); }
+  // A structurally-valid manifest with NO stretches previously threw inside this async handler
+  // AFTER the spinner was cleared — a silent blank page with no diagnostic (stress-test 2026-08).
+  // Fail loudly instead: the error screen is the honest state when the build emitted no areas.
+  if(!man.stretches || !man.stretches.length || !man.stretches[0].days || !man.stretches[0].days.length)
+    return fail('The forecast build produced no map areas — the daily build likely failed its self-audit; check the build logs.');
+  MAN = man;
+  document.getElementById('load').style.display='none';
+  document.getElementById('ctl').style.display='block';
+
+  // add each stretch's day-0 image; we swap the URL when the slider moves.
+  // cache-bust by build time so a new daily deploy isn't masked by cached PNGs
+  // (overlay filenames are stable across builds).
+  const V = '?v=' + encodeURIComponent(man.built_utc || man.issue || '');
+  man._v = V;
+  const lead0 = man.stretches[0].days[0].lead;
+  // PREFERRED-RANGE model: area features carry temp='sp:<id>' (per species). One soft fill +
+  // one crisp FRONT outline per stretch; the outline is the thermal edge where fish feed. The
+  // species chips + day slider just re-target the filter. See docs/FISH_BEHAVIOR_REVIEW.md.
+  SPECIES = (man.species && man.species.length) ? man.species
+    : [{id:'lake_trout',name:'Lake trout',range_c:[6,12],optimal_c:[6,10],front_c:12,temp_cue:'strong',default:true}];
+  curSp = SPECIES.find(s=>s.default) || SPECIES[0];
+  const bounds = new maplibregl.LngLatBounds();
+  man.stretches.forEach((s, i) => {
+    if(s.area){
+      map.addSource('ar'+i, { type:'geojson', data: s.area + V });
+      SUIT.forEach(z => {                       // temperature wash (moves with the forecast)
+        map.addLayer({ id:'arfill'+i+'_'+z.suf, type:'fill', source:'ar'+i,
+          filter:SF(lead0, curSp.id, z.suf),
+          paint:{ 'fill-color':z.col, 'fill-opacity':z.op } });
+      });
+      STRUCT.forEach(z => {                     // STATIC measured-structure marks (never move)
+        map.addLayer({ id:'arstr'+i+'_'+z.suf, type:'fill', source:'ar'+i,
+          filter:GF(curSp.id, z.suf),
+          paint:{ 'fill-color':z.col, 'fill-opacity':z.op } });
+      });
+      // thin outline on the TOP (p99) band only — marks the rare best breaks without blob weight
+      map.addLayer({ id:'arln'+i, type:'line', source:'ar'+i, filter:GF(curSp.id, 'g99'),
+        layout:{ 'line-join':'round' },
+        paint:{ 'line-color':'#053d2a', 'line-width':1.1, 'line-opacity':0.7 } });
+    }
+    s.corners.forEach(c => bounds.extend(c));
+  });
+  buildSpeciesChips();
+  // frame the coast inside the map window BETWEEN the two cards (bigger insets on a phone, where
+  // the header + control cards eat more of the viewport)
+  const pad = MOB ? {top:185,bottom:240,left:16,right:16} : {top:70,bottom:150,left:30,right:30};
+  if(!bounds.isEmpty()) map.fitBounds(bounds, { padding: pad, duration:0 });
+
+  // station markers. The green/gray verdict is COLD-WATER REACHABILITY — a lake-trout signal
+  // (cold hypolimnion within a cast). For the warm-preferring weak-cue species it doesn't mean
+  // "good here", so the pins de-emphasize + the popup says so when such a species is selected (T4c).
+  (man.stations||[]).forEach(st => {
+    const el = document.createElement('div');
+    const d = MOB ? 12 : 16;
+    el.style.cssText = `width:${d}px;height:${d}px;border-radius:50%;border:2.5px solid #fff;`+
+      'box-shadow:0 0 0 2px #0009;cursor:pointer;transition:opacity .15s,background .15s';
+    const pop = new maplibregl.Popup({offset:14, closeButton:false});
+    new maplibregl.Marker({element:el}).setLngLat([st.lon, st.lat]).setPopup(pop).addTo(map);
+    STATIONS.push({el, st, pop});
+  });
+  updateStations();
+
+  // river-mouth structure markers — plume/forage that rivals temperature for shore catch,
+  // decisive for the weak-cue species (docs/FISH_BEHAVIOR_REVIEW.md). Teardrop pins, dimmed
+  // when the selected species doesn't stage there.
+  (man.markers||[]).forEach(m => {
+    const el = document.createElement('div');
+    const d = MOB ? 12 : 15;
+    el.style.cssText = `width:${d}px;height:${d}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);`+
+      'background:#2f80ed;border:2px solid #eaf3ff;box-shadow:0 0 0 1.5px #0009;cursor:pointer;'+
+      'transition:opacity .15s';
+    const pop = new maplibregl.Popup({offset:16, closeButton:false}).setHTML(markerHTML(m));
+    new maplibregl.Marker({element:el, anchor:'bottom'}).setLngLat([m.lon, m.lat]).setPopup(pop).addTo(map);
+    MARKERS.push({el, m});
+  });
+  updateMarkers();
+
+  // age banner — computed CLIENT-SIDE from issued_utc so a dead daily build cannot
+  // display a frozen age forever (the baked age_h is only the build-time value)
+  const age = document.getElementById('age');
+  function renderAge(){
+    let h = man.age_h;
+    if(man.issued_utc){
+      const t = Date.parse(man.issued_utc);
+      if(!isNaN(t)) h = (Date.now() - t) / 3.6e6;
+    }
+    // negative age = issue date in the FUTURE (misdated manifest / clock skew) — that is NOT
+    // fresh, it's untrustworthy, and must read STALE too (rule 5; stress-test 2026-08).
+    const stale = h > 30 || h < -1;   // stale = a build was MISSED, not "it's night"
+    const days = h >= 48 ? ` (${(h/24).toFixed(1)} days)` : '';
+    // mobile drops the issue-date prefix (redundant with the age + the Today tick) — but never
+    // the STALE warnings (rule 5: staleness is loud on every screen size)
+    const pre = MOB ? '' : `issue ${man.issue} · `;
+    age.textContent = h < -1
+      ? `issue ${man.issue} · dated in the future ⚠ STALE`
+      : `${pre}${Math.round(h)} h old${days}` + (stale?' ⚠ STALE':'');
+    age.classList.toggle('stale', stale);
+    if(man.bias && man.bias.source && man.bias.source !== 'live')
+      age.textContent += ' · ⚠ degraded bias';
+  }
+  renderAge();
+  setInterval(renderAge, 60e3);
+
+  // seasonal-regime badge — the map is a SUMMER model; flag when the season shifts what drives catch
+  const se = document.getElementById('season');
+  if(man.season){
+    const s = man.season, primary = s.upwelling === 'primary';
+    se.textContent = '· ' + s.label + (primary ? '' : ' ⚠');
+    se.title = s.note + (primary ? '' : '\n(the map is a summer thermal/edge model — weight it less this season)');
+    se.style.color = primary ? '' : 'var(--warn)';
+  }
+  // per-stretch HEALTH — warn honestly when an area ran degraded or on a stale/missing anchor
+  // today (silent degradation is worse than a caveat). Names listed on hover.
+  const bad = (man.stretches||[]).filter(s => s.degraded || s.anchor_stale);
+  const he = document.getElementById('health');
+  if(he && bad.length){
+    const deg = bad.filter(s=>s.degraded).map(s=>s.name.split('—')[0].trim());
+    const stale = bad.filter(s=>s.anchor_stale&&!s.degraded).map(s=>s.name.split('—')[0].trim());
+    he.style.display = '';
+    he.textContent = `· ⚠ ${bad.length} area${bad.length>1?'s':''} degraded`;
+    he.title = (deg.length?`bathymetry-only shore (reachable area less reliable): ${deg.join(', ')}\n`:'')
+             + (stale.length?`stale/missing surface anchor: ${stale.join(', ')}`:'');
+  }
+
+  // ticks from the first stretch's day labels
+  const days = man.stretches[0].days;
+  const t = document.getElementById('t');
+  t.max = days.length-1;
+  document.getElementById('ticks').innerHTML =
+    days.map((d,i)=>{
+      const t=new Date(d.valid_utc);
+      const today=!isNaN(+t)&&new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay'}).format(t)===new Intl.DateTimeFormat('en-CA',{timeZone:'America/Thunder_Bay'}).format(new Date());
+      return `<span data-i="${i}">${today?'Today':esc(d.label.split(' ')[0])}</span>`;
+    }).join('');
+  t.addEventListener('input', e => setDay(+e.target.value));
+  document.getElementById('play').addEventListener('click', togglePlay);
+
+  // ---- settings sheet (ADR-041): operator controls off the main screen ----
+  const setEl = document.getElementById('settings');
+  document.getElementById('gear').addEventListener('click', () => {
+    setEl.style.display = setEl.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('setclose').addEventListener('click', () => { setEl.style.display = 'none'; });
+  const op = document.getElementById('op');
+  const savedOp = +localStorage.getItem('fc_op');
+  if(savedOp >= 20 && savedOp <= 100) op.value = savedOp;
+  op.addEventListener('input', () => { localStorage.setItem('fc_op', op.value); paintFills(); });
+  paintFills();
+
+  // CHART VIEW: swap the satellite for the CHS isobath chart. Contours are STATIC bathymetry —
+  // same smoothed NONNA field the gold is computed on — loaded lazily on first toggle.
+  let ctrLoaded = false;
+  async function loadContours(){
+    ctrLoaded = true;
+    // Depth LABELS need glyphs from the font server. A failed/hanging glyph fetch stalls the
+    // whole TILE of the source a symbol layer sits on — which silently blanked the contour
+    // LINES too (found headless, where the font host is unreachable). So: labels live on a
+    // SEPARATE source, added only if the glyph server answers — lines can never be hostage.
+    let glyphsOk = false;
+    try {
+      const r = await fetch('https://demotiles.maplibre.org/font/Open%20Sans%20Semibold/0-255.pbf');
+      glyphsOk = r.ok;
+    } catch(e){ /* offline/blocked font host: lines only */ }
+    man.stretches.forEach((s, i) => {
+      if(!s.contours) return;
+      map.addSource('ctr'+i, { type:'geojson', data: s.contours + V });
+      // chart WATER: dark fill over the water polygons only — the satellite LAND stays visible
+      // (operator request). Inserted beneath the first overlay layer so teal/gold ride on top.
+      const firstOverlay = (map.getStyle().layers.find(l => /^ar(fill|str)/.test(l.id)) || {}).id;
+      map.addLayer({ id:'ctrw'+i, type:'fill', source:'ctr'+i,
+        filter:['==', ['geometry-type'], 'Polygon'],
+        layout:{ visibility:'visible' },
+        paint:{ 'fill-color':'#0d1b2e', 'fill-opacity':0.92 } }, firstOverlay);
+      map.addLayer({ id:'ctr'+i, type:'line', source:'ctr'+i,
+        filter:['==', ['geometry-type'], 'LineString'],
+        layout:{ visibility:'visible' },
+        paint:{ 'line-color':'#c3d8ee',
+                // index contours (10/20 m) heavier, like a real chart; bright enough to read
+                // OVER the teal/gold fills, which cover most of the surveyed band
+                'line-width':['case', ['any',['==',['get','d'],10],['==',['get','d'],20]], 1.8, 1.0],
+                'line-opacity':0.9 } });
+      if(glyphsOk){
+        map.addSource('ctrs'+i, { type:'geojson', data: s.contours + V });
+        map.addLayer({ id:'ctrlab'+i, type:'symbol', source:'ctrs'+i,
+          filter:['==', ['geometry-type'], 'LineString'],
+          layout:{ visibility:'visible', 'symbol-placement':'line',
+                   'text-field':['concat',['to-string',['get','d']],' m'],
+                   'text-font':['Open Sans Semibold'], 'text-size':10, 'symbol-spacing':320 },
+          paint:{ 'text-color':'#b9cde2', 'text-halo-color':'#0d1b2e', 'text-halo-width':1.3 } });
+      }
+    });
+  }
+  function setChart(on){
+    // satellite STAYS: the chart water-fill covers only water, land keeps the imagery.
+    // chartbg remains as the offline/basemap-failure ground beneath everything.
+    if(on && !ctrLoaded) loadContours();
+    man.stretches.forEach((s, i) => ['ctrw'+i, 'ctr'+i, 'ctrlab'+i].forEach(id => {
+      if(map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    }));
+    localStorage.setItem('fc_chart', on ? '1' : '0');
+  }
+  const cv = document.getElementById('chartview');
+  cv.addEventListener('change', () => setChart(cv.checked));
+  if(localStorage.getItem('fc_chart') === '1'){ cv.checked = true; setChart(true); }
+
+  // RIVER SEAMS (ADR-045). Bend / constriction / velocity seams computed from 1 m lidar plus live
+  // discharge. Graded with the SAME nested-band discipline as the gold structure ramp (ADR-039):
+  // 13 cumulative bands on measured regional percentiles, so a bright segment means "strong for
+  // Thunder Bay" rather than a number someone chose.
+  //
+  // Drawn as SEGMENTS, never pins or a soft glow. The centreline is cartographic and a seam is
+  // 1-5 m wide, so the honest resolution is reach-scale (~100 m) — a dot would claim a precision
+  // we do not have, which is the error that once put the river-mouth markers kilometres out.
+  const SEAM_COL = { bend:'#ff8a3d', constriction:'#ff8a3d', expansion:'#7fb2ff',
+                     decel:'#ffd75e', accel:'#ff6b6b' };
+  // which seam signal leads for which species — ORDINAL, from hydraulics.SPECIES_SEAM
+  const SEAM_FOR = { steelhead:['decel','accel','bend'], salmon:['decel','bend'],
+                     brook_trout:['bend','constriction','expansion'], lake_trout:[] };
+  let seamLoaded = false;
+  async function loadSeams(){
+    seamLoaded = true;
+    try {
+      const r = await fetch('data/rivers.geojson' + V);
+      if(!r.ok) throw new Error('no rivers.geojson');
+      map.addSource('seams', { type:'geojson', data: await r.json() });
+    } catch(e){ console.warn('river seams unavailable', e); return; }
+    // one layer per band so opacity stacks into a true gradient (nested, not disjoint)
+    for(let b = 1; b <= 13; b++){
+      const t = (b - 1) / 12;
+      map.addLayer({ id:'seam'+b, type:'line', source:'seams',
+        filter:['>=', ['get','band'], b],
+        layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' },
+        paint:{
+          'line-color': ['match', ['get','kind'],
+            'bend', SEAM_COL.bend, 'constriction', SEAM_COL.constriction,
+            'expansion', SEAM_COL.expansion, 'decel', SEAM_COL.decel,
+            'accel', SEAM_COL.accel, '#ff8a3d'],
+          'line-width': 1.6 + 2.2 * t,
+          'line-opacity': 0.10 + 0.05 * t } });
+    }
+  }
+  // EXPOSED ON window ON PURPOSE. This function is defined inside map.on('load'), but the species
+  // switch that must re-apply it lives at top level — so a bare `typeof applySeams === 'function'`
+  // guard there silently evaluated to false and the seam layer never re-filtered when you changed
+  // species. It looked exactly like "the toggle does nothing". A guard written to be safe instead
+  // hid the failure, which is the silent-degradation trap this project keeps meeting.
+  function applySeams(on){
+    for(let b = 1; b <= 13; b++){
+      const id = 'seam'+b;
+      if(!map.getLayer(id)) continue;
+      const kinds = (curSp && SEAM_FOR[curSp.id]) || [];
+      // lake trout gets NO river ranking (it barely enters them), so the layer stays hidden
+      const show = on && kinds.length > 0;
+      map.setLayoutProperty(id, 'visibility', show ? 'visible' : 'none');
+      if(show) map.setFilter(id, ['all', ['>=', ['get','band'], b],
+                                  ['in', ['get','kind'], ['literal', kinds]]]);
+    }
+  }
+  // TELL THE USER WHY THEY SEE NOTHING. Two things make the seam layer legitimately empty, and
+  // both looked identical to a broken toggle: lake trout gets no river ranking at all, and at the
+  // default zoom (8.55) one pixel is 277 m, so a 100 m seam is 0.36 px long — physically
+  // unrenderable, which no styling can fix. Silence reads as a bug, so say which it is.
+  const SEAM_MIN_ZOOM = 11.5;
+  function seamHint(){
+    let el = document.getElementById('seamhint');
+    const on = document.getElementById('seamview') && document.getElementById('seamview').checked;
+    if(!el){
+      el = document.createElement('div'); el.id = 'seamhint';
+      el.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);bottom:96px;'
+        + 'background:rgba(12,18,28,.88);color:#dfe6ef;padding:6px 11px;border-radius:8px;'
+        + 'font-size:12.5px;pointer-events:none;z-index:5;display:none;max-width:82vw;text-align:center';
+      document.body.appendChild(el);
+    }
+    if(!on){ el.style.display = 'none'; return; }
+    const kinds = (curSp && SEAM_FOR[curSp.id]) || [];
+    if(!kinds.length){
+      el.textContent = 'River seams are not ranked for lake trout — it barely enters rivers.';
+      el.style.display = 'block';
+    } else if(map.getZoom() < SEAM_MIN_ZOOM){
+      el.textContent = 'Zoom into a river to see seams (they are 40–260 m long).';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+  map.on('zoomend', seamHint);
+  window.seamHint = seamHint;
+  window.applySeams = applySeams;
+  const sv = document.getElementById('seamview');
+  async function setSeams(on){
+    if(on && !seamLoaded) await loadSeams();
+    applySeams(on);
+    seamHint();
+    localStorage.setItem('fc_seams', on ? '1' : '0');
+  }
+  sv.addEventListener('change', () => setSeams(sv.checked));
+  if(localStorage.getItem('fc_seams') === '1'){ sv.checked = true; setSeams(true); }
+
+  // SHORELINE ACCESS (ADR-046). Ontario land tenure painted on the very edge of the coast:
+  // public / private / unknown. Three deliberate choices are visible here.
+  //
+  // 1. Colour is NOT the only channel. Red-green is the operator's explicit call, so line STYLE
+  //    carries the same distinction — solid public, dashed unknown, dotted private — and the
+  //    layer stays readable for the ~8% of men with red-green colour vision deficiency.
+  // 2. A dark casing sits under all three. These lines are drawn on satellite imagery, where a
+  //    2 px stroke over a bright beach or a dark conifer stand can vanish entirely.
+  // 3. Every segment is clickable and every segment can state its reason. A colour with no
+  //    receipt is exactly the kind of confident-looking claim this project keeps refusing to make
+  //    — especially here, where red is an instruction to stay off.
+  const SHORE_COL = { public:'#2fbf5f', unknown:'#f0b429', private:'#e14b4b' };
+  const SHORE_DASH = { public:null, unknown:[2.2,1.6], private:[0.5,1.5] };
+  let shoreLoaded = false;
+  window.SHORE_ON = false;
+  async function loadShore(){
+    shoreLoaded = true;
+    try {
+      const r = await fetch('data/shore_access.geojson' + V);
+      if(!r.ok) throw new Error('no shore_access.geojson');
+      map.addSource('shoreacc', { type:'geojson', data: await r.json() });
+    } catch(e){ console.warn('shoreline access unavailable', e); return; }
+    const width = ['interpolate',['linear'],['zoom'], 8,1.8, 11,2.6, 14,4.0, 17,6.0];
+    map.addLayer({ id:'shore-case', type:'line', source:'shoreacc',
+      layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' },
+      paint:{ 'line-color':'#0b1017', 'line-opacity':0.55,
+              'line-width':['interpolate',['linear'],['zoom'], 8,3.4, 11,4.6, 14,6.6, 17,9.0] } });
+    for(const cls of ['public','unknown','private']){
+      const p = { 'line-color':SHORE_COL[cls], 'line-width':width, 'line-opacity':0.95 };
+      if(SHORE_DASH[cls]) p['line-dasharray'] = SHORE_DASH[cls];
+      map.addLayer({ id:'shore-'+cls, type:'line', source:'shoreacc',
+        filter:['==', ['get','cls'], cls],
+        layout:{ visibility:'none', 'line-cap':'round', 'line-join':'round' }, paint:p });
+    }
+    const SHORE_LAYERS = ['shore-public','shore-unknown','shore-private'];
+    map.on('click', SHORE_LAYERS, (ev) => {
+      const f = ev.features && ev.features[0]; if(!f) return;
+      const cls = f.properties.cls, why = f.properties.why;
+      new maplibregl.Popup({offset:8, closeButton:false}).setLngLat(ev.lngLat).setHTML(
+        `<b style="color:${SHORE_COL[cls]}">${esc(cls === 'unknown' ? 'access unclear' : cls + ' land')}</b><br>`
+        + `<small>${esc(why || 'no tenure record here')}</small><br>`
+        + `<small style="opacity:.6">Ontario parcel fabric · ownership, not a legal access ruling</small>`
+      ).addTo(map);
+    });
+    map.on('mouseenter', SHORE_LAYERS, () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', SHORE_LAYERS, () => { map.getCanvas().style.cursor = ''; });
+  }
+  function setShore(on){
+    window.SHORE_ON = on;
+    for(const id of ['shore-case','shore-public','shore-unknown','shore-private']){
+      if(map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    }
+    localStorage.setItem('fc_shore', on ? '1' : '0');
+    renderMapKey();
+  }
+  const shv = document.getElementById('shoreview');
+  shv.addEventListener('change', async () => { if(shv.checked && !shoreLoaded) await loadShore(); setShore(shv.checked); });
+  if(localStorage.getItem('fc_shore') === '1'){ shv.checked = true; loadShore().then(() => setShore(true)); }
+  // open on the frame you're DECIDING on: the first snapshot still in the future
+  // (walkthrough finding #3 — Friday 9 pm should land on Saturday dawn, not this morning)
+  let start0 = 0;
+  for(let i=0;i<days.length;i++){ const tt=Date.parse(days[i].valid_utc); if(!isNaN(tt)&&tt>Date.now()){ start0=i; break; } }
+  setDay(start0);
+  renderTiming();      // dawn/dusk + barometer (same all days)
+  renderTopSpots();    // best spots for the default species
+  renderMapKey();      // what the map pins mean
+});
+
+function stationHTML(st, coldCued=true){
+  // cell tone mirrors the band: solid green = whole band agrees, pale = central-only
+  const traj = (st.traj||[]).map(p => {
+    const cls = p.certain ? 'go' : (p.reach ? 'go soft' : '');
+    // ADR-049: the depth band is computed per day from THAT day's stratification, so it is
+    // tight when the thermocline is sharp and absent when the column is mixed. "not constrained
+    // today" is a true and useful thing to say; a single pooled +/- would say it never.
+    const band = p.iso_band_m != null ? ` ±${p.iso_band_m}m` : '';
+    const why = p.iso_band_m == null && p.iso_band_why ? ` — ${p.iso_band_why}` : '';
+    return `<div class="c ${cls}" title="${esc((p.iso!=null?('12 °C at ~'+p.iso+' m'+band):'no crossing')+why)}">`+
+           `<span class="z">${p.iso!=null?p.iso+'m':'–'}</span>${esc(p.label)}</div>`;
+  }).join('');
+  // for the warm-preferring weak-cue species, say plainly that cold-reachability isn't their signal
+  const caveat = coldCued
+    ? `<div class="v" style="color:#777;font-size:10.5px;margin-top:5px">solid green = confident · pale = uncertain (band edge) · number = 12°C depth</div>`
+    : `<div class="v" style="color:#8a6d00;font-size:10.5px;margin-top:5px">this pin is cold-water reachability — a lake-trout signal. For ${curSp?curSp.name.split(/[(\/]/)[0].trim().toLowerCase():'this species'} it's a minor cue; fish river mouths + the run windows instead.</div>`;
+  return `<div class="pop"><b class="v">${esc(st.name.split('—')[0].trim())}</b>`+
+    `<div class="v" style="margin-top:3px">${esc(st.verdict||'')}</div>`+
+    (st.surf_sst!=null?`<div class="v" style="color:#555;font-size:12px;margin-top:2px">surface ${st.surf_sst}°C</div>`:'')+
+    `<div class="traj">${traj}</div>`+
+    caveat+`</div>`;
+}
+
+function markerHTML(m){
+  const names = (m.species||[]).map(id => {
+    const s = SPECIES.find(x=>x.id===id); return s ? s.name : id;
+  });
+  const run = m.run || {};
+  let runLine = '';
+  if(run.active && (run.runs||[]).length){
+    const rn = esc(run.runs.map(r => r.id.replace(/_/g,' ')).join(' · '));
+    runLine = `<div class="sp" style="color:#8a6d00">🐟 run window active (typical): ${rn}</div>`;
+  } else {
+    runLine = `<div class="nt" style="color:#999">no spawning-run window open now (typical dates)</div>`;
+  }
+  // LEDGER CONFIRMATION (ADR-042): a researched, dated report that the run is ACTUALLY on —
+  // shown ABOVE the typical-window line, never instead of it, and never bare: the date and the
+  // source come with it. A regional report is labelled regional (it didn't name this river).
+  const conf = m.confirmed || [];
+  if(conf.length){
+    const c = conf[0];
+    const reg = c.place_id ? '' : ' <span style="font-weight:400">(regional report — not this river specifically)</span>';
+    const more = conf.length > 1 ? ` <span style="font-weight:400;opacity:.8">+${conf.length-1} more</span>` : '';
+    runLine = `<div class="sp" style="color:#1a7a3a">✓ reported active — ${esc(c.species.replace(/_/g,' '))} `+
+              `${esc(c.date)} · ${esc(c.source_domain)}${reg}${more}</div>` + runLine;
+  }
+  // live river discharge + trend (plume strength — the real driver for the run species)
+  const f = m.flow;
+  let flowLine = '';
+  if(f && f.state && f.state!=='unknown'){
+    const arrow = f.state==='rising'?'↑':(f.state==='falling'?'↓':'→');
+    const col = f.freshet?'#1a7a3a':'#555';
+    flowLine = `<div class="nt" style="color:${col}">💧 river ${f.q_cms} m³/s ${arrow}`+
+      (f.trend_pct!=null?` (${f.trend_pct>0?'+':''}${f.trend_pct}%/3d)`:'')+
+      (f.pct_label?` · ${esc(f.pct_label)} for the date`:'')+
+      (f.freshet?' — freshet, staging trigger':'')+`</div>`+
+      (f.clim_years?`<div class="nt" style="color:#999;font-size:10.5px">vs ${esc(String(f.clim_years))} daily-flow record (ECCC)</div>`:'');
+  }
+  return `<div class="rvpop"><b>${esc(m.name)}</b>`+
+    `<div class="nt">${esc(m.note||'')}</div>`+
+    runLine+ flowLine+
+    (names.length?`<div class="sp">stages: ${esc(names.join(' · '))}</div>`:'')+
+    `<div class="nt" style="color:#888;font-size:10.5px;margin-top:5px">river-mouth structure · flow ECCC · position approximate (field-verify)</div></div>`;
+}
+
+function localLabel(d){
+  // each frame is an INSTANT (one model valid time), not a whole day — label it with
+  // the local clock time so "Thu" doesn't imply an all-day state (conditions shift
+  // within a day; seiche period ~40 h)
+  if(!d.valid_utc) return d.label;
+  const t = new Date(d.valid_utc);
+  if(isNaN(+t)) return d.label;
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Thunder_Bay',
+    weekday:'short', month:'short', day:'numeric', hour:'numeric' });
+  return f.format(t).replace(/\./g,'') + ' snapshot';
+}
+
+function setDay(i){
+  cur = i;
+  const man = MAN;
+  applyLayers();                       // re-target the species bands to this day's lead
+  const d0 = man.stretches[0].days[i];
+  renderPhase(d0.lead);                 // upwelling phase for this day's lead
+  document.getElementById('dlab').textContent = localLabel(d0) + (i===0?' (latest)':'');
+  // headline total counts only well-surveyed stretches — a sparse-survey box (e.g. Little
+  // Trout Bay, ~14% NONNA) interpolates its cold band over mostly-unsurveyed water and can
+  // report a large but poorly-constrained area, which would inflate the number misleadingly.
+  // TREND, not raw hectares (walkthrough: the actionable signal is more/less cold water than
+  // the prior frame, not an absolute figure) — low-confidence stretches stay excluded
+  const haAt = j => man.stretches.filter(s=>!s.low_confidence)
+    .reduce((a,s)=>a+(s.days[Math.min(j,s.days.length-1)].reach_ha||0),0);
+  const totHa = haAt(i);
+  let trend = '';
+  if(i>0){
+    const prev = haAt(i-1);
+    const d = prev>0 ? (totHa-prev)/prev : 0;
+    trend = d>0.08 ? 'cold water ↑' : (d<-0.08 ? 'cold water ↓' : 'cold water steady');
+  }
+  document.getElementById('halab').textContent = trend;
+  // continuous upwelling-favorability (graded response to wind strength), with context so a
+  // low reading is never a bare, alarming "0%" — light wind simply can't upwell.
+  const w = (man.wind||[]).find(x => d0.label.startsWith(x.day));
+  // PLAIN wind first — the standard pre-trip check (from the same obs+forecast series the
+  // phase uses; measured/forecast data, display only). Compass + mean–max kt.
+  const dw = man.phase && man.phase.daily_wind ? man.phase.daily_wind[String(d0.lead)] : null;
+  let wl = '';
+  if(dw){
+    const pts=['N','NE','E','SE','S','SW','W','NW'];
+    const c = pts[Math.round(((dw.dir_deg%360)+360)%360/45)%8];
+    wl = `<b>${c} ${dw.mean_kn}${dw.max_kn>dw.mean_kn?'–'+dw.max_kn:''} kt</b>`;
+  }
+  if(w){
+    const fav = Math.round((w.favor!=null?w.favor:w.p||0)*100);
+    if(fav >= 8) wl += `${wl?' · ':''}upwelling-favorable: <b>${fav}%</b>`;
+    else if(!MOB) wl += `${wl?' · ':''}<span style="opacity:.85">no upwelling blow</span>`;
+  }
+  document.getElementById('wlab').innerHTML = wl;
+  document.querySelectorAll('#ticks span').forEach(sp =>
+    sp.classList.toggle('on', +sp.dataset.i === i));
+  document.getElementById('t').value = i;
+}
+
+function togglePlay(){
+  const btn = document.getElementById('play');
+  if(playing){ clearInterval(playing); playing=null; btn.textContent='▶ Play'; return; }
+  btn.textContent='❚❚ Pause';
+  playing = setInterval(()=>{
+    const n = MAN.stretches[0].days.length;
+    setDay((cur+1) % n);
+  }, 1100);
+}
+</script>
+</body>
+</html>
