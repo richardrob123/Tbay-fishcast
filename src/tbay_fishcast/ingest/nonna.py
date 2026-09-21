@@ -37,6 +37,15 @@ import numpy as np
 
 WCS_URL = "https://nonna-geoserver.data.chs-shc.ca/geoserver/wcs"
 COVERAGE_ID = "nonna__NONNA 10 Coverage"
+# WCS 2.0 subset axis labels, as the coverage itself advertises them in
+# DescribeCoverage (<gml:Envelope axisLabels="X Y">). GeoServer matches these
+# CASE-SENSITIVELY and answers anything else with an InvalidAxisLabel exception
+# report + HTTP 404 — not a GeoTIFF. CHS switched this coverage from "x y" to
+# "X Y" on 2026-09-14 and the heartbeat hard-failed on every run for a week
+# (ADR-062). tests/fixtures/nonna_describecoverage.xml pins these to the served
+# contract, so the next rename fails in CI instead of in the field.
+AXIS_X = "X"
+AXIS_Y = "Y"
 GEOTIFF_NODATA = 3.4028234663852886e38  # float32 max — GeoServer's land/nodata fill
 _R = 6378137.0  # WGS84 / Web-Mercator sphere radius (EPSG:3857)
 
@@ -217,8 +226,8 @@ def _wcs_geotiff_url(lat: float, lon: float, half_m: float, scale_px: int | None
     cid = quote(COVERAGE_ID)
     url = (f"{WCS_URL}?service=WCS&version=2.0.1&request=GetCoverage"
            f"&coverageId={cid}&format=image/geotiff"
-           f"&subset=x({x - half_m:.1f},{x + half_m:.1f})"
-           f"&subset=y({y - half_m:.1f},{y + half_m:.1f})")
+           f"&subset={AXIS_X}({x - half_m:.1f},{x + half_m:.1f})"
+           f"&subset={AXIS_Y}({y - half_m:.1f},{y + half_m:.1f})")
     if scale_px:
         url += (f"&scalesize=http://www.opengis.net/def/axis/OGC/1/i({scale_px}),"
                 f"http://www.opengis.net/def/axis/OGC/1/j({scale_px})")

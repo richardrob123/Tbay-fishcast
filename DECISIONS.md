@@ -101,6 +101,38 @@ These arose from the first-hour verifications (see `docs/FIRST_HOUR_VERIFICATION
   strength of edge-selection are literature-direction-certain, not yet fit to Thunder Bay fish data.
   That final calibration is the field-log job (demotion rule as backstop).
 
+- **ADR-062 — A remote source's REQUEST contract is a tested contract. The NONNA axis-label
+  rename stopped the fishcast for a week and nothing said so.**
+
+  On 2026-09-14 CHS re-published the NONNA-10 coverage with its WCS subset axis labels renamed
+  `x y` -> `X Y`. GeoServer matches those labels case-sensitively and answers a mismatch with an
+  `ows:ExceptionReport` + HTTP 404, not a GeoTIFF. `ingest/nonna.py` asked for `subset=x(...)`,
+  so `fetch_patch` spent its four retries on a permanent error and raised. Silver Harbour is the
+  first station in the heartbeat loop, so every run died on the first station: **last good
+  heartbeat #155 2026-09-14 10:04 UTC, 28 consecutive failures through #183 2026-09-21 10:09 UTC**,
+  and `coast-site` frozen on the same fault — the published map went a week without a rebuild.
+  Fix: the labels are named constants (`AXIS_X`/`AXIS_Y`) pinned by
+  `tests/test_nonna_wcs_contract.py`, which reads the labels out of a recorded `DescribeCoverage`
+  response (`tests/fixtures/nonna_describecoverage.xml`) and asserts the request we build uses
+  the labels — and the CASE — the server says it serves. The next rename fails in CI.
+
+  **Why this is an ADR and not a one-line commit.** ADR-059 gave remote sources one place that
+  knows how they FAIL. This is the other half: we had no test that compared what we ASK for
+  against what the source SAYS it serves, so a one-character server-side change was invisible to
+  every guard in the repo. Schema contracts on bronze (rule 2) cover the response; nothing covered
+  the request. Recorded-capabilities pinning is now the pattern for any versioned remote API we
+  construct URLs against.
+
+  **Two gaps this exposed, deliberately NOT fixed in this commit** (each needs its own ADR):
+  (1) **Retry classification.** `fetch_patch`'s backoff was written for CHS dropping connections
+  mid-stream. A body that parses as an `ows:ExceptionReport` is a PERMANENT failure and retrying
+  it four times per station per run is noise that hides the real cause in the traceback tail.
+  (2) **Silent death — the rule-11 hole.** "Staleness is loud" is implemented for stale DATA in a
+  brief that gets sent. It is not implemented for a heartbeat that never produces a brief at all:
+  ntfy speaks only on a window open/close, so a crash and a genuinely quiet week are the same
+  silence on the phone. Seven days of nothing read as "no change in conditions". A heartbeat that
+  cannot speak for N cycles must say so out-of-band.
+
 - **ADR-061 — The run "triggers" the calendar asserts are not visible in this bay's record; the
   product stops narrating them.** `events_calendar.yaml` carries two T2 literature claims for the
   fall runs — `pink_run.modifiers.rain_trigger` ("first cool rain after Aug 20 = starting gun",
