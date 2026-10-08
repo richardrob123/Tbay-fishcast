@@ -37,8 +37,8 @@
    "end": "10-29",
    "authored_start": "09-25",
    "authored_end": "freeze_up",
-   "n": 16,
-   "n_years": 10,
+   "n": 17,
+   "n_years": 11,
    "years": [
     2010,
     2013,
@@ -49,7 +49,8 @@
     2022,
     2023,
     2024,
-    2025
+    2025,
+    2026
    ],
    "shift_days": -20,
    "applied": false,
@@ -66,6 +67,6 @@
   90.0
  ],
  "definition": "Run windows fitted from the LOCAL observation ledger: percentiles of dated report day-of-year within each authored window +/-tol, anchored to the authored window so multi-run species (spring/fall steelhead) stay separate. Effort-biased: describes when people REPORT fish, not escapement. Entries below the evidence bar are absent -> authored window.",
- "ledger_rows": 1427,
- "generated_utc": "2026-09-04T18:36:35Z"
+ "ledger_rows": 1431,
+ "generated_utc": "2026-10-08T20:57:55Z"
 }
