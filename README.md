@@ -77,5 +77,5 @@ python scripts/bootstrap_grid.py /path/to/lsofs.tHHz.YYYYMMDD.fields.nNNN.nc
 
 No LLM in the heartbeat · TDD with golden fixtures · provenance tiers on all knowledge
 (regs T1-only) · closed water is unrecommendable · staleness is loud · temporal splits
-only · UTC in storage · self-repair via PR, never auto-merge. Nothing outside the current
+only · UTC in storage · self-repair via PR (merged only when the tests pass and no workflow, hindcast-request or PLAN.md path is touched). Nothing outside the current
 phase (`NOT_BUILDING.md`); deviations need a proposed ADR + sign-off.

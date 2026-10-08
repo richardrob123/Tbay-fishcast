@@ -1,0 +1,31 @@
+{
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5"
+  },
+  "autoCompactWindow": 250000,
+  "worktree": {
+    "baseRef": "head"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task|Workflow",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_models.py\"; if [ -f \"$f\" ]; then exec python3 \"$f\"; fi; echo 'harness: .claude/hooks/guard_models.py is missing, so the model guard is skipped' >&2; exit 0"
+          }
+        ]
+      }
+    ]
+  },
+  "disableClaudeAiConnectors": true,
+  "permissions": {
+    "deny": [
+      "Edit(.github/workflows/**)",
+      "Write(.github/workflows/**)",
+      "Edit(data/hindcast_request.json)",
+      "Write(data/hindcast_request.json)"
+    ]
+  }
+}

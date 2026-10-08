@@ -1,0 +1,16 @@
+{
+  "_managed": "harness: refreshed from the plugin. To differ on purpose, delete this key and say why in CLAUDE.md under Model policy.",
+  "_about": "Which Claude model each role must use. Enforced by .claude/hooks/guard_models.py on Agent/Task/Workflow calls: only a model that contradicts a role is blocked. .claude/agents/*.md must pin the same model.",
+  "roles": {
+    "lead":        { "model": "claude-opus-5-5",   "reason": "orchestration, planning and final synthesis" },
+    "analyst":     { "model": "claude-opus-5-5",   "aliases": ["opus"], "reason": "one delegated judgement call; never inside a Workflow fan-out" },
+    "implementer": { "model": "claude-sonnet-5-5", "reason": "writes and changes code and tests" },
+    "scout":       { "model": "claude-sonnet-5-5", "reason": "every fan-out: review, verification, search" },
+    "Explore":     { "model": "haiku",             "reason": "cheap read-only search; haiku alias or claude-haiku-*" }
+  },
+  "workflow_agent_types": ["implementer", "scout"],
+  "escalation": {
+    "ladder": ["haiku", "claude-sonnet-5-5", "claude-opus-5-5"],
+    "rule": "Move up one step only after an objective failure (a failing test, a missing answer), never on a hunch."
+  }
+}

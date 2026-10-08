@@ -13,7 +13,7 @@ You are building **tbay-fishcast**: a deterministic fishing-conditions forecast 
 - **Provenance**: any knowledge entering `knowledge/` follows RESEARCH_PROTOCOL.md — source, retrieval date, confidence tier. Regs fields accept Tier-1 sources only.
 - **Model policy** (see CLAUDE.md): this session runs on the top model; delegate defined engineering subtasks to Sonnet-class subagents; delegate bulk extraction/classification to Haiku-class. Verify current model names against docs before wiring the Routine.
 - **Ask, don't assume**, on anything ambiguous. Deviations from PLAN.md require a proposed ADR in DECISIONS.md and my sign-off.
-- Never touch anything in NOT_BUILDING.md. Never auto-merge your own repair PRs.
+- Never touch anything in NOT_BUILDING.md. Merge your own repair PRs only when the tests pass and no workflow, hindcast-request or PLAN.md path is touched (rule 10, updated 2026-10-08).
 
 ## First-hour verification list (do these before building on them)
 1. Open one LSOFS nowcast file from the NODD bucket; confirm variable names, sigma-layer convention, node coordinate variables, and file size per cycle.
