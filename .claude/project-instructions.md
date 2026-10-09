@@ -5,9 +5,9 @@ Purpose: deterministic fishing forecast for Thunder Bay shore fishing. The site 
 
 Branch: the default branch is claude/tbay-fishcast-phase-0-6kh5lx (not main). Start from it and land work by PR (the bots commit there too, so fetch first). Never touch gh-pages.
 
-Checks: pip install -e ".[dev,geo]" once, then pytest -q (no network needed; 535 tests on 2026-10-07).
+Checks: pip install -e ".[dev,geo]" once, then python -m pytest (not bare pytest, which can be a separate tool that cannot see the packages; the config already adds -q, so a second -q hides the "N passed" line). No network needed; 535 tests on 2026-10-07.
 
-Ask first (the owner decides): anything under .github/workflows/ (edit, add, re-run, trigger); data/hindcast_request.json (a push starts a 350-minute job); secrets, tokens or alert-topic names in a public repo; PLAN.md changes (need an ADR and sign-off). The daily Routine's self-repair PR merges itself only when pytest -q is green and it touches none of those paths; otherwise it stays open for the owner.
+Ask first (the owner decides): anything under .github/workflows/ (edit, add, re-run, trigger); data/hindcast_request.json (a push starts a 350-minute job); secrets, tokens or alert-topic names in a public repo; PLAN.md changes (need an ADR and sign-off). The daily Routine's self-repair PR merges itself only when python -m pytest is green and it touches none of those paths; otherwise it stays open for the owner.
 
 <!-- harness:core -->
 How to work: nobody reviews your code or PRs, so the checks decide.
