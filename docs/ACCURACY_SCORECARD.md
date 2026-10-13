@@ -27,11 +27,11 @@ How the forecast the map ships degrades with lead time. Same far-chain caveats. 
 
 | lead | n | corrected MAE | raw MAE |
 |---|---|---|---|
-| +24 h | 15 | 4.96 m | 5.92 m |
-| +48 h | 15 | 4.74 m | 5.49 m |
-| +72 h | 15 | 4.95 m | 5.52 m |
-| +96 h | 15 | 4.70 m | 5.18 m |
-| +120 h | 15 | 4.93 m | 6.04 m |
+| +24 h | 16 | 4.95 m | 6.05 m |
+| +48 h | 16 | 4.74 m | 5.63 m |
+| +72 h | 16 | 4.96 m | 5.67 m |
+| +96 h | 16 | 4.46 m | 5.29 m |
+| +120 h | 16 | 4.79 m | 6.04 m |
 
 (Nowcast/lead-0 is in the isotherm-depth table above.) The lead-dependent uncertainty band (ADR-021) activates once these per-lead n are respectable — the widening is read from this measured error, never hand-picked.
 
@@ -41,8 +41,8 @@ n=65 clear scenes · shore-warm **+1.09 °C** (range -11.77…+10.14). GLSEA (1 
 
 ## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)
 
-n=42 days · mixed-layer model−clim mean **-0.47 °C**, iso-12 depth model−clim mean **+4.8 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
+n=43 days · mixed-layer model−clim mean **-0.44 °C**, iso-12 depth model−clim mean **+4.8 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
-n=116 buoy-days · GFS speed MAE **2.70 kn**, W-quadrant forecast−obs bias **-0.72 kn** · airport(CYQT)−buoy offset **-1.65 kn** (W-quadrant -1.33). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.
+n=118 buoy-days · GFS speed MAE **2.74 kn**, W-quadrant forecast−obs bias **-0.70 kn** · airport(CYQT)−buoy offset **-1.72 kn** (W-quadrant -1.29). The real over-lake test the wind-model choice deferred; the airport offset is what a separate phase threshold would need to earn — currently within noise, so one Wedderburn bar is used.

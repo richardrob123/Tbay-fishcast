@@ -1,6 +1,6 @@
 {
   "source": "data/forecast_gate_log.csv",
-  "n": 45,
+  "n": 50,
   "chains": [
     "45216",
     "llo1"
@@ -10,33 +10,33 @@
     "llo1"
   ],
   "n_effective_chains": 2,
-  "pooled_mae_m": 7.418,
+  "pooled_mae_m": 7.041,
   "band_blocked_reason": null,
-  "pooled_p90_m": 21.97,
+  "pooled_p90_m": 14.47,
   "per_lead": {
     "24": {
-      "n": 9,
-      "mae_m": 7.686,
+      "n": 10,
+      "mae_m": 7.4,
       "p90_m": 12.8
     },
     "48": {
-      "n": 9,
-      "mae_m": 7.331,
+      "n": 10,
+      "mae_m": 7.071,
       "p90_m": 12.41
     },
     "72": {
-      "n": 9,
-      "mae_m": 7.311,
+      "n": 10,
+      "mae_m": 7.092,
       "p90_m": 14.43
     },
     "96": {
-      "n": 9,
-      "mae_m": 7.111,
+      "n": 10,
+      "mae_m": 6.486,
       "p90_m": 12.01
     },
     "120": {
-      "n": 9,
-      "mae_m": 7.651,
+      "n": 10,
+      "mae_m": 7.158,
       "p90_m": 14.47
     }
   },
@@ -84,7 +84,7 @@
   "quarantined_chains": [
     "llo1"
   ],
-  "lead_slope_m_per_h": -0.0012,
+  "lead_slope_m_per_h": -0.00445,
   "lead_trend_detected": false,
-  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 7.418 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0012 m/h; per-lead means span 0.57 m). CAVEAT: n=45 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 2 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
+  "note": "Isotherm-depth (thermal-field position) error, bias-corrected, from the accumulated forecast gate. Pooled MAE 7.041 m over leads 24-120 h. Lead trend NOT detected (OLS slope -0.0045 m/h; per-lead means span 0.91 m). CAVEAT: n=50 usable rows (chains ['llo1'] quarantined under ADR-048 \u2014 a constant observed isotherm depth is the top-sensor bound, not a measurement), 2 of 2 chains have a moving observed reference \u2014 treat as a provisional ABSOLUTE-error figure, not skill. Because no lead trend is measurable, the map must NOT fabricate a growing-with-lead thermal-zone decay; timing uncertainty lives in the phase banner instead."
 }
