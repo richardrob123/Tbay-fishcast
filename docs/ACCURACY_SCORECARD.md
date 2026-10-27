@@ -41,7 +41,7 @@ n=65 clear scenes · shore-warm **+1.09 °C** (range -11.77…+10.14). GLSEA (1 
 
 ## Offshore cross-check (LSOFS vs GLERL mooring climatology, ADR-034)
 
-n=55 days · mixed-layer model−clim mean **+0.05 °C**, iso-12 depth model−clim mean **+4.8 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
+n=56 days · mixed-layer model−clim mean **+0.08 °C**, iso-12 depth model−clim mean **+4.8 m** · 0 DIVERGENT day(s). Independent (observed) check that the model's central-basin thermocline isn't grossly misplaced; generous band (2-yr clim vs 1 day).
 
 ## Over-lake wind gate (GFS forecast vs NDBC buoy obs, ADR-032/034)
 
