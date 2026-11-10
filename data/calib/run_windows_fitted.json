@@ -34,10 +34,10 @@
    "id": "fall_steelhead",
    "species": "steelhead",
    "start": "09-05",
-   "end": "10-29",
+   "end": "11-05",
    "authored_start": "09-25",
    "authored_end": "freeze_up",
-   "n": 17,
+   "n": 18,
    "n_years": 11,
    "years": [
     2010,
@@ -67,6 +67,6 @@
   90.0
  ],
  "definition": "Run windows fitted from the LOCAL observation ledger: percentiles of dated report day-of-year within each authored window +/-tol, anchored to the authored window so multi-run species (spring/fall steelhead) stay separate. Effort-biased: describes when people REPORT fish, not escapement. Entries below the evidence bar are absent -> authored window.",
- "ledger_rows": 1437,
- "generated_utc": "2026-11-09T23:52:55Z"
+ "ledger_rows": 1438,
+ "generated_utc": "2026-11-10T21:29:58Z"
 }
