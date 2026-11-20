@@ -1,6 +1,6 @@
 {
   "source": "data/wind_lead_gate_log.csv",
-  "built_utc": "2026-11-19T22:59:34+00:00",
+  "built_utc": "2026-11-20T22:37:32+00:00",
   "truth": "WELCOME ISLAND (AUT), ECCC station 4061 \u2014 a real anemometer on an island IN Thunder Bay, ~4 km from the LSOFS node the product forecasts at",
   "forecast": "gfs_seamless via Open-Meteo previous-runs (the run the product ships)",
   "scored_quantity": "upwelling DRIVE = trailing 24 h favorable wind-run integral (kt*h) from the product's own wind.favorable_wind_run; favorable axis 270 deg",
@@ -413,7 +413,7 @@
   "era5_reference_audit": {
     "n_days": 162,
     "n_changes": 161,
-    "reference_daily_change_sd_c": 66.059,
+    "reference_daily_change_sd_c": 66.057,
     "insitu_daily_change_sd_c": 84.212,
     "variability_ratio": 0.784,
     "quantity": "wind",
